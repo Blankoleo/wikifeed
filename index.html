@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WikiFeed">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>WikiFeed</title>
+</head>
+<body>
+  <main id="view-feed" class="view active">
+    <div id="feed" class="feed"></div>
+  </main>
+
+  <section id="view-saved" class="view">
+    <header class="page-head"><h1>Gemerkt</h1></header>
+    <ul id="saved-list" class="list"></ul>
+    <p id="saved-empty" class="empty">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern.</p>
+  </section>
+
+  <section id="view-topics" class="view">
+    <header class="page-head">
+      <h1>Deine Themen</h1>
+      <p class="sub" id="stats"></p>
+    </header>
+    <div class="pad">
+      <div id="topic-chips" class="chips"></div>
+
+      <label class="toggle">
+        <input type="checkbox" id="quality">
+        <span><b>Nur Top-Artikel</b><br><small>Bevorzugt exzellente &amp; lesenswerte Artikel – keine kurzen, trockenen Stubs.</small></span>
+      </label>
+
+      <h2>Was die App über dich gelernt hat</h2>
+      <p class="hint">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
+      <div id="weights" class="weights"></div>
+      <button id="reset" class="btn ghost">Gelerntes zurücksetzen</button>
+    </div>
+  </section>
+
+  <nav class="tabbar">
+    <button data-view="feed" class="active"><span>📖</span>Feed</button>
+    <button data-view="saved"><span>🔖</span>Gemerkt</button>
+    <button data-view="topics"><span>⚙️</span>Themen</button>
+  </nav>
+
+  <div id="reader" class="reader" hidden>
+    <header class="reader-head">
+      <button id="reader-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <div id="reader-title" class="reader-title"></div>
+      <button id="reader-save" class="icon-btn" aria-label="Merken">🔖</button>
+      <a id="reader-ext" class="icon-btn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen">↗</a>
+    </header>
+    <div id="reader-scroll" class="reader-scroll">
+      <article id="reader-body" class="reader-body"></article>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
