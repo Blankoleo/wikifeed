@@ -19,10 +19,19 @@
     <div id="feed" class="feed"></div>
   </main>
 
+  <section id="view-search" class="view">
+    <header class="page-head"><h1>Suche</h1></header>
+    <form id="search-form" class="search-box" action="#" role="search">
+      <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
+    </form>
+    <p id="search-hint" class="empty"></p>
+    <ul id="search-list" class="list"></ul>
+  </section>
+
   <section id="view-saved" class="view">
     <header class="page-head"><h1>Gemerkt</h1></header>
     <ul id="saved-list" class="list"></ul>
-    <p id="saved-empty" class="empty">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern.</p>
+    <p id="saved-empty" class="empty">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern – sie sind dann auch ohne Internet lesbar.</p>
   </section>
 
   <section id="view-topics" class="view">
@@ -47,6 +56,7 @@
 
   <nav class="tabbar">
     <button data-view="feed" class="active"><span>📖</span>Feed</button>
+    <button data-view="search"><span>🔍</span>Suche</button>
     <button data-view="saved"><span>🔖</span>Gemerkt</button>
     <button data-view="topics"><span>⚙️</span>Themen</button>
   </nav>
@@ -55,6 +65,7 @@
     <header class="reader-head">
       <button id="reader-back" class="icon-btn" aria-label="Zurück">‹</button>
       <div id="reader-title" class="reader-title"></div>
+      <button id="reader-speak" class="icon-btn" aria-label="Vorlesen">🔊</button>
       <button id="reader-save" class="icon-btn" aria-label="Merken">🔖</button>
       <a id="reader-ext" class="icon-btn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen">↗</a>
     </header>

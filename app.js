@@ -41,7 +41,8 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('wf.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('wf.' + k, JSON.stringify(v)); } catch {} },
 };
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const $ = id => document.getElementById(id);
 
 const state = {
   enabled: store.get('enabled', TOPICS.filter(t => t.on).map(t => t.id)),
@@ -50,6 +51,8 @@ const state = {
   saved: store.get('saved', []),
   quality: store.get('quality', true),
   stats: store.get('stats', { day: today(), read: 0, total: 0 }),
+  seeds: store.get('seeds', []),   // Artikel, die dir gefallen haben -> "Mehr wie das hier"
+  pool: store.get('pool', []),     // gesehene Artikel für Quiz-Karten
 };
 const seenSet = new Set(state.seen);
 
@@ -121,11 +124,92 @@ async function fetchTopic(topic) {
     .map(p => ({ title: p.title, extract: p.extract, thumb: p.thumbnail?.source || null, topic, top: !!p.top }));
 }
 
+// ---------- Mehr wie das hier ----------
+function addSeed(item) {
+  if (!item?.title) return;
+  state.seeds = [{ title: item.title, topic: item.topic || null }, ...state.seeds.filter(s => s.title !== item.title)].slice(0, 8);
+  store.set('seeds', state.seeds);
+}
+function dropSeed(title) {
+  state.seeds = state.seeds.filter(s => s.title !== title);
+  store.set('seeds', state.seeds);
+}
+async function fetchSimilar(seed, max) {
+  const d = await api({ ...CARD_PROPS, gsrsort: 'relevance', gsrlimit: '12', gsrsearch: 'morelike:' + seed.title });
+  return (d.query?.pages || [])
+    .sort((a, b) => a.index - b.index)
+    .filter(p => p.length >= 3500 && p.extract && p.extract.length > 80 && !seenSet.has(p.title) && !feedTitles.has(p.title))
+    .slice(0, max)
+    .map(p => ({ title: p.title, extract: p.extract, thumb: p.thumbnail?.source || null, topic: seed.topic, top: false, seed: seed.title }));
+}
+async function insertSimilar(card, item) {
+  if (!card || card.dataset.sim) return;
+  card.dataset.sim = '1';
+  const gen = feedGen;
+  try {
+    const sims = await fetchSimilar({ title: item.title, topic: item.topic || null }, 2);
+    if (gen !== feedGen || !card.isConnected) return;
+    let after = card;
+    for (const s of sims) after = addCard(s, after);
+  } catch {}
+}
+
+// ---------- Artikel des Tages ----------
+async function fetchAotd() {
+  const day = today();
+  let a = store.get('aotd', null);
+  if (!a || a.day !== day) {
+    const res = await fetch(`https://de.wikipedia.org/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
+    if (!title) return null;
+    const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '6', piprop: 'thumbnail', pithumbsize: '900' });
+    const p = q.query?.pages?.[0];
+    a = { day, item: { title: p?.title || title, extract: p?.extract || j.tfa.extract || '', thumb: p?.thumbnail?.source || null, topic: null, top: false, aotd: true } };
+    store.set('aotd', a);
+  }
+  return a.item;
+}
+
+// ---------- Quiz ----------
+function poolAdd(item) {
+  if (!item || !item.extract || state.pool.some(p => p.title === item.title)) return;
+  state.pool.push({ title: item.title, extract: item.extract.slice(0, 600), thumb: item.thumb || null, topic: item.topic || null, asked: false });
+  if (state.pool.length > 80) state.pool = state.pool.slice(-80);
+  store.set('pool', state.pool);
+}
+const STOP = new Set(['der', 'die', 'das', 'und', 'von', 'bei', 'des', 'dem', 'den', 'für', 'the', 'auf', 'mit', 'aus', 'zur', 'zum']);
+function maskTitle(text, title) {
+  const words = title.replace(/\(.*?\)/g, ' ').split(/[^\p{L}\p{N}]+/u).filter(x => x.length >= 3 && !STOP.has(x.toLowerCase()));
+  let out = text;
+  for (const wd of words) {
+    const re = new RegExp('(^|[^\\p{L}\\p{N}])' + wd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\p{L}]*', 'giu');
+    out = out.replace(re, '$1▢▢▢▢');
+  }
+  return out;
+}
+function makeQuiz() {
+  if (state.pool.length < 9) return null;
+  // Nicht die allerneuesten Artikel abfragen – etwas Abstand hilft beim Merken.
+  const cands = state.pool.slice(0, -5).filter(p => !p.asked);
+  if (!cands.length) return null;
+  const q = cands[Math.floor(Math.random() * cands.length)];
+  q.asked = true;
+  store.set('pool', state.pool);
+  const others = shuffle(state.pool.filter(p => p.title !== q.title));
+  const wrong = others.filter(p => p.topic === q.topic).concat(others.filter(p => p.topic !== q.topic)).slice(0, 2);
+  return { quiz: true, q, options: shuffle([q, ...wrong]) };
+}
+
 // ---------- Feed ----------
 const feedEl = document.getElementById('feed');
 let loading = false;
 let cardCount = 0;
 let feedGen = 0;
+let sinceQuiz = 0;
+const feedTitles = new Set();
+const cardItems = new WeakMap();
 
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -157,18 +241,34 @@ async function loadMore() {
     const want = Math.min(3, state.enabled.length);
     const topics = new Set();
     for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
+    const aotdP = (cardCount === 0 && store.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
     let items = [];
     for (const t of topics) items = items.concat(await fetchTopic(t));
+    // Dazu Artikel, die einem ähneln, der dir gefallen hat.
+    if (state.seeds.length && Math.random() < 0.7) {
+      const seed = state.seeds[Math.floor(Math.random() * state.seeds.length)];
+      try { items = items.concat(await fetchSimilar(seed, 2)); } catch {}
+    }
+    const aotd = aotdP ? await aotdP : null;
     if (gen !== feedGen) return;
-    const titles = new Set();
+    const titles = new Set(feedTitles);
+    if (aotd) titles.add(aotd.title);
     items = shuffle(items.filter(i => !titles.has(i.title) && titles.add(i.title)));
+    if (aotd) items.unshift(aotd);
     spinner?.remove();
     if (!items.length) { loading = false; return loadMore(); }
-    items.forEach(addCard);
+    sinceQuiz += items.length;
+    if (sinceQuiz >= 8) {
+      const quiz = makeQuiz();
+      if (quiz) { items.splice(Math.min(items.length, 2 + Math.floor(Math.random() * 3)), 0, quiz); sinceQuiz = 0; }
+    }
+    items.forEach(i => i.quiz ? addQuizCard(i) : addCard(i));
   } catch (e) {
     if (gen !== feedGen) return;
     spinner?.remove();
-    stateCard('error', 'Konnte keine Artikel laden (' + e.message + '). Bist du online?');
+    stateCard('error', navigator.onLine === false
+      ? 'Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.'
+      : 'Konnte keine Artikel laden (' + e.message + '). Bist du online?');
   } finally {
     if (gen === feedGen) loading = false;
   }
@@ -178,16 +278,31 @@ const viewObs = new IntersectionObserver(entries => {
   for (const en of entries) {
     if (!en.isIntersecting) continue;
     const card = en.target;
-    markSeen(card.dataset.title);
-    const idx = Number(card.dataset.idx);
-    if (idx >= cardCount - 3) loadMore();
+    const item = cardItems.get(card);
+    if (item) {
+      markSeen(item.title);
+      poolAdd(item);
+      if (item.aotd) store.set('aotdSeen', today());
+    }
+    let after = 0;
+    for (let n = card.nextElementSibling; n && after < 3; n = n.nextElementSibling) if (n.classList.contains('card') && !n.classList.contains('state-card')) after++;
+    if (after < 3) loadMore();
   }
 }, { root: feedEl, threshold: 0.6 });
 
-function addCard(item) {
+function placeCard(card, afterEl) {
+  cardCount++;
+  if (afterEl?.isConnected) { afterEl.after(card); }
+  else { const sc = feedEl.querySelector('.state-card'); if (sc) sc.before(card); else feedEl.append(card); }
+  viewObs.observe(card);
+  return card;
+}
+
+function addCard(item, afterEl) {
   const card = el('article', 'card');
   card.dataset.title = item.title;
-  card.dataset.idx = cardCount++;
+  cardItems.set(card, item);
+  feedTitles.add(item.title);
 
   const img = el('div', 'card-img');
   if (item.thumb) img.style.backgroundImage = `url("${item.thumb}")`;
@@ -195,8 +310,10 @@ function addCard(item) {
 
   const body = el('div', 'card-body');
   const meta = el('div', 'meta');
-  meta.append(el('span', 'chip', topicLabel(item.topic)));
+  if (item.aotd) meta.append(el('span', 'chip top', '⭐ Artikel des Tages'));
+  if (item.topic) meta.append(el('span', 'chip', topicLabel(item.topic)));
   if (item.top) meta.append(el('span', 'chip top', '★ Top-Artikel'));
+  if (item.seed) meta.append(el('span', 'chip sim', '≈ Ähnlich wie „' + item.seed + '“'));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
   const read = el('button', 'read-btn', 'Weiterlesen →');
@@ -218,7 +335,9 @@ function addCard(item) {
     adjust(item.topic, 0.7);
     if (good.classList.contains('on')) { adjust(item.topic, 1 / 1.3); good.classList.remove('on'); }
     bad.classList.add('on');
-    toast(`Weniger ${topicLabel(item.topic)}`);
+    if (item.seed) dropSeed(item.seed);
+    dropSeed(item.title);
+    toast(item.topic ? `Weniger ${topicLabel(item.topic)}` : 'Weniger davon');
     setTimeout(() => next(card), 350);
   };
   good.onclick = () => {
@@ -226,20 +345,53 @@ function addCard(item) {
     adjust(item.topic, 1.3);
     if (bad.classList.contains('on')) { adjust(item.topic, 1 / 0.7); bad.classList.remove('on'); }
     good.classList.add('on');
-    toast(`Mehr ${topicLabel(item.topic)} 👍`);
+    addSeed(item);
+    insertSimilar(card, item);
+    toast('👍 Ähnliche Artikel kommen als Nächstes');
   };
   save.onclick = () => {
     const on = toggleSaved(item);
     save.classList.toggle('on', on);
     if (on) adjust(item.topic, 1.1);
-    toast(on ? 'Gemerkt' : 'Entfernt');
+    toast(on ? 'Gemerkt · auch offline lesbar' : 'Entfernt');
   };
   actions.append(bad, save, good);
 
   card.append(img, body, actions);
-  const sc = feedEl.querySelector('.state-card');
-  if (sc) sc.before(card); else feedEl.append(card);
-  viewObs.observe(card);
+  return placeCard(card, afterEl);
+}
+
+function addQuizCard({ q, options }) {
+  const card = el('article', 'card quiz');
+  const img = el('div', 'card-img');
+  if (q.thumb) img.style.backgroundImage = `url("${q.thumb}")`;
+  else { img.classList.add('placeholder'); img.textContent = '?'; }
+  const body = el('div', 'card-body');
+  const meta = el('div', 'meta');
+  meta.append(el('span', 'chip top', '🧠 Quiz'), el('span', 'chip', 'Das hast du schon gesehen'));
+  const opts = el('div', 'opts');
+  const open = el('button', 'read-btn', 'Artikel nochmal lesen →');
+  open.hidden = true;
+  open.onclick = () => openReader(q.title, q);
+  for (const o of options) {
+    const b = el('button', 'opt', o.title);
+    b.onclick = () => {
+      if (card.dataset.done) return;
+      card.dataset.done = '1';
+      const right = o.title === q.title;
+      [...opts.children].forEach(x => { if (x.textContent === q.title) x.classList.add('right'); });
+      if (!right) b.classList.add('wrong');
+      state.stats.quizTotal = (state.stats.quizTotal || 0) + 1;
+      if (right) state.stats.quizRight = (state.stats.quizRight || 0) + 1;
+      store.set('stats', state.stats);
+      toast(right ? 'Richtig! 🎉' : 'Leider falsch – es war „' + q.title + '“');
+      open.hidden = false;
+    };
+    opts.append(b);
+  }
+  body.append(meta, el('h2', null, 'Welcher Artikel war das?'), el('p', 'extract', maskTitle(q.extract, q.title)), opts, open);
+  card.append(img, body);
+  return placeCard(card);
 }
 
 function next(card) {
@@ -251,6 +403,8 @@ function resetFeed() {
   feedGen++;
   loading = false;
   cardCount = 0;
+  sinceQuiz = 0;
+  feedTitles.clear();
   viewObs.disconnect();
   feedEl.innerHTML = '';
   feedEl.scrollTop = 0;
@@ -264,8 +418,83 @@ function toggleSaved(item) {
   else state.saved.unshift({ title: item.title, extract: item.extract || '', thumb: item.thumb || null, topic: item.topic || null });
   store.set('saved', state.saved);
   renderSaved();
+  if (isSaved(item.title)) queueOffline(item.title); else offlineDelete(item.title);
   return isSaved(item.title);
 }
+
+// ---------- Offline lesen ----------
+// Gemerkte Artikel landen samt Bildern im Cache-Speicher des Geräts.
+const ART_CACHE = 'wikifeed-articles';
+const canCache = 'caches' in window;
+const artKey = t => 'offline-article/' + encodeURIComponent(t);
+
+function cleanArticle(htmlText) {
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+  doc.querySelectorAll('script, link, meta, .navbox, .mw-references-wrap, .reflist, ol.references, sup.reference, .mw-editsection, .sisterproject, #normdaten, .mw-empty-elt').forEach(n => n.remove());
+  doc.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src');
+    if (src?.startsWith('//')) img.setAttribute('src', 'https:' + src);
+    const ss = img.getAttribute('srcset');
+    if (ss) img.setAttribute('srcset', ss.replace(/(^|,\s*)\/\//g, '$1https://'));
+    img.loading = 'lazy';
+  });
+  return doc;
+}
+async function fetchArticle(title) {
+  const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
+  if (d.error) throw new Error(d.error.info);
+  return { title: d.parse.title, doc: cleanArticle(d.parse.text) };
+}
+async function offlineGet(title) {
+  if (!canCache) return null;
+  try {
+    const c = await caches.open(ART_CACHE);
+    const r = await c.match(artKey(title));
+    return r ? await r.json() : null;
+  } catch { return null; }
+}
+async function offlineSave(title) {
+  if (!canCache || !isSaved(title)) return;
+  const entry = state.saved.find(s => s.title === title);
+  const { title: realTitle, doc } = await fetchArticle(title);
+  const imgs = [];
+  // Videos/Audio gehen ohne Netz nicht – in der Offline-Kopie weglassen.
+  doc.querySelectorAll('video, audio').forEach(v => (v.closest('figure') || v).remove());
+  doc.querySelectorAll('img').forEach(img => {
+    img.removeAttribute('srcset');
+    img.removeAttribute('loading');
+    const src = img.getAttribute('src') || '';
+    if (/^https:\/\//.test(src) && imgs.length < 40) imgs.push(src);
+    else (img.closest('figure') || img).remove();
+  });
+  if (entry?.thumb) imgs.push(entry.thumb);
+  const c = await caches.open(ART_CACHE);
+  await c.put(artKey(title), new Response(JSON.stringify({ title: realTitle, html: doc.body.innerHTML, imgs }), { headers: { 'Content-Type': 'application/json' } }));
+  for (const u of imgs) {
+    try { const r = await fetch(u, { mode: 'cors' }); if (r.ok) await c.put(u, r); } catch {}
+  }
+  if (!isSaved(title)) return offlineDelete(title);
+  if (entry) { entry.off = true; store.set('saved', state.saved); renderSaved(); }
+}
+async function offlineDelete(title) {
+  if (!canCache) return;
+  try {
+    const off = await offlineGet(title);
+    const c = await caches.open(ART_CACHE);
+    for (const u of off?.imgs || []) await c.delete(u);
+    await c.delete(artKey(title));
+  } catch {}
+}
+let offChain = Promise.resolve();
+function queueOffline(title) {
+  if (!canCache) return;
+  offChain = offChain.then(() => offlineSave(title)).catch(() => {}).then(() => new Promise(r => setTimeout(r, 700)));
+}
+function offlineBackfill() {
+  if (navigator.onLine === false) return;
+  state.saved.filter(s => !s.off).forEach(s => queueOffline(s.title));
+}
+window.addEventListener('online', offlineBackfill);
 function renderSaved() {
   const ul = document.getElementById('saved-list');
   ul.innerHTML = '';
@@ -276,6 +505,7 @@ function renderSaved() {
     if (s.thumb) th.style.backgroundImage = `url("${s.thumb}")`;
     const t = el('div', 't');
     t.append(el('b', null, s.title), el('small', null, s.extract));
+    if (s.off) t.append(el('span', 'offbadge', '✓ offline verfügbar'));
     const del = el('button', 'del', '✕');
     del.setAttribute('aria-label', 'Entfernen');
     del.onclick = e => { e.stopPropagation(); toggleSaved(s); syncSaveButtons(); };
@@ -311,31 +541,120 @@ async function renderArticle(title, restoreScroll = 0) {
   document.getElementById('reader-title').textContent = title;
   document.getElementById('reader-ext').href = 'https://de.wikipedia.org/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
   document.getElementById('reader-save').classList.toggle('on', isSaved(title));
+  ttsStop();
   readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>Lade Artikel …</div>';
   readerScroll.scrollTop = 0;
   try {
-    const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
+    // Gemerkte Artikel kommen sofort aus dem Offline-Speicher, alles andere aus dem Netz.
+    const off = await offlineGet(title);
+    let art;
+    if (off) art = { title: off.title, doc: new DOMParser().parseFromString(off.html, 'text/html'), offline: true };
+    else art = await fetchArticle(title);
     if (readerStack[readerStack.length - 1] !== top) return;
-    if (d.error) throw new Error(d.error.info);
-    const doc = new DOMParser().parseFromString(d.parse.text, 'text/html');
-    doc.querySelectorAll('script, link, meta').forEach(n => n.remove());
-    doc.querySelectorAll('img').forEach(img => {
-      const src = img.getAttribute('src');
-      if (src?.startsWith('//')) img.setAttribute('src', 'https:' + src);
-      const ss = img.getAttribute('srcset');
-      if (ss) img.setAttribute('srcset', ss.replace(/(^|,\s*)\/\//g, '$1https://'));
-      img.loading = 'lazy';
-    });
     readerBody.innerHTML = '';
-    const h = el('h1', 'art-title', d.parse.title);
-    readerBody.append(h, ...doc.body.childNodes);
+    readerBody.append(el('h1', 'art-title', art.title));
+    if (art.offline) readerBody.append(el('div', 'offnote', '📥 Offline gespeichert'));
+    readerBody.append(...art.doc.body.childNodes);
     readerScroll.scrollTop = restoreScroll;
-    top.title = d.parse.title;
+    top.title = art.title;
   } catch (e) {
+    if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
-    readerBody.append(el('p', 'loading', 'Artikel konnte nicht geladen werden: ' + e.message));
+    readerBody.append(el('p', 'loading', navigator.onLine === false
+      ? 'Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (🔖) kannst du auch ohne Netz lesen.'
+      : 'Artikel konnte nicht geladen werden: ' + e.message));
   }
 }
+
+// ---------- Vorlesen ----------
+const speakBtn = $('reader-speak');
+const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+const tts = { on: false, token: 0, nodes: [], ni: 0, chunks: [], ci: 0, lock: null, utter: null };
+if (!canSpeak) speakBtn.hidden = true;
+else speechSynthesis.getVoices(); // Stimmen schon mal laden
+
+function germanVoice() {
+  const vs = speechSynthesis.getVoices().filter(v => /^de(-|_|$)/i.test(v.lang));
+  return vs.find(v => v.localService && /de[-_]DE/i.test(v.lang)) || vs.find(v => v.localService) || vs[0] || null;
+}
+function nodeText(n) {
+  const c = n.cloneNode(true);
+  c.querySelectorAll('sup, style, .mw-editsection, .noprint, .offnote').forEach(x => x.remove());
+  return c.textContent.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+}
+function ttsNodes() {
+  return [...readerBody.querySelectorAll('h1, h2, h3, p, li, blockquote, dd')].filter(n =>
+    n.offsetParent !== null && !n.closest('table, figure, .thumb, .infobox') &&
+    !n.parentElement.closest('li, blockquote, dd, p') && nodeText(n).length > 1);
+}
+function chunkText(t) {
+  // Kurze Häppchen: lange Texte am Stück brechen in manchen Browsern ab.
+  const parts = t.match(/[^.!?]+[.!?]*\s*/g) || [t];
+  const out = [];
+  let cur = '';
+  for (const p of parts) {
+    if (cur && (cur + p).length > 240) { out.push(cur); cur = ''; }
+    cur += p;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+function ttsStart() {
+  const nodes = ttsNodes();
+  if (!nodes.length) return;
+  // Beim ersten Absatz anfangen, der gerade sichtbar ist.
+  const topY = readerScroll.getBoundingClientRect().top;
+  const start = Math.max(0, nodes.findIndex(n => n.getBoundingClientRect().bottom > topY + 4));
+  Object.assign(tts, { on: true, token: tts.token + 1, nodes, ni: start, chunks: [], ci: 0 });
+  speakBtn.textContent = '⏹';
+  speakBtn.classList.add('on');
+  speakBtn.setAttribute('aria-label', 'Vorlesen stoppen');
+  // Bildschirm anlassen – bei gesperrtem Handy stoppt die Stimme sonst.
+  navigator.wakeLock?.request('screen').then(l => { if (tts.on) tts.lock = l; else l.release(); }).catch(() => {});
+  speechSynthesis.cancel();
+  ttsSpeakNode();
+}
+function ttsSpeakNode() {
+  readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
+  const n = tts.nodes[tts.ni];
+  if (!n || !n.isConnected) { ttsStop(); if (!n) toast('Fertig vorgelesen'); return; }
+  n.classList.add('tts-now');
+  n.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  tts.chunks = chunkText(nodeText(n));
+  tts.ci = 0;
+  ttsSpeakChunk();
+}
+function ttsSpeakChunk() {
+  if (!tts.on) return;
+  if (tts.ci >= tts.chunks.length) { tts.ni++; return ttsSpeakNode(); }
+  const u = new SpeechSynthesisUtterance(tts.chunks[tts.ci++]);
+  u.lang = 'de-DE';
+  const v = germanVoice();
+  if (v) u.voice = v;
+  const token = tts.token;
+  u.onend = () => { if (token === tts.token) ttsSpeakChunk(); };
+  u.onerror = e => {
+    if (token !== tts.token || e.error === 'interrupted' || e.error === 'canceled') return;
+    ttsStop();
+    toast('Vorlesen ist hier leider nicht möglich');
+  };
+  tts.utter = u; // Referenz halten, sonst verliert Safari das Ende-Signal
+  speechSynthesis.speak(u);
+}
+function ttsStop() {
+  if (!tts.on) return;
+  tts.on = false;
+  tts.token++;
+  speechSynthesis.cancel();
+  readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
+  speakBtn.textContent = '🔊';
+  speakBtn.classList.remove('on');
+  speakBtn.setAttribute('aria-label', 'Vorlesen');
+  tts.lock?.release().catch(() => {});
+  tts.lock = null;
+}
+speakBtn.onclick = () => { if (tts.on) ttsStop(); else ttsStart(); };
+window.addEventListener('pagehide', ttsStop);
 
 readerBody.addEventListener('click', e => {
   const a = e.target.closest('a');
@@ -372,13 +691,20 @@ function readerBack(fromPopstate = false) {
   closeReader(fromPopstate);
 }
 function closeReader(fromPopstate) {
+  ttsStop();
   reader.hidden = true;
   readerBody.innerHTML = '';
   if (readSession) {
     const secs = (Date.now() - readSession.start) / 1000;
     if (secs > 25) {
       countRead();
-      if (readSession.item?.topic) adjust(readSession.item.topic, secs > 120 ? 1.25 : 1.12);
+      const it = readSession.item;
+      if (it?.topic) adjust(it.topic, secs > 120 ? 1.25 : 1.12);
+      // Lange gelesen = gefällt dir -> ähnliche Artikel nachschieben.
+      if (it?.title && secs > 120) {
+        addSeed(it);
+        insertSimilar([...feedEl.querySelectorAll('.card')].find(c => c.dataset.title === it.title), it);
+      }
     }
     readSession = null;
   }
@@ -392,8 +718,65 @@ document.getElementById('reader-save').onclick = () => {
   const on = toggleSaved({ ...item, title: top.title });
   document.getElementById('reader-save').classList.toggle('on', on);
   syncSaveButtons();
-  toast(on ? 'Gemerkt' : 'Entfernt');
+  toast(on ? 'Gemerkt · auch offline lesbar' : 'Entfernt');
 };
+
+// ---------- Suche ----------
+const searchInput = $('search-input');
+const searchList = $('search-list');
+const searchHint = $('search-hint');
+let searchTimer;
+let searchSeq = 0;
+const SEARCH_PROPS = { prop: 'description|pageimages|extracts', exintro: '1', explaintext: '1', exsentences: '2', exlimit: 'max', piprop: 'thumbnail', pithumbsize: '160', pilimit: 'max' };
+
+function listItem(it, sub) {
+  const li = el('li');
+  const th = el('div', 'thumb');
+  if (it.thumb) th.style.backgroundImage = `url("${it.thumb}")`;
+  const t = el('div', 't');
+  t.append(el('b', null, it.title), el('small', null, sub || ''));
+  li.append(th, t);
+  li.onclick = () => openReader(it.title, it);
+  return li;
+}
+async function runSearch() {
+  const q = searchInput.value.trim();
+  const seq = ++searchSeq;
+  if (q.length < 2) { searchList.innerHTML = ''; renderSearchHint(); return; }
+  try {
+    const d = await api({ ...SEARCH_PROPS, generator: 'prefixsearch', gpssearch: q, gpslimit: '10', gpsnamespace: '0' });
+    let pages = (d.query?.pages || []).sort((a, b) => a.index - b.index);
+    if (pages.length < 4) {
+      // Kaum Treffer am Wortanfang -> zusätzlich Volltextsuche.
+      const d2 = await api({ ...SEARCH_PROPS, generator: 'search', gsrsearch: q, gsrlimit: '10', gsrnamespace: '0' });
+      const have = new Set(pages.map(p => p.title));
+      pages = pages.concat((d2.query?.pages || []).sort((a, b) => a.index - b.index).filter(p => !have.has(p.title)));
+    }
+    if (seq !== searchSeq) return;
+    searchList.innerHTML = '';
+    searchHint.hidden = pages.length > 0;
+    searchHint.textContent = 'Nichts gefunden für „' + q + '“.';
+    for (const p of pages) {
+      const it = { title: p.title, extract: p.extract || p.description || '', thumb: p.thumbnail?.source || null, topic: null };
+      searchList.append(listItem(it, p.description || p.extract));
+    }
+  } catch (e) {
+    if (seq !== searchSeq) return;
+    searchList.innerHTML = '';
+    searchHint.hidden = false;
+    searchHint.textContent = navigator.onLine === false ? 'Du bist offline – die Suche braucht Internet.' : 'Suche fehlgeschlagen (' + e.message + ').';
+  }
+}
+function renderSearchHint() {
+  searchHint.hidden = false;
+  searchHint.textContent = 'Tippe ein Stichwort ein, z. B. „Photosynthese“ oder „Römisches Reich“.';
+  const a = store.get('aotd', null);
+  if (a?.day === today() && a.item && !searchList.children.length) {
+    searchList.append(listItem(a.item, '⭐ Artikel des Tages'));
+  }
+}
+searchInput.oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 350); };
+$('search-form').onsubmit = e => { e.preventDefault(); clearTimeout(searchTimer); runSearch(); searchInput.blur(); };
 
 // ---------- Themen-Seite ----------
 let topicsDirty = false;
@@ -425,7 +808,8 @@ function renderTopics() {
   }
   const s = state.stats;
   const readToday = s.day === today() ? s.read : 0;
-  document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`;
+  document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}` +
+    (s.quizTotal ? ` · Quiz: ${s.quizRight || 0} von ${s.quizTotal} richtig` : '');
 }
 document.getElementById('quality').onchange = e => { state.quality = e.target.checked; store.set('quality', state.quality); topicsDirty = true; };
 document.getElementById('reset').onclick = () => {
@@ -443,6 +827,7 @@ document.querySelectorAll('.tabbar button').forEach(btn => {
     document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
     if (v === 'topics') renderTopics();
     if (v === 'saved') renderSaved();
+    if (v === 'search' && !searchInput.value.trim()) { searchList.innerHTML = ''; renderSearchHint(); }
     if (v === 'feed' && topicsDirty) { topicsDirty = false; resetFeed(); }
   };
 });
@@ -459,6 +844,7 @@ function toast(msg) {
 // ---------- Start ----------
 renderSaved();
 loadMore();
+setTimeout(offlineBackfill, 4000);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
