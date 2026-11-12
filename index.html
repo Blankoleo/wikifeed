@@ -47,6 +47,22 @@
         <span><b>Nur Top-Artikel</b><br><small>Bevorzugt exzellente &amp; lesenswerte Artikel – keine kurzen, trockenen Stubs.</small></span>
       </label>
 
+      <div id="voice-box">
+        <h2>Vorlesestimme</h2>
+        <p class="hint">Stimme und Tempo für 🔊 im Leser. Beim Auswählen hörst du eine Probe.</p>
+        <div class="voice-row">
+          <select id="voice-select" aria-label="Stimme"></select>
+          <select id="rate-select" aria-label="Tempo">
+            <option value="0.85">Langsam</option>
+            <option value="1">Normal</option>
+            <option value="1.15">Zügig</option>
+            <option value="1.3">Schnell</option>
+          </select>
+          <button id="voice-test" class="btn" type="button">Probe</button>
+        </div>
+        <p class="hint tip"><b>Noch schönere Stimmen:</b> Auf dem iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch eine Stimme mit „Erweitert“ oder „Premium“ laden (z. B. Anna oder Petra). Danach erscheint sie hier in der Liste.</p>
+      </div>
+
       <h2>Was die App über dich gelernt hat</h2>
       <p class="hint">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
       <div id="weights" class="weights"></div>

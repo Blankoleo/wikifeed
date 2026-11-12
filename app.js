@@ -573,9 +573,60 @@ const tts = { on: false, token: 0, nodes: [], ni: 0, chunks: [], ci: 0, lock: nu
 if (!canSpeak) speakBtn.hidden = true;
 else speechSynthesis.getVoices(); // Stimmen schon mal laden
 
+// Stimmen nach Qualität sortieren: Premium > Erweitert > normale > Spaß-Stimmen (Eddy, Grandma …).
+const NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/i;
+function voiceScore(v) {
+  let sc = 0;
+  if (/premium/i.test(v.name)) sc += 40;
+  else if (/enhanced|erweitert|natural|neural/i.test(v.name)) sc += 30;
+  if (/^(Anna|Petra|Markus|Viktor|Yannick|Helena|Martin)\b/i.test(v.name)) sc += 10;
+  if (/Google|Microsoft/i.test(v.name)) sc += 8;
+  if (NOVELTY.test(v.name)) sc -= 30;
+  if (/de[-_]DE/i.test(v.lang)) sc += 3;
+  if (v.localService) sc += 2;
+  return sc;
+}
+function germanVoices() {
+  if (!canSpeak) return [];
+  return speechSynthesis.getVoices().filter(v => /^de(-|_|$)/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
+}
 function germanVoice() {
-  const vs = speechSynthesis.getVoices().filter(v => /^de(-|_|$)/i.test(v.lang));
-  return vs.find(v => v.localService && /de[-_]DE/i.test(v.lang)) || vs.find(v => v.localService) || vs[0] || null;
+  const vs = germanVoices();
+  const want = store.get('voice', '');
+  return vs.find(v => v.voiceURI === want) || vs[0] || null;
+}
+const ttsRate = () => Number(store.get('rate', 1)) || 1;
+function renderVoices() {
+  const box = $('voice-box');
+  if (!canSpeak) { box.hidden = true; return; }
+  const sel = $('voice-select');
+  const vs = germanVoices();
+  const cur = germanVoice();
+  sel.innerHTML = '';
+  for (const v of vs) {
+    const o = el('option', null, v.name.replace(/\s*\(Deutsch[^)]*\)\)?/i, '') + (NOVELTY.test(v.name) ? ' (Roboter)' : ''));
+    o.value = v.voiceURI;
+    if (cur && v.voiceURI === cur.voiceURI) o.selected = true;
+    sel.append(o);
+  }
+  if (!vs.length) sel.append(el('option', null, 'Standardstimme'));
+  $('rate-select').value = String(ttsRate());
+}
+function speakSample() {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance('Hallo! So klinge ich, wenn ich dir einen Artikel vorlese.');
+  u.lang = 'de-DE';
+  const v = germanVoice();
+  if (v) u.voice = v;
+  u.rate = ttsRate();
+  tts.utter = u;
+  speechSynthesis.speak(u);
+}
+if (canSpeak) {
+  speechSynthesis.addEventListener?.('voiceschanged', renderVoices);
+  $('voice-select').onchange = e => { store.set('voice', e.target.value); speakSample(); };
+  $('rate-select').onchange = e => { store.set('rate', Number(e.target.value)); speakSample(); };
+  $('voice-test').onclick = speakSample;
 }
 function nodeText(n) {
   const c = n.cloneNode(true);
@@ -631,6 +682,7 @@ function ttsSpeakChunk() {
   u.lang = 'de-DE';
   const v = germanVoice();
   if (v) u.voice = v;
+  u.rate = ttsRate();
   const token = tts.token;
   u.onend = () => { if (token === tts.token) ttsSpeakChunk(); };
   u.onerror = e => {
@@ -795,6 +847,7 @@ function renderTopics() {
   }
   const q = document.getElementById('quality');
   q.checked = state.quality;
+  renderVoices();
 
   const wb = document.getElementById('weights');
   wb.innerHTML = '';
