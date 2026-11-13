@@ -75,7 +75,7 @@
       <p class="hint">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
       <div id="weights" class="weights"></div>
       <button id="reset" class="btn ghost">Gelerntes zurücksetzen</button>
-      <p class="version">WikiFeed · Version 11<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 12<br><span id="dims"></span></p>
     </div>
   </section>
 
@@ -98,6 +98,17 @@
     </div>
   </div>
 
+  <div id="game" class="game-sheet" hidden>
+    <header class="think-head">
+      <button id="game-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <div id="game-title" class="reader-title"></div>
+      <span class="icon-btn" aria-hidden="true"></span>
+    </header>
+    <div id="game-scroll" class="think-scroll">
+      <article id="game-body" class="game-body"></article>
+    </div>
+  </div>
+
   <div id="reader" class="reader" hidden>
     <header class="reader-head">
       <button id="reader-back" class="icon-btn" aria-label="Zurück">‹</button>
@@ -115,5 +126,7 @@
 
   <script src="thoughts.js"></script>
   <script src="app.js"></script>
+  <script src="trolley-data.js"></script>
+  <script src="trolley.js"></script>
 </body>
 </html>

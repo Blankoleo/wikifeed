@@ -921,6 +921,16 @@ function renderDenken() {
   const done = THOUGHTS.filter(t => state.think[t.id]).length;
   $('think-stats').textContent = `${done} von ${THOUGHTS.length} durchdacht`;
 
+  // Einstieg ins Trolley-Spiel (trolley.js)
+  if (typeof openTrolley === 'function') {
+    const g = el('button', 'game-banner');
+    const gt = el('div', 'gb-t');
+    gt.append(el('b', null, 'Weichensteller'), el('small', null, 'Das Trolley-Spiel: Klassiker, Endlos-Modus und 46 Fälle aus der Forschung'));
+    g.append(el('span', 'gb-i', '🚋'), gt, el('span', 'gb-go', '›'));
+    g.onclick = () => openTrolley();
+    box.append(g);
+  }
+
   const d = dailyThought();
   const today1 = el('ul', 'list');
   today1.append(thinkRow(d, state.think[d.id] ? null : 'Heute: ' + d.q));

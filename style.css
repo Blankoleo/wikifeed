@@ -140,6 +140,66 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .think-body .btn { margin-top: 18px; width: 100%; padding: 13px 18px; }
 .btn.ghost2 { background: transparent; color: var(--accent); border: 1px solid var(--line); }
 
+/* ---------- Trolley-Spiel ---------- */
+.game-banner { display: flex; align-items: center; gap: 14px; width: calc(100% - 40px); margin: 8px 20px 0; padding: 14px 16px; text-align: left;
+  border: 1px solid #4a3f78; border-radius: 16px; background: linear-gradient(135deg, #2c2450, #1a1b1f 75%); }
+.gb-i { font-size: 34px; line-height: 1; }
+.gb-t { flex: 1; min-width: 0; }
+.gb-t b { display: block; font-size: 17px; }
+.gb-t small { color: var(--muted); display: block; line-height: 1.35; margin-top: 2px; }
+.gb-go, .gmode-go { font-size: 26px; color: var(--muted); }
+
+.game-sheet { position: fixed; inset: 0; background: var(--bg); z-index: 9; display: flex; flex-direction: column; }
+.game-sheet[hidden] { display: none; }
+.game-body { max-width: 640px; margin: 0 auto; padding: 10px 20px calc(40px + env(safe-area-inset-bottom)); font-size: 17px; line-height: 1.55; }
+.game-body h1 { font: 700 30px/1.15 Georgia, "Times New Roman", serif; margin: 4px 0 8px; }
+.game-body h2 { font: 700 26px/1.15 Georgia, "Times New Roman", serif; margin: 2px 0 10px; }
+.game-body h3 { font: 700 20px/1.2 Georgia, serif; margin: 28px 0 10px; }
+.game-body h4 { font-size: 15px; margin: 18px 0 8px; color: var(--accent); }
+.game-body p { margin: 0 0 10px; color: #d6d7db; }
+.ghero { font-size: 60px; line-height: 1; margin: 10px 0 12px; }
+.ghero.small { font-size: 44px; margin: 4px 0 8px; }
+.gintro { color: var(--muted) !important; }
+.gstep { color: var(--muted) !important; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 6px 0 4px !important; }
+.gq { color: var(--text) !important; font-weight: 700; font-size: 18px; margin-top: 14px !important; }
+.gline { margin: 0 0 4px !important; }
+.gmode { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; margin-top: 12px; padding: 14px 16px;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.gmode:active, .game-banner:active { transform: scale(.985); }
+.gmode-i { font-size: 30px; line-height: 1; }
+.gmode-t { flex: 1; min-width: 0; }
+.gmode-t b { display: block; font-size: 17px; }
+.gmode-t small { display: block; color: var(--muted); line-height: 1.35; margin: 2px 0 6px; }
+.gmode-p { font-size: 12px; color: var(--accent); }
+.gchoice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.gchoice .btn { padding: 14px 10px; line-height: 1.25; }
+.gchoice .gno { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+.gchoice .btn:disabled { opacity: .35; }
+.gchoice .btn.picked { opacity: 1; outline: 2px solid var(--text); outline-offset: 2px; }
+.gresult { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.gnext { width: 100%; margin-top: 12px; padding: 13px 18px; }
+.gnote { color: var(--muted) !important; font-size: 14px; }
+.gsource { color: var(--muted) !important; font-size: 12px; line-height: 1.45; margin-top: 26px !important; }
+.gpattern { display: grid; gap: 14px; padding: 16px; background: var(--card); border-radius: 14px; }
+.gpattern h4 { margin: 6px 0 0; }
+.gpattern .gnote { margin: 0; }
+.gbar-top { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; }
+.gbar-line { height: 8px; border-radius: 99px; background: #2a2c31; overflow: hidden; margin: 6px 0 4px; }
+.gbar-line i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.gbar small { color: var(--muted); font-size: 12px; line-height: 1.35; display: block; }
+
+.scene { display: block; width: 100%; height: auto; margin: 4px 0 12px; border-radius: 14px; background: linear-gradient(#1c2333, #171a20); }
+.tr-bed { fill: none; stroke: #565a66; stroke-width: 7; stroke-linecap: round; }
+.tr-ties { fill: none; stroke: #171a20; stroke-width: 7; stroke-dasharray: 2 9; }
+.switch-dot { fill: #f5c96b; }
+.bridge { fill: #6d6257; }
+.fig { font-size: 21px; }
+.tram { font-size: 30px; }
+.boom { font-size: 30px; }
+.vs { font-size: 14px; fill: #9a9ca3; }
+.figs { transition: opacity .4s; }
+.figs.hit { opacity: .22; }
+
 /* ---------- Tabbar ---------- */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--tab-h); padding-bottom: var(--tab-pad);
   display: flex; background: rgba(17,18,20,.96); border-top: 1px solid var(--line); z-index: 5; }
