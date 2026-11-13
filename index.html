@@ -20,9 +20,9 @@
   </main>
 
   <section id="view-search" class="view">
-    <header class="page-head"><h1>Suche</h1></header>
+    <header class="page-head"><h1 data-en="Search">Suche</h1></header>
     <form id="search-form" class="search-box" action="#" role="search">
-      <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
+      <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" data-en-ph="Search Wikipedia …" data-en-aria="Search Wikipedia" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
     </form>
     <p id="search-hint" class="empty"></p>
     <ul id="search-list" class="list"></ul>
@@ -30,21 +30,21 @@
 
   <section id="view-think" class="view">
     <header class="page-head">
-      <h1>Denken</h1>
+      <h1 data-en="Think">Denken</h1>
       <p class="sub" id="think-stats"></p>
     </header>
     <div id="think-list" class="think-list"></div>
   </section>
 
   <section id="view-saved" class="view">
-    <header class="page-head"><h1>Gemerkt</h1></header>
+    <header class="page-head"><h1 data-en="Saved">Gemerkt</h1></header>
     <ul id="saved-list" class="list"></ul>
-    <p id="saved-empty" class="empty">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern – sie sind dann auch ohne Internet lesbar.</p>
+    <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap 🔖 in the feed to keep articles for later – they can then be read without an internet connection too.">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern – sie sind dann auch ohne Internet lesbar.</p>
   </section>
 
   <section id="view-topics" class="view">
     <header class="page-head">
-      <h1>Deine Themen</h1>
+      <h1 data-en="Your topics">Deine Themen</h1>
       <p class="sub" id="stats"></p>
     </header>
     <div class="pad">
@@ -52,44 +52,53 @@
 
       <label class="toggle">
         <input type="checkbox" id="quality">
-        <span><b>Nur Top-Artikel</b><br><small>Bevorzugt exzellente &amp; lesenswerte Artikel – keine kurzen, trockenen Stubs.</small></span>
+        <span><b data-en="Top articles only">Nur Top-Artikel</b><br><small data-en="Prefers featured and good articles – no short, dry stubs.">Bevorzugt exzellente &amp; lesenswerte Artikel – keine kurzen, trockenen Stubs.</small></span>
       </label>
 
-      <div id="voice-box">
-        <h2>Vorlesestimme</h2>
-        <p class="hint">Stimme und Tempo für 🔊 im Leser. Beim Auswählen hörst du eine Probe.</p>
-        <div class="voice-row">
-          <select id="voice-select" aria-label="Stimme"></select>
-          <select id="rate-select" aria-label="Tempo">
-            <option value="0.85">Langsam</option>
-            <option value="1">Normal</option>
-            <option value="1.15">Zügig</option>
-            <option value="1.3">Schnell</option>
-          </select>
-          <button id="voice-test" class="btn" type="button">Probe</button>
-        </div>
-        <p class="hint tip"><b>Noch schönere Stimmen:</b> Auf dem iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch eine Stimme mit „Erweitert“ oder „Premium“ laden (z. B. Anna oder Petra). Danach erscheint sie hier in der Liste.</p>
+      <h2 data-en="Language">Sprache</h2>
+      <p class="hint" data-en="Switches the whole app: texts, Wikipedia articles, thought experiments and the trolley game. Saved and already seen articles are kept separately for each language.">Stellt die ganze App um: Texte, Wikipedia-Artikel, Gedankenspiele und das Trolley-Spiel. Gemerkte und schon gesehene Artikel werden je Sprache getrennt geführt.</p>
+      <div class="voice-row">
+        <select id="lang-select" aria-label="Sprache" data-en-aria="Language">
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+        </select>
       </div>
 
-      <h2>Was die App über dich gelernt hat</h2>
-      <p class="hint">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
+      <div id="voice-box">
+        <h2 data-en="Reading voice">Vorlesestimme</h2>
+        <p class="hint" data-en="Voice and speed for 🔊 in the reader. You hear a sample when you choose.">Stimme und Tempo für 🔊 im Leser. Beim Auswählen hörst du eine Probe.</p>
+        <div class="voice-row">
+          <select id="voice-select" aria-label="Stimme" data-en-aria="Voice"></select>
+          <select id="rate-select" aria-label="Tempo" data-en-aria="Speed">
+            <option value="0.85" data-en="Slow">Langsam</option>
+            <option value="1">Normal</option>
+            <option value="1.15" data-en="Brisk">Zügig</option>
+            <option value="1.3" data-en="Fast">Schnell</option>
+          </select>
+          <button id="voice-test" class="btn" type="button" data-en="Sample">Probe</button>
+        </div>
+        <p class="hint tip" data-en="Nicer voices: on the iPhone go to Settings → Accessibility → Spoken Content → Voices → English and download a voice marked “Enhanced” or “Premium” (e.g. Ava or Zoe). It will then appear in this list."><b>Noch schönere Stimmen:</b> Auf dem iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch eine Stimme mit „Erweitert“ oder „Premium“ laden (z. B. Anna oder Petra). Danach erscheint sie hier in der Liste.</p>
+      </div>
+
+      <h2 data-en="What the app has learned about you">Was die App über dich gelernt hat</h2>
+      <p class="hint" data-en="👍 and long reading make a topic more frequent, 👎 makes it rarer.">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
       <div id="weights" class="weights"></div>
-      <button id="reset" class="btn ghost">Gelerntes zurücksetzen</button>
-      <p class="version">WikiFeed · Version 12<br><span id="dims"></span></p>
+      <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
+      <p class="version">WikiFeed · Version 13<br><span id="dims"></span></p>
     </div>
   </section>
 
   <nav class="tabbar">
-    <button data-view="feed" class="active"><span>📖</span>Feed</button>
-    <button data-view="search"><span>🔍</span>Suche</button>
-    <button data-view="think"><span>💭</span>Denken</button>
-    <button data-view="saved"><span>🔖</span>Gemerkt</button>
-    <button data-view="topics"><span>⚙️</span>Themen</button>
+    <button data-view="feed" class="active"><span>📖</span><em>Feed</em></button>
+    <button data-view="search"><span>🔍</span><em data-en="Search">Suche</em></button>
+    <button data-view="think"><span>💭</span><em data-en="Think">Denken</em></button>
+    <button data-view="saved"><span>🔖</span><em data-en="Saved">Gemerkt</em></button>
+    <button data-view="topics"><span>⚙️</span><em data-en="Topics">Themen</em></button>
   </nav>
 
   <div id="think" class="think-sheet" hidden>
     <header class="think-head">
-      <button id="think-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <button id="think-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
       <div id="think-title" class="reader-title"></div>
       <span class="icon-btn" aria-hidden="true"></span>
     </header>
@@ -100,7 +109,7 @@
 
   <div id="game" class="game-sheet" hidden>
     <header class="think-head">
-      <button id="game-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <button id="game-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
       <div id="game-title" class="reader-title"></div>
       <span class="icon-btn" aria-hidden="true"></span>
     </header>
@@ -111,11 +120,11 @@
 
   <div id="reader" class="reader" hidden>
     <header class="reader-head">
-      <button id="reader-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <button id="reader-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
       <div id="reader-title" class="reader-title"></div>
-      <button id="reader-speak" class="icon-btn" aria-label="Vorlesen">🔊</button>
-      <button id="reader-save" class="icon-btn" aria-label="Merken">🔖</button>
-      <a id="reader-ext" class="icon-btn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen">↗</a>
+      <button id="reader-speak" class="icon-btn" aria-label="Vorlesen" data-en-aria="Read aloud">🔊</button>
+      <button id="reader-save" class="icon-btn" aria-label="Merken" data-en-aria="Save">🔖</button>
+      <a id="reader-ext" class="icon-btn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen" data-en-aria="Open on Wikipedia">↗</a>
     </header>
     <div id="reader-scroll" class="reader-scroll">
       <article id="reader-body" class="reader-body"></article>
@@ -124,7 +133,9 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="i18n.js"></script>
   <script src="thoughts.js"></script>
+  <script src="thoughts.en.js"></script>
   <script src="app.js"></script>
   <script src="trolley-data.js"></script>
   <script src="trolley.js"></script>

@@ -3,7 +3,7 @@
 // opts: Antworten. Ein Eintrag [Text, Zahl] zählt für "Wo du stehst": -1 = linke Seite der Achse, +1 = rechte Seite.
 // correct: Nummer der richtigen Antwort (ab 0), falls es eine gibt. wiki: Titel des deutschen Wikipedia-Artikels.
 
-const THINK_FIELDS = {
+const THINK_FIELDS_DE = {
   ethik: { label: 'Ethik & Moral', axis: ['Die Folgen zählen', 'Prinzipien zählen'] },
   geist: { label: 'Bewusstsein & Geist', axis: ['Geist ist Physik', 'Bewusstsein ist mehr'] },
   ich: { label: 'Identität & Ich', axis: ['Stoff & Herkunft zählen', 'Muster & Erinnerung zählen'] },
@@ -13,7 +13,7 @@ const THINK_FIELDS = {
   wissen: { label: 'Wissen & Wirklichkeit' },
 };
 
-const THOUGHTS = [
+const THOUGHTS_DE = [
   // ---------------- Ethik & Moral ----------------
   { id: 'trolley', icon: '🚋', field: 'ethik', title: 'Das Trolley-Problem', wiki: 'Trolley-Problem',
     text: 'Eine führerlose Straßenbahn rast auf fünf Gleisarbeiter zu. Du stehst an einer Weiche. Legst du den Hebel um, fährt die Bahn auf ein Nebengleis – dort steht aber ein einzelner Arbeiter, der dann stirbt.',

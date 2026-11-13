@@ -1,40 +1,43 @@
 'use strict';
 
-const API = 'https://de.wikipedia.org/w/api.php';
+const API = 'https://' + WIKI.host + '/w/api.php';
+// Gedankenspiele in der aktiven Sprache (thoughts.js / thoughts.en.js)
+const THOUGHTS = LANG === 'en' ? THOUGHTS_EN : THOUGHTS_DE;
+const THINK_FIELDS = LANG === 'en' ? THINK_FIELDS_EN : THINK_FIELDS_DE;
 
 // Themen = Wikipedias eigene "articletopic"-Klassifizierung.
 // on:true = deine Interessen als Voreinstellung.
 const TOPICS = [
   // Eigene Suchanfrage statt articletopic: Wikipedias Kategorien für Gedankenexperimente und Paradoxa.
-  { id: 'thought', label: '💭 Gedankenexperimente & Paradoxa', on: true, query: 'incategory:Gedankenexperiment|Paradoxon', minLen: 2000 },
-  { id: 'history', label: 'Geschichte', on: true },
-  { id: 'biography', label: 'Biografien', on: true },
-  { id: 'women', label: 'Biografien (Frauen)', on: true },
-  { id: 'society', label: 'Gesellschaft', on: true },
-  { id: 'philosophy-and-religion', label: 'Philosophie & Religion', on: true },
-  { id: 'politics-and-government', label: 'Staat & Politik', on: true },
-  { id: 'education', label: 'Bildung', on: true },
-  { id: 'biology', label: 'Biologie', on: true },
-  { id: 'chemistry', label: 'Chemie', on: true },
-  { id: 'computing', label: 'Computer & Internet', on: true },
-  { id: 'earth-and-environment', label: 'Erde & Umwelt', on: true },
-  { id: 'mathematics', label: 'Mathematik', on: true },
-  { id: 'physics', label: 'Physik', on: true },
-  { id: 'engineering', label: 'Technik', on: true },
-  { id: 'technology', label: 'Technologie', on: true },
-  { id: 'space', label: 'Weltraum', on: true },
-  { id: 'medicine-and-health', label: 'Medizin & Gesundheit', on: false },
-  { id: 'military-and-warfare', label: 'Krieg & Militär', on: false },
-  { id: 'business-and-economics', label: 'Wirtschaft', on: false },
-  { id: 'transportation', label: 'Verkehr', on: false },
-  { id: 'food-and-drink', label: 'Essen & Trinken', on: false },
-  { id: 'architecture', label: 'Architektur', on: false },
-  { id: 'visual-arts', label: 'Kunst', on: false },
-  { id: 'literature', label: 'Literatur', on: false },
-  { id: 'music', label: 'Musik', on: false },
-  { id: 'films', label: 'Film', on: false },
-  { id: 'video-games', label: 'Videospiele', on: false },
-  { id: 'sports', label: 'Sport', on: false },
+  { id: 'thought', label: T('💭 Gedankenexperimente & Paradoxa', '💭 Thought experiments & paradoxes'), on: true, query: WIKI.thought, minLen: 2000 },
+  { id: 'history', label: T('Geschichte', 'History'), on: true },
+  { id: 'biography', label: T('Biografien', 'Biographies'), on: true },
+  { id: 'women', label: T('Biografien (Frauen)', 'Biographies (women)'), on: true },
+  { id: 'society', label: T('Gesellschaft', 'Society'), on: true },
+  { id: 'philosophy-and-religion', label: T('Philosophie & Religion', 'Philosophy & religion'), on: true },
+  { id: 'politics-and-government', label: T('Staat & Politik', 'Politics & government'), on: true },
+  { id: 'education', label: T('Bildung', 'Education'), on: true },
+  { id: 'biology', label: T('Biologie', 'Biology'), on: true },
+  { id: 'chemistry', label: T('Chemie', 'Chemistry'), on: true },
+  { id: 'computing', label: T('Computer & Internet', 'Computing & internet'), on: true },
+  { id: 'earth-and-environment', label: T('Erde & Umwelt', 'Earth & environment'), on: true },
+  { id: 'mathematics', label: T('Mathematik', 'Mathematics'), on: true },
+  { id: 'physics', label: T('Physik', 'Physics'), on: true },
+  { id: 'engineering', label: T('Technik', 'Engineering'), on: true },
+  { id: 'technology', label: T('Technologie', 'Technology'), on: true },
+  { id: 'space', label: T('Weltraum', 'Space'), on: true },
+  { id: 'medicine-and-health', label: T('Medizin & Gesundheit', 'Medicine & health'), on: false },
+  { id: 'military-and-warfare', label: T('Krieg & Militär', 'Military & warfare'), on: false },
+  { id: 'business-and-economics', label: T('Wirtschaft', 'Business & economics'), on: false },
+  { id: 'transportation', label: T('Verkehr', 'Transportation'), on: false },
+  { id: 'food-and-drink', label: T('Essen & Trinken', 'Food & drink'), on: false },
+  { id: 'architecture', label: T('Architektur', 'Architecture'), on: false },
+  { id: 'visual-arts', label: T('Kunst', 'Visual arts'), on: false },
+  { id: 'literature', label: T('Literatur', 'Literature'), on: false },
+  { id: 'music', label: T('Musik', 'Music'), on: false },
+  { id: 'films', label: T('Film', 'Film'), on: false },
+  { id: 'video-games', label: T('Videospiele', 'Video games'), on: false },
+  { id: 'sports', label: T('Sport', 'Sports'), on: false },
 ];
 const topicLabel = id => (TOPICS.find(t => t.id === id) || {}).label || id;
 
@@ -43,17 +46,22 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('wf.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('wf.' + k, JSON.stringify(v)); } catch {} },
 };
+// Je Sprache getrennt gespeichert: Gesehenes, Merkliste, Artikel des Tages, Stimme.
+const lstore = {
+  get: (k, d) => store.get(LANG === 'de' ? k : LANG + '.' + k, d),
+  set: (k, v) => store.set(LANG === 'de' ? k : LANG + '.' + k, v),
+};
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const $ = id => document.getElementById(id);
 
 const state = {
   enabled: store.get('enabled', TOPICS.filter(t => t.on).map(t => t.id)),
   weights: store.get('weights', {}),
-  seen: store.get('seen', []),
-  saved: store.get('saved', []),
+  seen: lstore.get('seen', []),
+  saved: lstore.get('saved', []),
   quality: store.get('quality', true),
   stats: store.get('stats', { day: today(), read: 0, total: 0 }),
-  seeds: store.get('seeds', []),   // Artikel, die dir gefallen haben -> "Mehr wie das hier"
+  seeds: lstore.get('seeds', []),   // Artikel, die dir gefallen haben -> "Mehr wie das hier"
 };
 const seenSet = new Set(state.seen);
 state.think = store.get('think', {}); // Antworten auf Gedankenspiele: id -> { a, t, at, reveal }
@@ -87,7 +95,7 @@ function markSeen(title) {
   seenSet.add(title);
   state.seen.push(title);
   if (state.seen.length > 4000) state.seen = state.seen.slice(-3000);
-  store.set('seen', state.seen);
+  lstore.set('seen', state.seen);
 }
 function countRead() {
   if (state.stats.day !== today()) { state.stats.day = today(); state.stats.read = 0; }
@@ -118,14 +126,14 @@ async function fetchTopic(topic) {
   let pages = [];
   if (state.quality) {
     const d = await api({ ...CARD_PROPS, gsrlimit: '4',
-      gsrsearch: `${base} incategory:Wikipedia:Exzellent|Wikipedia:Lesenswert` });
+      gsrsearch: `${base} ${WIKI.top}` });
     pages = (d.query?.pages || []).map(p => ({ ...p, top: true }));
     pages = pages.filter(p => !seenSet.has(p.title));
   }
   if (pages.length < 2) {
     // Zu wenig Top-Artikel (oder Filter aus): normale Artikel, aber nur ausführliche.
     const d = await api({ ...CARD_PROPS, gsrlimit: '20',
-      gsrsearch: `${base} -intitle:Liste` });
+      gsrsearch: `${base} ${WIKI.noList}` });
     const minLen = def.minLen || (state.quality ? 9000 : 4000);
     const more = (d.query?.pages || []).filter(p => p.length >= minLen && !seenSet.has(p.title));
     pages = pages.concat(more.slice(0, 4));
@@ -139,11 +147,11 @@ async function fetchTopic(topic) {
 function addSeed(item) {
   if (!item?.title) return;
   state.seeds = [{ title: item.title, topic: item.topic || null }, ...state.seeds.filter(s => s.title !== item.title)].slice(0, 8);
-  store.set('seeds', state.seeds);
+  lstore.set('seeds', state.seeds);
 }
 function dropSeed(title) {
   state.seeds = state.seeds.filter(s => s.title !== title);
-  store.set('seeds', state.seeds);
+  lstore.set('seeds', state.seeds);
 }
 async function fetchSimilar(seed, max) {
   const d = await api({ ...CARD_PROPS, gsrsort: 'relevance', gsrlimit: '12', gsrsearch: 'morelike:' + seed.title });
@@ -168,9 +176,9 @@ async function insertSimilar(card, item) {
 // ---------- Artikel des Tages ----------
 async function fetchAotd() {
   const day = today();
-  let a = store.get('aotd', null);
+  let a = lstore.get('aotd', null);
   if (!a || a.day !== day) {
-    const res = await fetch(`https://de.wikipedia.org/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
+    const res = await fetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
     const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
@@ -178,7 +186,7 @@ async function fetchAotd() {
     const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '6', piprop: 'thumbnail', pithumbsize: '900' });
     const p = q.query?.pages?.[0];
     a = { day, item: { title: p?.title || title, extract: p?.extract || j.tfa.extract || '', thumb: p?.thumbnail?.source || null, topic: null, top: false, aotd: true } };
-    store.set('aotd', a);
+    lstore.set('aotd', a);
   }
   return a.item;
 }
@@ -201,7 +209,7 @@ function stateCard(kind, msg) {
   if (kind === 'loading') inner.append(el('div', 'spinner'));
   inner.append(el('p', null, msg));
   if (kind === 'error') {
-    const b = el('button', 'btn', 'Nochmal versuchen');
+    const b = el('button', 'btn', T('Nochmal versuchen', 'Try again'));
     b.onclick = () => { c.remove(); loadMore(); };
     inner.append(b);
   }
@@ -212,17 +220,17 @@ function stateCard(kind, msg) {
 
 async function loadMore() {
   if (loading) return;
-  if (!state.enabled.length) { stateCard('empty', 'Wähle unter „Themen“ mindestens ein Thema aus.'); return; }
+  if (!state.enabled.length) { stateCard('empty', T('Wähle unter „Themen“ mindestens ein Thema aus.', 'Pick at least one topic under “Topics”.')); return; }
   loading = true;
   const gen = feedGen;
   const first = cardCount === 0;
-  const spinner = first ? stateCard('loading', 'Suche spannende Artikel …') : null;
+  const spinner = first ? stateCard('loading', T('Suche spannende Artikel …', 'Finding interesting articles …')) : null;
   try {
     // 3 verschiedene Themen pro Ladevorgang, je ~4 Artikel -> gute Mischung.
     const want = Math.min(3, state.enabled.length);
     const topics = new Set();
     for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
-    const aotdP = (cardCount === 0 && store.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
+    const aotdP = (cardCount === 0 && lstore.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
     let items = [];
     for (const t of topics) items = items.concat(await fetchTopic(t));
     // Dazu Artikel, die einem ähneln, der dir gefallen hat.
@@ -243,8 +251,8 @@ async function loadMore() {
     if (gen !== feedGen) return;
     spinner?.remove();
     stateCard('error', navigator.onLine === false
-      ? 'Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.'
-      : 'Konnte keine Artikel laden (' + e.message + '). Bist du online?');
+      ? T('Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.', 'You are offline. You can still read your saved articles under “Saved”.')
+      : T('Konnte keine Artikel laden (', 'Could not load articles (') + e.message + T('). Bist du online?', '). Are you online?'));
   } finally {
     if (gen === feedGen) loading = false;
   }
@@ -257,7 +265,7 @@ const viewObs = new IntersectionObserver(entries => {
     const item = cardItems.get(card);
     if (item) {
       markSeen(item.title);
-      if (item.aotd) store.set('aotdSeen', today());
+      if (item.aotd) lstore.set('aotdSeen', today());
     }
     let after = 0;
     for (let n = card.nextElementSibling; n && after < 3; n = n.nextElementSibling) if (n.classList.contains('card') && !n.classList.contains('state-card')) after++;
@@ -285,13 +293,13 @@ function addCard(item, afterEl) {
 
   const body = el('div', 'card-body');
   const meta = el('div', 'meta');
-  if (item.aotd) meta.append(el('span', 'chip top', '⭐ Artikel des Tages'));
+  if (item.aotd) meta.append(el('span', 'chip top', T('⭐ Artikel des Tages', '⭐ Article of the day')));
   if (item.topic) meta.append(el('span', 'chip', topicLabel(item.topic)));
-  if (item.top) meta.append(el('span', 'chip top', '★ Top-Artikel'));
-  if (item.seed) meta.append(el('span', 'chip sim', '≈ Ähnlich wie „' + item.seed + '“'));
+  if (item.top) meta.append(el('span', 'chip top', T('★ Top-Artikel', '★ Top article')));
+  if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
-  const read = el('button', 'read-btn', 'Weiterlesen →');
+  const read = el('button', 'read-btn', T('Weiterlesen →', 'Read more →'));
   const openIt = () => openReader(item.title, item);
   read.onclick = openIt;
   h.onclick = openIt;
@@ -300,9 +308,9 @@ function addCard(item, afterEl) {
 
   const actions = el('div', 'actions');
   const mk = (cls, icon, label) => { const b = el('button', 'act ' + cls); b.textContent = icon; b.setAttribute('aria-label', label); return b; };
-  const bad = mk('dislike', '👎', 'Nicht interessant');
-  const save = mk('save', '🔖', 'Merken');
-  const good = mk('like', '👍', 'Mehr davon');
+  const bad = mk('dislike', '👎', T('Nicht interessant', 'Not interested'));
+  const save = mk('save', '🔖', T('Merken', 'Save'));
+  const good = mk('like', '👍', T('Mehr davon', 'More like this'));
   if (isSaved(item.title)) save.classList.add('on');
 
   bad.onclick = () => {
@@ -312,7 +320,7 @@ function addCard(item, afterEl) {
     bad.classList.add('on');
     if (item.seed) dropSeed(item.seed);
     dropSeed(item.title);
-    toast(item.topic ? `Weniger ${topicLabel(item.topic)}` : 'Weniger davon');
+    toast(item.topic ? T(`Weniger ${topicLabel(item.topic)}`, `Less ${topicLabel(item.topic)}`) : T('Weniger davon', 'Less of this'));
     setTimeout(() => next(card), 350);
   };
   good.onclick = () => {
@@ -322,13 +330,13 @@ function addCard(item, afterEl) {
     good.classList.add('on');
     addSeed(item);
     insertSimilar(card, item);
-    toast('👍 Ähnliche Artikel kommen als Nächstes');
+    toast(T('👍 Ähnliche Artikel kommen als Nächstes', '👍 Similar articles coming up next'));
   };
   save.onclick = () => {
     const on = toggleSaved(item);
     save.classList.toggle('on', on);
     if (on) adjust(item.topic, 1.1);
-    toast(on ? 'Gemerkt · auch offline lesbar' : 'Entfernt');
+    toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
   };
   actions.append(bad, save, good);
 
@@ -357,7 +365,7 @@ const isSaved = t => state.saved.some(s => s.title === t);
 function toggleSaved(item) {
   if (isSaved(item.title)) state.saved = state.saved.filter(s => s.title !== item.title);
   else state.saved.unshift({ title: item.title, extract: item.extract || '', thumb: item.thumb || null, topic: item.topic || null });
-  store.set('saved', state.saved);
+  lstore.set('saved', state.saved);
   renderSaved();
   if (isSaved(item.title)) queueOffline(item.title); else offlineDelete(item.title);
   return isSaved(item.title);
@@ -367,7 +375,7 @@ function toggleSaved(item) {
 // Gemerkte Artikel landen samt Bildern im Cache-Speicher des Geräts.
 const ART_CACHE = 'wikifeed-articles';
 const canCache = 'caches' in window;
-const artKey = t => 'offline-article/' + encodeURIComponent(t);
+const artKey = t => 'offline-article/' + (LANG === 'de' ? '' : LANG + '/') + encodeURIComponent(t);
 
 function cleanArticle(htmlText) {
   const doc = new DOMParser().parseFromString(htmlText, 'text/html');
@@ -415,7 +423,7 @@ async function offlineSave(title) {
     try { const r = await fetch(u, { mode: 'cors' }); if (r.ok) await c.put(u, r); } catch {}
   }
   if (!isSaved(title)) return offlineDelete(title);
-  if (entry) { entry.off = true; store.set('saved', state.saved); renderSaved(); }
+  if (entry) { entry.off = true; lstore.set('saved', state.saved); renderSaved(); }
 }
 async function offlineDelete(title) {
   if (!canCache) return;
@@ -446,9 +454,9 @@ function renderSaved() {
     if (s.thumb) th.style.backgroundImage = `url("${s.thumb}")`;
     const t = el('div', 't');
     t.append(el('b', null, s.title), el('small', null, s.extract));
-    if (s.off) t.append(el('span', 'offbadge', '✓ offline verfügbar'));
+    if (s.off) t.append(el('span', 'offbadge', T('✓ offline verfügbar', '✓ available offline')));
     const del = el('button', 'del', '✕');
-    del.setAttribute('aria-label', 'Entfernen');
+    del.setAttribute('aria-label', T('Entfernen', 'Remove'));
     del.onclick = e => { e.stopPropagation(); toggleSaved(s); syncSaveButtons(); };
     li.append(th, t, del);
     li.onclick = () => openReader(s.title, s);
@@ -480,10 +488,10 @@ async function openReader(title, item = null) {
 async function renderArticle(title, restoreScroll = 0) {
   const top = readerStack[readerStack.length - 1];
   document.getElementById('reader-title').textContent = title;
-  document.getElementById('reader-ext').href = 'https://de.wikipedia.org/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
+  document.getElementById('reader-ext').href = 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
   document.getElementById('reader-save').classList.toggle('on', isSaved(title));
   ttsStop();
-  readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>Lade Artikel …</div>';
+  readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>' + T('Lade Artikel …', 'Loading article …') + '</div>';
   readerScroll.scrollTop = 0;
   try {
     // Gemerkte Artikel kommen sofort aus dem Offline-Speicher, alles andere aus dem Netz.
@@ -494,7 +502,7 @@ async function renderArticle(title, restoreScroll = 0) {
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
     readerBody.append(el('h1', 'art-title', art.title));
-    if (art.offline) readerBody.append(el('div', 'offnote', '📥 Offline gespeichert'));
+    if (art.offline) readerBody.append(el('div', 'offnote', T('📥 Offline gespeichert', '📥 Saved offline')));
     readerBody.append(...art.doc.body.childNodes);
     readerScroll.scrollTop = restoreScroll;
     top.title = art.title;
@@ -502,8 +510,8 @@ async function renderArticle(title, restoreScroll = 0) {
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
     readerBody.append(el('p', 'loading', navigator.onLine === false
-      ? 'Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (🔖) kannst du auch ohne Netz lesen.'
-      : 'Artikel konnte nicht geladen werden: ' + e.message));
+      ? T('Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (🔖) kannst du auch ohne Netz lesen.', 'You are offline and this article is not saved. Saved articles (🔖) can be read without a connection.')
+      : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
   }
 }
 
@@ -515,25 +523,25 @@ if (!canSpeak) speakBtn.hidden = true;
 else speechSynthesis.getVoices(); // Stimmen schon mal laden
 
 // Stimmen nach Qualität sortieren: Premium > Erweitert > normale > Spaß-Stimmen (Eddy, Grandma …).
-const NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/i;
+const NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Kathy|Ralph)\b/i;
 function voiceScore(v) {
   let sc = 0;
   if (/premium/i.test(v.name)) sc += 40;
   else if (/enhanced|erweitert|natural|neural/i.test(v.name)) sc += 30;
-  if (/^(Anna|Petra|Markus|Viktor|Yannick|Helena|Martin)\b/i.test(v.name)) sc += 10;
+  if (WIKI.voiceNames.test(v.name)) sc += 10;
   if (/Google|Microsoft/i.test(v.name)) sc += 8;
   if (NOVELTY.test(v.name)) sc -= 30;
-  if (/de[-_]DE/i.test(v.lang)) sc += 3;
+  if (WIKI.voiceBest.test(v.lang)) sc += 3;
   if (v.localService) sc += 2;
   return sc;
 }
 function germanVoices() {
   if (!canSpeak) return [];
-  return speechSynthesis.getVoices().filter(v => /^de(-|_|$)/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
+  return speechSynthesis.getVoices().filter(v => WIKI.voiceRe.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
 }
 function germanVoice() {
   const vs = germanVoices();
-  const want = store.get('voice', '');
+  const want = lstore.get('voice', '');
   return vs.find(v => v.voiceURI === want) || vs[0] || null;
 }
 const ttsRate = () => Number(store.get('rate', 1)) || 1;
@@ -545,18 +553,18 @@ function renderVoices() {
   const cur = germanVoice();
   sel.innerHTML = '';
   for (const v of vs) {
-    const o = el('option', null, v.name.replace(/\s*\(Deutsch[^)]*\)\)?/i, '') + (NOVELTY.test(v.name) ? ' (Roboter)' : ''));
+    const o = el('option', null, v.name.replace(WIKI.voiceStrip, '') + (NOVELTY.test(v.name) ? T(' (Roboter)', ' (robot)') : ''));
     o.value = v.voiceURI;
     if (cur && v.voiceURI === cur.voiceURI) o.selected = true;
     sel.append(o);
   }
-  if (!vs.length) sel.append(el('option', null, 'Standardstimme'));
+  if (!vs.length) sel.append(el('option', null, T('Standardstimme', 'Default voice')));
   $('rate-select').value = String(ttsRate());
 }
 function speakSample() {
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance('Hallo! So klinge ich, wenn ich dir einen Artikel vorlese.');
-  u.lang = 'de-DE';
+  const u = new SpeechSynthesisUtterance(T('Hallo! So klinge ich, wenn ich dir einen Artikel vorlese.', 'Hello! This is how I sound when I read an article to you.'));
+  u.lang = WIKI.tts;
   const v = germanVoice();
   if (v) u.voice = v;
   u.rate = ttsRate();
@@ -565,7 +573,7 @@ function speakSample() {
 }
 if (canSpeak) {
   speechSynthesis.addEventListener?.('voiceschanged', renderVoices);
-  $('voice-select').onchange = e => { store.set('voice', e.target.value); speakSample(); };
+  $('voice-select').onchange = e => { lstore.set('voice', e.target.value); speakSample(); };
   $('rate-select').onchange = e => { store.set('rate', Number(e.target.value)); speakSample(); };
   $('voice-test').onclick = speakSample;
 }
@@ -600,7 +608,7 @@ function ttsStart() {
   Object.assign(tts, { on: true, token: tts.token + 1, nodes, ni: start, chunks: [], ci: 0 });
   speakBtn.textContent = '⏹';
   speakBtn.classList.add('on');
-  speakBtn.setAttribute('aria-label', 'Vorlesen stoppen');
+  speakBtn.setAttribute('aria-label', T('Vorlesen stoppen', 'Stop reading'));
   // Bildschirm anlassen – bei gesperrtem Handy stoppt die Stimme sonst.
   navigator.wakeLock?.request('screen').then(l => { if (tts.on) tts.lock = l; else l.release(); }).catch(() => {});
   speechSynthesis.cancel();
@@ -609,7 +617,7 @@ function ttsStart() {
 function ttsSpeakNode() {
   readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
   const n = tts.nodes[tts.ni];
-  if (!n || !n.isConnected) { ttsStop(); if (!n) toast('Fertig vorgelesen'); return; }
+  if (!n || !n.isConnected) { ttsStop(); if (!n) toast(T('Fertig vorgelesen', 'Finished reading')); return; }
   n.classList.add('tts-now');
   n.scrollIntoView({ block: 'center', behavior: 'smooth' });
   tts.chunks = chunkText(nodeText(n));
@@ -620,7 +628,7 @@ function ttsSpeakChunk() {
   if (!tts.on) return;
   if (tts.ci >= tts.chunks.length) { tts.ni++; return ttsSpeakNode(); }
   const u = new SpeechSynthesisUtterance(tts.chunks[tts.ci++]);
-  u.lang = 'de-DE';
+  u.lang = WIKI.tts;
   const v = germanVoice();
   if (v) u.voice = v;
   u.rate = ttsRate();
@@ -629,7 +637,7 @@ function ttsSpeakChunk() {
   u.onerror = e => {
     if (token !== tts.token || e.error === 'interrupted' || e.error === 'canceled') return;
     ttsStop();
-    toast('Vorlesen ist hier leider nicht möglich');
+    toast(T('Vorlesen ist hier leider nicht möglich', 'Reading aloud is not available here'));
   };
   tts.utter = u; // Referenz halten, sonst verliert Safari das Ende-Signal
   speechSynthesis.speak(u);
@@ -642,7 +650,7 @@ function ttsStop() {
   readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
   speakBtn.textContent = '🔊';
   speakBtn.classList.remove('on');
-  speakBtn.setAttribute('aria-label', 'Vorlesen');
+  speakBtn.setAttribute('aria-label', T('Vorlesen', 'Read aloud'));
   tts.lock?.release().catch(() => {});
   tts.lock = null;
 }
@@ -656,8 +664,8 @@ readerBody.addEventListener('click', e => {
   if (href.startsWith('/wiki/')) {
     e.preventDefault();
     const name = decodeURIComponent(href.slice(6).split('#')[0]).replace(/_/g, ' ');
-    if (/^(Datei|Kategorie|Hilfe|Spezial|Wikipedia|Portal|Vorlage|File|Benutzer):/.test(name)) {
-      window.open('https://de.wikipedia.org' + href, '_blank', 'noopener');
+    if (WIKI.ns.test(name)) {
+      window.open('https://' + WIKI.host + href, '_blank', 'noopener');
     } else {
       openReader(name);
     }
@@ -714,7 +722,7 @@ document.getElementById('reader-save').onclick = () => {
   const on = toggleSaved({ ...item, title: top.title });
   document.getElementById('reader-save').classList.toggle('on', on);
   syncSaveButtons();
-  toast(on ? 'Gemerkt · auch offline lesbar' : 'Entfernt');
+  toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
 };
 
 // ---------- Suche ----------
@@ -751,7 +759,7 @@ async function runSearch() {
     if (seq !== searchSeq) return;
     searchList.innerHTML = '';
     searchHint.hidden = pages.length > 0;
-    searchHint.textContent = 'Nichts gefunden für „' + q + '“.';
+    searchHint.textContent = T('Nichts gefunden für „' + q + '“.', 'Nothing found for “' + q + '”.');
     for (const p of pages) {
       const it = { title: p.title, extract: p.extract || p.description || '', thumb: p.thumbnail?.source || null, topic: null };
       searchList.append(listItem(it, p.description || p.extract));
@@ -760,15 +768,15 @@ async function runSearch() {
     if (seq !== searchSeq) return;
     searchList.innerHTML = '';
     searchHint.hidden = false;
-    searchHint.textContent = navigator.onLine === false ? 'Du bist offline – die Suche braucht Internet.' : 'Suche fehlgeschlagen (' + e.message + ').';
+    searchHint.textContent = navigator.onLine === false ? T('Du bist offline – die Suche braucht Internet.', 'You are offline – search needs a connection.') : T('Suche fehlgeschlagen (', 'Search failed (') + e.message + ').';
   }
 }
 function renderSearchHint() {
   searchHint.hidden = false;
-  searchHint.textContent = 'Tippe ein Stichwort ein, z. B. „Photosynthese“ oder „Römisches Reich“.';
-  const a = store.get('aotd', null);
+  searchHint.textContent = T('Tippe ein Stichwort ein, z. B. „Photosynthese“ oder „Römisches Reich“.', 'Type a keyword, e.g. “photosynthesis” or “Roman Empire”.');
+  const a = lstore.get('aotd', null);
   if (a?.day === today() && a.item && !searchList.children.length) {
-    searchList.append(listItem(a.item, '⭐ Artikel des Tages'));
+    searchList.append(listItem(a.item, T('⭐ Artikel des Tages', '⭐ Article of the day')));
   }
 }
 searchInput.oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 350); };
@@ -858,32 +866,32 @@ function renderThink() {
   b.innerHTML = '';
   const meta = el('div', 'meta');
   meta.append(el('span', 'chip', THINK_FIELDS[t.field].label));
-  if (dailyThought().id === t.id) meta.append(el('span', 'chip top', '💭 Gedankenspiel des Tages'));
+  if (dailyThought().id === t.id) meta.append(el('span', 'chip top', T('💭 Gedankenspiel des Tages', '💭 Thought experiment of the day')));
   b.append(el('div', 'think-icon', t.icon), meta, el('h1', null, t.title), el('p', 'think-text', t.text), el('p', 'think-q', t.q));
   b.append(optButtons(t.opts, rec ? rec.a : null, t.correct, i => { answerThink(t, i); renderThink(); }));
-  if (!rec) { b.append(el('p', 'think-note', 'Erst entscheiden – danach siehst du, was dafür und dagegen spricht.')); return; }
+  if (!rec) { b.append(el('p', 'think-note', T('Erst entscheiden – danach siehst du, was dafür und dagegen spricht.', 'Decide first – then you will see the arguments on both sides.'))); return; }
 
   if (thinkWaiting(t)) {
-    b.append(el('p', 'think-note', 'Deine Antwort ist gespeichert. Nimm die Frage mit durch den Tag – morgen wartet hier unter „Denken“ die Auflösung.'));
-    const now = el('button', 'btn ghost2', 'Auflösung jetzt schon zeigen');
+    b.append(el('p', 'think-note', T('Deine Antwort ist gespeichert. Nimm die Frage mit durch den Tag – morgen wartet hier unter „Denken“ die Auflösung.', 'Your answer is saved. Carry the question with you today – the resolution will be waiting here under “Think” tomorrow.')));
+    const now = el('button', 'btn ghost2', T('Auflösung jetzt schon zeigen', 'Show the resolution now'));
     now.onclick = () => { rec.reveal = true; saveThink(); renderThink(); };
     b.append(now);
     return;
   }
   if (t.correct != null) {
-    b.append(el('p', 'think-verdict ' + (rec.a === t.correct ? 'ok' : 'no'), rec.a === t.correct ? '✓ Richtig!' : '✗ Nicht ganz. Richtig ist: ' + optLabel(t.opts[t.correct])));
+    b.append(el('p', 'think-verdict ' + (rec.a === t.correct ? 'ok' : 'no'), rec.a === t.correct ? T('✓ Richtig!', '✓ Correct!') : T('✗ Nicht ganz. Richtig ist: ', '✗ Not quite. The correct answer is: ') + optLabel(t.opts[t.correct])));
   } else if (t.opts.length && t.correct == null) {
-    b.append(el('p', 'think-note', 'Hier gibt es keine „richtige“ Antwort. Du kannst deine Wahl jederzeit ändern.'));
+    b.append(el('p', 'think-note', T('Hier gibt es keine „richtige“ Antwort. Du kannst deine Wahl jederzeit ändern.', 'There is no “right” answer here. You can change your choice at any time.')));
   }
-  b.append(el('h3', null, t.correct != null ? 'Die Erklärung' : 'Was dafür und dagegen spricht'));
+  b.append(el('h3', null, t.correct != null ? T('Die Erklärung', 'The explanation') : T('Was dafür und dagegen spricht', 'The arguments on both sides')));
   for (const [head, txt] of t.args) b.append(el('h4', null, head), el('p', null, txt));
   if (t.twist) {
-    b.append(el('h3', null, 'Und jetzt?'), el('p', null, t.twist.text), el('p', 'think-q', t.twist.q));
+    b.append(el('h3', null, T('Und jetzt?', 'And now?')), el('p', null, t.twist.text), el('p', 'think-q', t.twist.q));
     b.append(optButtons(t.twist.opts, rec.t, null, i => { rec.t = i; saveThink(); renderThink(); }));
     if (rec.t != null) b.append(el('p', 'think-twistnote', t.twist.note));
   }
-  b.append(el('h3', null, 'Hintergrund'), el('p', null, t.info));
-  const wiki = el('button', 'btn', 'Ganzen Artikel auf Wikipedia lesen →');
+  b.append(el('h3', null, T('Hintergrund', 'Background')), el('p', null, t.info));
+  const wiki = el('button', 'btn', T('Ganzen Artikel auf Wikipedia lesen →', 'Read the full Wikipedia article →'));
   wiki.onclick = () => openReader(t.wiki);
   b.append(wiki);
   thinkScroll.scrollTop = keep;
@@ -908,7 +916,7 @@ function thinkRow(t, sub) {
   const li = el('li');
   const rec = state.think[t.id];
   const tx = el('div', 't');
-  tx.append(el('b', null, t.title), el('small', null, sub || (rec ? 'Deine Antwort: ' + optLabel(t.opts[rec.a]) : t.q)));
+  tx.append(el('b', null, t.title), el('small', null, sub || (rec ? T('Deine Antwort: ', 'Your answer: ') + optLabel(t.opts[rec.a]) : t.q)));
   li.append(el('div', 'thumb think-thumb', t.icon), tx);
   if (rec) li.append(el('span', 'done', '✓'));
   li.onclick = () => openThink(t.id);
@@ -919,13 +927,13 @@ function renderDenken() {
   box.innerHTML = '';
   if (typeof THOUGHTS === 'undefined') return;
   const done = THOUGHTS.filter(t => state.think[t.id]).length;
-  $('think-stats').textContent = `${done} von ${THOUGHTS.length} durchdacht`;
+  $('think-stats').textContent = T(`${done} von ${THOUGHTS.length} durchdacht`, `${done} of ${THOUGHTS.length} explored`);
 
   // Einstieg ins Trolley-Spiel (trolley.js)
   if (typeof openTrolley === 'function') {
     const g = el('button', 'game-banner');
     const gt = el('div', 'gb-t');
-    gt.append(el('b', null, 'Weichensteller'), el('small', null, 'Das Trolley-Spiel: Klassiker, Endlos-Modus und 46 Fälle aus der Forschung'));
+    gt.append(el('b', null, T('Weichensteller', 'Pull the Lever')), el('small', null, T('Das Trolley-Spiel: Klassiker, Endlos-Modus und 46 Fälle aus der Forschung', 'The trolley game: classics, endless mode and 46 research dilemmas')));
     g.append(el('span', 'gb-i', '🚋'), gt, el('span', 'gb-go', '›'));
     g.onclick = () => openTrolley();
     box.append(g);
@@ -933,18 +941,18 @@ function renderDenken() {
 
   const d = dailyThought();
   const today1 = el('ul', 'list');
-  today1.append(thinkRow(d, state.think[d.id] ? null : 'Heute: ' + d.q));
-  box.append(el('h2', null, 'Gedankenspiel des Tages'), today1);
+  today1.append(thinkRow(d, state.think[d.id] ? null : T('Heute: ', 'Today: ') + d.q));
+  box.append(el('h2', null, T('Gedankenspiel des Tages', 'Thought experiment of the day')), today1);
   const res = pendingResolve();
   if (res) {
     const ul = el('ul', 'list');
-    ul.append(thinkRow(res, '💡 Die Auflösung ist da – tippen zum Ansehen'));
-    box.append(el('h2', null, 'Auflösung von gestern'), ul);
+    ul.append(thinkRow(res, T('💡 Die Auflösung ist da – tippen zum Ansehen', '💡 The resolution is here – tap to view')));
+    box.append(el('h2', null, T('Auflösung von gestern', 'Yesterday’s resolution')), ul);
   }
   updateThinkDot();
 
   const { axes, right, total } = thinkProfile();
-  box.append(el('h2', null, 'Wo du stehst'));
+  box.append(el('h2', null, T('Wo du stehst', 'Where you stand')));
   const prof = el('div', 'profile');
   for (const [key, f] of Object.entries(THINK_FIELDS)) {
     if (!f.axis) continue;
@@ -952,7 +960,7 @@ function renderDenken() {
     const row = el('div', 'axis');
     row.append(el('div', 'axis-name', f.label));
     if (vals.length < 2) {
-      row.append(el('div', 'axis-empty', `Noch zu wenig Antworten (${vals.length} von 2)`));
+      row.append(el('div', 'axis-empty', T(`Noch zu wenig Antworten (${vals.length} von 2)`, `Not enough answers yet (${vals.length} of 2)`)));
     } else {
       const avg = vals.reduce((a, c) => a + c, 0) / vals.length;
       const bar = el('div', 'axis-bar');
@@ -965,7 +973,7 @@ function renderDenken() {
     }
     prof.append(row);
   }
-  if (total) prof.append(el('p', 'axis-score', `Rätsel mit eindeutiger Lösung: ${right} von ${total} richtig`));
+  if (total) prof.append(el('p', 'axis-score', T(`Rätsel mit eindeutiger Lösung: ${right} von ${total} richtig`, `Puzzles with a definite answer: ${right} of ${total} correct`)));
   box.append(prof);
 
   for (const [key, f] of Object.entries(THINK_FIELDS)) {
@@ -1012,19 +1020,19 @@ function renderTopics() {
   document.body.append(probe);
   const cs = getComputedStyle(probe);
   const app = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  $('dims').textContent = `Maße: ${screen.height} · ${window.innerHeight} · ${document.documentElement.clientHeight} · ${parseFloat(cs.paddingTop) || 0} · ${parseFloat(cs.paddingBottom) || 0} · ${app ? 'App' : 'Browser'}`;
+  $('dims').textContent = `${T('Maße', 'Size')}: ${screen.height} · ${window.innerHeight} · ${document.documentElement.clientHeight} · ${parseFloat(cs.paddingTop) || 0} · ${parseFloat(cs.paddingBottom) || 0} · ${app ? 'App' : 'Browser'}`;
   probe.remove();
 
   const s = state.stats;
   const readToday = s.day === today() ? s.read : 0;
-  document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`;
+  document.getElementById('stats').textContent = T(`Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`, `Read today: ${readToday} · total: ${s.total || 0}`);
 }
 document.getElementById('quality').onchange = e => { state.quality = e.target.checked; store.set('quality', state.quality); topicsDirty = true; };
 document.getElementById('reset').onclick = () => {
-  if (!confirm('Alles Gelernte zurücksetzen? Deine Themenauswahl und gemerkten Artikel bleiben.')) return;
+  if (!confirm(T('Alles Gelernte zurücksetzen? Deine Themenauswahl und gemerkten Artikel bleiben.', 'Reset everything the app has learned? Your topic selection and saved articles are kept.'))) return;
   state.weights = {}; store.set('weights', {});
   renderTopics(); topicsDirty = true;
-  toast('Zurückgesetzt');
+  toast(T('Zurückgesetzt', 'Reset'));
 };
 
 // ---------- Navigation ----------
@@ -1049,6 +1057,17 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
 }
+
+// ---------- Sprache ----------
+// Englische Fassung der festen Texte aus index.html (data-en, data-en-ph, data-en-aria).
+if (LANG === 'en') {
+  document.documentElement.lang = 'en';
+  document.querySelectorAll('[data-en]').forEach(n => { n.textContent = n.dataset.en; });
+  document.querySelectorAll('[data-en-ph]').forEach(n => { n.placeholder = n.dataset.enPh; });
+  document.querySelectorAll('[data-en-aria]').forEach(n => { n.setAttribute('aria-label', n.dataset.enAria); });
+}
+$('lang-select').value = LANG;
+$('lang-select').onchange = e => { store.set('lang', e.target.value); location.reload(); };
 
 // ---------- Start ----------
 renderSaved();
