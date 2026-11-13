@@ -6,7 +6,7 @@ const API = 'https://de.wikipedia.org/w/api.php';
 // on:true = deine Interessen als Voreinstellung.
 const TOPICS = [
   // Eigene Suchanfrage statt articletopic: Wikipedias Kategorien für Gedankenexperimente und Paradoxa.
-  { id: 'thought', label: '💭 Gedankenspiele', on: true, query: 'incategory:Gedankenexperiment|Paradoxon', minLen: 2000 },
+  { id: 'thought', label: '💭 Gedankenexperimente & Paradoxa', on: true, query: 'incategory:Gedankenexperiment|Paradoxon', minLen: 2000 },
   { id: 'history', label: 'Geschichte', on: true },
   { id: 'biography', label: 'Biografien', on: true },
   { id: 'women', label: 'Biografien (Frauen)', on: true },
@@ -188,8 +188,6 @@ const feedEl = document.getElementById('feed');
 let loading = false;
 let cardCount = 0;
 let feedGen = 0;
-let sinceThink = 0;
-const feedThinks = new Set();
 const feedTitles = new Set();
 const cardItems = new WeakMap();
 
@@ -240,16 +238,7 @@ async function loadMore() {
     if (aotd) items.unshift(aotd);
     spinner?.remove();
     if (!items.length) { loading = false; return loadMore(); }
-    if (thinkOn()) {
-      // Alle paar Karten ein Gedankenspiel einstreuen, das du noch nicht beantwortet hast.
-      sinceThink += items.length;
-      if (sinceThink >= 7) {
-        const t = pickThought();
-        if (t) { items.splice(Math.min(items.length, 2 + Math.floor(Math.random() * 3)), 0, { think: t, mode: 'feed' }); sinceThink = 0; }
-      }
-      if (first) items.unshift(...dailySpecials());
-    }
-    items.forEach(i => i.think ? addThinkCard(i) : addCard(i));
+    items.forEach(i => addCard(i));
   } catch (e) {
     if (gen !== feedGen) return;
     spinner?.remove();
@@ -266,8 +255,6 @@ const viewObs = new IntersectionObserver(entries => {
     if (!en.isIntersecting) continue;
     const card = en.target;
     const item = cardItems.get(card);
-    if (card.dataset.mode === 'daily') store.set('dailySeen', today());
-    if (card.dataset.mode === 'resolve') store.set('resolveSeen', today());
     if (item) {
       markSeen(item.title);
       if (item.aotd) store.set('aotdSeen', today());
@@ -359,8 +346,6 @@ function resetFeed() {
   loading = false;
   cardCount = 0;
   feedTitles.clear();
-  feedThinks.clear();
-  sinceThink = 0;
   viewObs.disconnect();
   feedEl.innerHTML = '';
   feedEl.scrollTop = 0;
@@ -795,7 +780,6 @@ const thinkBody = $('think-body');
 const thinkScroll = $('think-scroll');
 let thinkCur = null;
 
-const thinkOn = () => typeof THOUGHTS !== 'undefined' && state.enabled.includes('thought');
 const thinkById = id => THOUGHTS.find(t => t.id === id);
 const optLabel = o => Array.isArray(o) ? o[0] : o;
 const optLean = o => Array.isArray(o) ? o[1] : null;
@@ -813,65 +797,23 @@ function dailyThought(day = today()) {
 // Beim Gedankenspiel des Tages gibt es die Auflösung erst am nächsten Tag (oder auf Wunsch sofort).
 const thinkWaiting = t => { const r = state.think[t.id]; return !!r && dailyThought().id === t.id && r.at === today() && !r.reveal; };
 
-function dailySpecials() {
-  const out = [];
-  const d = dailyThought();
-  if (store.get('dailySeen', '') !== today()) out.push({ think: d, mode: 'daily' });
-  const y = dailyThought(yesterday());
-  const yr = state.think[y.id];
-  if (y.id !== d.id && yr && yr.at === yesterday() && !yr.reveal && store.get('resolveSeen', '') !== today()) out.push({ think: y, mode: 'resolve' });
-  return out;
-}
-function pickThought() {
-  const daily = dailyThought().id;
-  const open = THOUGHTS.filter(t => !state.think[t.id] && t.id !== daily && !feedThinks.has(t.id));
-  return open.length ? open[Math.floor(Math.random() * open.length)] : null;
-}
 function answerThink(t, i) {
   const rec = state.think[t.id];
   if (rec) { if (t.correct != null) return; rec.a = i; }
   else state.think[t.id] = { a: i, t: null, at: today(), reveal: false };
   saveThink();
-  feedEl.querySelectorAll('.card.think').forEach(c => { if (c.dataset.think === t.id) fillThinkCard(c); });
+  updateThinkDot();
 }
-
-function addThinkCard({ think: t, mode }) {
-  const card = el('article', 'card think');
-  card.dataset.think = t.id;
-  card.dataset.mode = mode;
-  feedThinks.add(t.id);
-  const img = el('div', 'card-img think-img', t.icon);
-  const body = el('div', 'card-body');
-  const meta = el('div', 'meta');
-  meta.append(
-    el('span', 'chip top', mode === 'daily' ? '💭 Gedankenspiel des Tages' : mode === 'resolve' ? '💡 Auflösung von gestern' : '💭 Gedankenspiel'),
-    el('span', 'chip', THINK_FIELDS[t.field].label));
-  const h = el('h2', null, t.title);
-  const p = el('p', 'extract', t.text);
-  h.onclick = p.onclick = () => openThink(t.id);
-  body.append(meta, h, p, el('p', 'think-q', t.q), el('div', 'opts'));
-  card.append(img, body);
-  fillThinkCard(card);
-  return placeCard(card);
+// Gestern beantwortet, Auflösung noch nicht angesehen?
+function pendingResolve() {
+  const y = dailyThought(yesterday());
+  const r = state.think[y.id];
+  return (y.id !== dailyThought().id && r && r.at === yesterday() && !r.reveal) ? y : null;
 }
-function fillThinkCard(card) {
-  const t = thinkById(card.dataset.think);
-  const box = card.querySelector('.opts');
-  const rec = state.think[t.id];
-  box.innerHTML = '';
-  box.classList.toggle('grid2', !rec && t.opts.length > 3);
-  if (!rec) {
-    t.opts.forEach((o, i) => {
-      const b = el('button', 'opt', optLabel(o));
-      b.onclick = () => { answerThink(t, i); openThink(t.id); };
-      box.append(b);
-    });
-    return;
-  }
-  box.append(el('p', 'think-yours', 'Deine Antwort: ' + optLabel(t.opts[rec.a])));
-  const b = el('button', 'read-btn', thinkWaiting(t) ? 'Ansehen →' : t.correct != null ? 'Lösung ansehen →' : 'Argumente ansehen →');
-  b.onclick = () => openThink(t.id);
-  box.append(b);
+// Punkt am Tab „Denken“, solange das heutige Gedankenspiel offen ist oder eine Auflösung wartet.
+function updateThinkDot() {
+  const open = typeof THOUGHTS !== 'undefined' && (!state.think[dailyThought().id] || !!pendingResolve());
+  document.querySelector('.tabbar button[data-view="think"]')?.classList.toggle('dot', open);
 }
 
 function openThink(id) {
@@ -879,6 +821,9 @@ function openThink(id) {
   if (!thinkCur) return;
   if (thinkEl.hidden) history.pushState({ think: true }, '');
   thinkEl.hidden = false;
+  // Wer die Auflösung von gestern öffnet, hat sie gesehen.
+  const rec = state.think[id];
+  if (rec && rec.at !== today() && !rec.reveal) { rec.reveal = true; saveThink(); updateThinkDot(); }
   renderThink();
   thinkScroll.scrollTop = 0;
 }
@@ -919,7 +864,7 @@ function renderThink() {
   if (!rec) { b.append(el('p', 'think-note', 'Erst entscheiden – danach siehst du, was dafür und dagegen spricht.')); return; }
 
   if (thinkWaiting(t)) {
-    b.append(el('p', 'think-note', 'Deine Antwort ist gespeichert. Nimm die Frage mit durch den Tag – morgen wartet im Feed die Auflösung.'));
+    b.append(el('p', 'think-note', 'Deine Antwort ist gespeichert. Nimm die Frage mit durch den Tag – morgen wartet hier unter „Denken“ die Auflösung.'));
     const now = el('button', 'btn ghost2', 'Auflösung jetzt schon zeigen');
     now.onclick = () => { rec.reveal = true; saveThink(); renderThink(); };
     b.append(now);
@@ -980,6 +925,13 @@ function renderDenken() {
   const today1 = el('ul', 'list');
   today1.append(thinkRow(d, state.think[d.id] ? null : 'Heute: ' + d.q));
   box.append(el('h2', null, 'Gedankenspiel des Tages'), today1);
+  const res = pendingResolve();
+  if (res) {
+    const ul = el('ul', 'list');
+    ul.append(thinkRow(res, '💡 Die Auflösung ist da – tippen zum Ansehen'));
+    box.append(el('h2', null, 'Auflösung von gestern'), ul);
+  }
+  updateThinkDot();
 
   const { axes, right, total } = thinkProfile();
   box.append(el('h2', null, 'Wo du stehst'));
@@ -1090,6 +1042,7 @@ function toast(msg) {
 
 // ---------- Start ----------
 renderSaved();
+updateThinkDot();
 loadMore();
 setTimeout(offlineBackfill, 4000);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
