@@ -52,9 +52,9 @@ const state = {
   quality: store.get('quality', true),
   stats: store.get('stats', { day: today(), read: 0, total: 0 }),
   seeds: store.get('seeds', []),   // Artikel, die dir gefallen haben -> "Mehr wie das hier"
-  pool: store.get('pool', []),     // gesehene Artikel für Quiz-Karten
 };
 const seenSet = new Set(state.seen);
+try { localStorage.removeItem('wf.pool'); } catch {} // Reste der entfernten Quiz-Funktion
 
 // ---------- Lernen ----------
 const w = id => state.weights[id] ?? 1;
@@ -172,42 +172,11 @@ async function fetchAotd() {
   return a.item;
 }
 
-// ---------- Quiz ----------
-function poolAdd(item) {
-  if (!item || !item.extract || state.pool.some(p => p.title === item.title)) return;
-  state.pool.push({ title: item.title, extract: item.extract.slice(0, 600), thumb: item.thumb || null, topic: item.topic || null, asked: false });
-  if (state.pool.length > 80) state.pool = state.pool.slice(-80);
-  store.set('pool', state.pool);
-}
-const STOP = new Set(['der', 'die', 'das', 'und', 'von', 'bei', 'des', 'dem', 'den', 'für', 'the', 'auf', 'mit', 'aus', 'zur', 'zum']);
-function maskTitle(text, title) {
-  const words = title.replace(/\(.*?\)/g, ' ').split(/[^\p{L}\p{N}]+/u).filter(x => x.length >= 3 && !STOP.has(x.toLowerCase()));
-  let out = text;
-  for (const wd of words) {
-    const re = new RegExp('(^|[^\\p{L}\\p{N}])' + wd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\p{L}]*', 'giu');
-    out = out.replace(re, '$1▢▢▢▢');
-  }
-  return out;
-}
-function makeQuiz() {
-  if (state.pool.length < 9) return null;
-  // Nicht die allerneuesten Artikel abfragen – etwas Abstand hilft beim Merken.
-  const cands = state.pool.slice(0, -5).filter(p => !p.asked);
-  if (!cands.length) return null;
-  const q = cands[Math.floor(Math.random() * cands.length)];
-  q.asked = true;
-  store.set('pool', state.pool);
-  const others = shuffle(state.pool.filter(p => p.title !== q.title));
-  const wrong = others.filter(p => p.topic === q.topic).concat(others.filter(p => p.topic !== q.topic)).slice(0, 2);
-  return { quiz: true, q, options: shuffle([q, ...wrong]) };
-}
-
 // ---------- Feed ----------
 const feedEl = document.getElementById('feed');
 let loading = false;
 let cardCount = 0;
 let feedGen = 0;
-let sinceQuiz = 0;
 const feedTitles = new Set();
 const cardItems = new WeakMap();
 
@@ -257,12 +226,7 @@ async function loadMore() {
     if (aotd) items.unshift(aotd);
     spinner?.remove();
     if (!items.length) { loading = false; return loadMore(); }
-    sinceQuiz += items.length;
-    if (sinceQuiz >= 8) {
-      const quiz = makeQuiz();
-      if (quiz) { items.splice(Math.min(items.length, 2 + Math.floor(Math.random() * 3)), 0, quiz); sinceQuiz = 0; }
-    }
-    items.forEach(i => i.quiz ? addQuizCard(i) : addCard(i));
+    items.forEach(i => addCard(i));
   } catch (e) {
     if (gen !== feedGen) return;
     spinner?.remove();
@@ -281,7 +245,6 @@ const viewObs = new IntersectionObserver(entries => {
     const item = cardItems.get(card);
     if (item) {
       markSeen(item.title);
-      poolAdd(item);
       if (item.aotd) store.set('aotdSeen', today());
     }
     let after = 0;
@@ -361,39 +324,6 @@ function addCard(item, afterEl) {
   return placeCard(card, afterEl);
 }
 
-function addQuizCard({ q, options }) {
-  const card = el('article', 'card quiz');
-  const img = el('div', 'card-img');
-  if (q.thumb) img.style.backgroundImage = `url("${q.thumb}")`;
-  else { img.classList.add('placeholder'); img.textContent = '?'; }
-  const body = el('div', 'card-body');
-  const meta = el('div', 'meta');
-  meta.append(el('span', 'chip top', '🧠 Quiz'), el('span', 'chip', 'Das hast du schon gesehen'));
-  const opts = el('div', 'opts');
-  const open = el('button', 'read-btn', 'Artikel nochmal lesen →');
-  open.hidden = true;
-  open.onclick = () => openReader(q.title, q);
-  for (const o of options) {
-    const b = el('button', 'opt', o.title);
-    b.onclick = () => {
-      if (card.dataset.done) return;
-      card.dataset.done = '1';
-      const right = o.title === q.title;
-      [...opts.children].forEach(x => { if (x.textContent === q.title) x.classList.add('right'); });
-      if (!right) b.classList.add('wrong');
-      state.stats.quizTotal = (state.stats.quizTotal || 0) + 1;
-      if (right) state.stats.quizRight = (state.stats.quizRight || 0) + 1;
-      store.set('stats', state.stats);
-      toast(right ? 'Richtig! 🎉' : 'Leider falsch – es war „' + q.title + '“');
-      open.hidden = false;
-    };
-    opts.append(b);
-  }
-  body.append(meta, el('h2', null, 'Welcher Artikel war das?'), el('p', 'extract', maskTitle(q.extract, q.title)), opts, open);
-  card.append(img, body);
-  return placeCard(card);
-}
-
 function next(card) {
   const n = card.nextElementSibling;
   if (n) feedEl.scrollTo({ top: n.offsetTop, behavior: 'smooth' });
@@ -403,7 +333,6 @@ function resetFeed() {
   feedGen++;
   loading = false;
   cardCount = 0;
-  sinceQuiz = 0;
   feedTitles.clear();
   viewObs.disconnect();
   feedEl.innerHTML = '';
@@ -861,8 +790,7 @@ function renderTopics() {
   }
   const s = state.stats;
   const readToday = s.day === today() ? s.read : 0;
-  document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}` +
-    (s.quizTotal ? ` · Quiz: ${s.quizRight || 0} von ${s.quizTotal} richtig` : '');
+  document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`;
 }
 document.getElementById('quality').onchange = e => { state.quality = e.target.checked; store.set('quality', state.quality); topicsDirty = true; };
 document.getElementById('reset').onclick = () => {
