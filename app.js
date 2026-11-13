@@ -827,5 +827,11 @@ renderSaved();
 loadMore();
 setTimeout(offlineBackfill, 4000);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // Jedes Mal, wenn die App wieder nach vorne kommt, nach einer neuen Version schauen.
+    // Gibt es eine, lädt der Service Worker die App von selbst neu.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && reader.hidden) reg.update().catch(() => {});
+    });
+  }).catch(() => {});
 }
