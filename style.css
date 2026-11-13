@@ -8,7 +8,7 @@
   --good: #4cd18a;
   --bad: #ff6b6b;
   /* Nur ein Teil des iPhone-Randes unten: so sitzt die Leiste tiefer, bleibt aber über dem Home-Strich. */
-  --tab-pad: calc(env(safe-area-inset-bottom) * 0.3);
+  --tab-pad: calc(env(safe-area-inset-bottom) * 0.4);
   --tab-h: calc(44px + var(--tab-pad));
   color-scheme: dark;
 }
