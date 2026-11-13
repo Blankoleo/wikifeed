@@ -52,6 +52,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .chip.sim { color: var(--accent); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Gedankenspiel-Karten */
+.card.think .card-img { flex-basis: 20%; }
+.think-img { display: grid; place-items: center; font-size: 76px; line-height: 1;
+  background: radial-gradient(circle at 30% 20%, #3b2f5c, #15161a 72%); }
+.card.think .card-body { overflow: hidden; padding-bottom: 14px; }
+.card.think .extract { -webkit-line-clamp: 6; flex: none; }
+.think-q { font-weight: 700; margin: 12px 0 0; }
+.opts { display: grid; gap: 9px; margin-top: 12px; }
+.opts.grid2 { grid-template-columns: 1fr 1fr; }
+.opt { text-align: left; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-weight: 600; line-height: 1.3; }
+.opt:active { transform: scale(.98); }
+.opt.chosen { border-color: var(--accent); background: rgba(122,167,255,.16); }
+.opt.right { border-color: var(--good); background: rgba(76,209,138,.18); }
+.opt.wrong { border-color: var(--bad); background: rgba(255,107,107,.18); }
+.opt:disabled { color: var(--text); opacity: 1; cursor: default; }
+.think-yours { margin: 0; color: var(--muted); }
+
 .state-card { display: grid; place-items: center; text-align: center; padding: 30px; color: var(--muted); }
 .state-card .btn { margin-top: 16px; }
 .spinner { width: 34px; height: 34px; border: 3px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px; }
@@ -97,6 +114,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--card); color: var(--text); outline: none; -webkit-appearance: none; appearance: none; }
 .search-box input:focus { border-color: var(--accent); }
 
+/* ---------- Denken (Sammlung + Detailansicht) ---------- */
+.think-list { padding: 0 0 30px; }
+.think-list h2 { font-size: 17px; margin: 22px 20px 4px; }
+.think-thumb { display: grid; place-items: center; font-size: 28px; }
+.list .done { color: var(--good); font-weight: 700; padding: 0 8px; }
+.profile { margin: 8px 20px 0; padding: 14px; background: var(--card); border-radius: 14px; display: grid; gap: 14px; }
+.axis-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.axis-empty, .axis-score { color: var(--muted); font-size: 13px; margin: 0; }
+.axis-bar { position: relative; height: 8px; border-radius: 99px; background: linear-gradient(90deg, #f5c96b, #2a2c31 50%, #7aa7ff); }
+.axis-bar i { position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--bg); transform: translate(-50%, -50%); }
+.axis-ends { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 7px; }
+.axis-ends span:last-child { text-align: right; }
+
+.think-sheet { position: fixed; inset: 0; background: var(--bg); z-index: 9; display: flex; flex-direction: column; }
+.think-sheet[hidden] { display: none; }
+.think-head { display: flex; align-items: center; gap: 6px; padding: calc(6px + env(safe-area-inset-top)) 8px 6px; border-bottom: 1px solid var(--line); }
+.think-head .icon-btn { color: var(--text); font-size: 34px; line-height: 1; }
+.think-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.think-body { max-width: 640px; margin: 0 auto; padding: 10px 22px calc(40px + env(safe-area-inset-bottom)); font-size: 17px; line-height: 1.6; }
+.think-icon { font-size: 64px; line-height: 1; margin: 10px 0 14px; }
+.think-body h1 { font: 700 30px/1.15 Georgia, "Times New Roman", serif; margin: 6px 0 12px; }
+.think-body h3 { font: 700 21px/1.2 Georgia, serif; margin: 30px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); }
+.think-body h4 { font-size: 15px; margin: 16px 0 2px; color: var(--accent); }
+.think-body p { margin: 0 0 10px; color: #d6d7db; }
+.think-body .think-q { color: var(--text); font-size: 19px; margin-top: 16px; }
+.think-note { color: var(--muted) !important; font-size: 15px; margin-top: 14px !important; }
+.think-verdict { font-weight: 700; margin-top: 14px !important; }
+.think-verdict.ok { color: var(--good) !important; }
+.think-verdict.no { color: var(--bad) !important; }
+.think-twistnote { margin-top: 14px !important; padding: 12px 14px; background: var(--card); border-radius: 12px; }
+.think-body .btn { margin-top: 18px; width: 100%; padding: 13px 18px; }
+.btn.ghost2 { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+
 /* ---------- Tabbar ---------- */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--tab-h); padding-bottom: var(--tab-pad);
   display: flex; background: rgba(17,18,20,.96); border-top: 1px solid var(--line); z-index: 5; }
@@ -141,9 +191,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 @media (min-width: 700px) {
   .feed .card { max-width: 520px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
-  .pad, .list, .page-head, .search-box, .empty { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .pad, .list, .page-head, .search-box, .empty, .think-list { max-width: 640px; margin-left: auto; margin-right: auto; }
 }
 @media (max-height: 700px) {
+  .card.think .card-img { flex-basis: 13%; font-size: 52px; }
+  .card.think .extract { -webkit-line-clamp: 4; }
+  .opt { padding: 9px 12px; }
   .card h2 { font-size: 24px; }
   .extract { -webkit-line-clamp: 5; }
   .act { width: 56px; height: 56px; font-size: 22px; }

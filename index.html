@@ -28,6 +28,14 @@
     <ul id="search-list" class="list"></ul>
   </section>
 
+  <section id="view-think" class="view">
+    <header class="page-head">
+      <h1>Denken</h1>
+      <p class="sub" id="think-stats"></p>
+    </header>
+    <div id="think-list" class="think-list"></div>
+  </section>
+
   <section id="view-saved" class="view">
     <header class="page-head"><h1>Gemerkt</h1></header>
     <ul id="saved-list" class="list"></ul>
@@ -67,16 +75,28 @@
       <p class="hint">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
       <div id="weights" class="weights"></div>
       <button id="reset" class="btn ghost">Gelerntes zurücksetzen</button>
-      <p class="version">WikiFeed · Version 9<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 10<br><span id="dims"></span></p>
     </div>
   </section>
 
   <nav class="tabbar">
     <button data-view="feed" class="active"><span>📖</span>Feed</button>
     <button data-view="search"><span>🔍</span>Suche</button>
+    <button data-view="think"><span>💭</span>Denken</button>
     <button data-view="saved"><span>🔖</span>Gemerkt</button>
     <button data-view="topics"><span>⚙️</span>Themen</button>
   </nav>
+
+  <div id="think" class="think-sheet" hidden>
+    <header class="think-head">
+      <button id="think-back" class="icon-btn" aria-label="Zurück">‹</button>
+      <div id="think-title" class="reader-title"></div>
+      <span class="icon-btn" aria-hidden="true"></span>
+    </header>
+    <div id="think-scroll" class="think-scroll">
+      <article id="think-body" class="think-body"></article>
+    </div>
+  </div>
 
   <div id="reader" class="reader" hidden>
     <header class="reader-head">
@@ -93,6 +113,7 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="thoughts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
