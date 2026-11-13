@@ -788,6 +788,15 @@ function renderTopics() {
     r.append(el('span', null, topicLabel(id)), bar, el('span', null, Math.round(val * 100) + '%'));
     wb.append(r);
   }
+  // Bildschirm-Messwerte, um Layout-Probleme auf dem iPhone aus der Ferne zu erkennen.
+  const probe = el('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+  document.body.append(probe);
+  const cs = getComputedStyle(probe);
+  const app = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  $('dims').textContent = `Maße: ${screen.height} · ${window.innerHeight} · ${document.documentElement.clientHeight} · ${parseFloat(cs.paddingTop) || 0} · ${parseFloat(cs.paddingBottom) || 0} · ${app ? 'App' : 'Browser'}`;
+  probe.remove();
+
   const s = state.stats;
   const readToday = s.day === today() ? s.read : 0;
   document.getElementById('stats').textContent = `Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`;

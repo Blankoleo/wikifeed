@@ -8,12 +8,15 @@
   --good: #4cd18a;
   --bad: #ff6b6b;
   /* Nur ein Teil des iPhone-Randes unten: so sitzt die Leiste tiefer, bleibt aber über dem Home-Strich. */
-  --tab-pad: calc(env(safe-area-inset-bottom) * 0.4);
-  --tab-h: calc(46px + var(--tab-pad));
+  --tab-pad: calc(env(safe-area-inset-bottom) * 0.3);
+  --tab-h: calc(44px + var(--tab-pad));
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* iPhone-Eigenheit: Als Home-Bildschirm-App mit durchsichtiger Statusleiste rechnet iOS die Seite teils um die
+   Statusleiste zu kurz – dann bleibt unten ein leerer Streifen. Die größere Mindesthöhe gleicht das aus. */
+html { min-height: calc(100% + env(safe-area-inset-top)); }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
   font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 button { font: inherit; color: inherit; cursor: pointer; }
