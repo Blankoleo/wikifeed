@@ -409,8 +409,17 @@ function burst(btn, emojis) {
 function stateCard(kind, msg) {
   feedEl.querySelector('.state-card')?.remove();
   const c = el('div', 'card state-card');
+  if (kind === 'loading') {
+    // Platzhalter in Kartenform statt eines Lade-Kringels
+    c.classList.add('skel');
+    const box = el('div', 'sk-box');
+    for (let i = 0; i < 5; i++) box.append(el('i'));
+    box.append(el('p', null, msg));
+    c.append(el('div', 'sk-photo'), box);
+    feedEl.append(c);
+    return c;
+  }
   const inner = el('div');
-  if (kind === 'loading') inner.append(el('div', 'spinner'));
   inner.append(el('p', null, msg));
   if (kind === 'error') {
     const b = el('button', 'btn', T('Nochmal versuchen', 'Try again'));
@@ -582,7 +591,7 @@ function addCard(item, afterEl) {
   side.append(like, save, less, share);
 
   // Antippen öffnet den Artikel, Doppeltippen aufs Bild ist ein Herz.
-  const openIt = () => openReader(item.title, item);
+  const openIt = () => openReader(item.title, item, 0, img);
   body.onclick = openIt;
   let tapTimer = null;
   img.onclick = e => {
@@ -671,7 +680,7 @@ async function fetchArticle(title) {
   let a = articleMem.get(title);
   if (!a) {
     const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
-    if (d.error) throw new Error(d.error.info);
+    if (d.error) throw new Error(d.error.code === 'missingtitle' ? T('Diesen Artikel gibt es (noch) nicht.', 'This article does not exist (yet).') : d.error.info);
     a = { title: d.parse.title, html: d.parse.text };
     articleMem.set(title, a);
     articleMem.set(a.title, a);
@@ -765,7 +774,7 @@ let popPending = null, popResolve = null;
 function waitPop() {
   popPending = new Promise(res => { popResolve = res; setTimeout(res, 600); }).then(() => { popPending = null; popResolve = null; });
 }
-async function openReader(title, item = null, restoreScroll = 0) {
+async function openReader(title, item = null, restoreScroll = 0, origin = null) {
   if (popPending) await popPending;
   if (!readerStack.length) {
     readSession = { item, start: Date.now() };
@@ -778,7 +787,15 @@ async function openReader(title, item = null, restoreScroll = 0) {
   }
   readerStack.push({ title, item, scroll: 0 });
   readerStack.slice(0, -5).forEach(e => { e.frag = null; }); // nur die letzten Artikel im Speicher halten
-  reader.hidden = false;
+  if (readerStack.length === 1) {
+    // Aus einer Karte geöffnet: Das Kartenbild wächst zum Titelbild des Artikels.
+    const r = origin && !reduceMotion && reader.animate ? visibleRect(origin) : null;
+    reader.classList.toggle('hero-open', !!r);
+    heroEl.style.height = r ? Math.min(Math.round(r.bottom + 6), Math.round(innerHeight * .62)) + 'px' : '';
+    reader.hidden = false;
+    if (r) reader.animate([{ clipPath: insetOf(r) }, { clipPath: 'inset(0px 0px 0px 0px round 0px)' }], { duration: 480, easing: 'cubic-bezier(.2, .85, .2, 1)' });
+  }
+  heroFor(readerStack[readerStack.length - 1]);
   saveSnapSoon();
   await renderArticle(title, restoreScroll);
 }
@@ -807,6 +824,7 @@ async function renderArticle(title, restoreScroll = 0) {
     readerBody.append(...art.doc.body.childNodes);
     readerBody.append(sourceNote(art.title));
     readerScroll.scrollTop = restoreScroll;
+    readerChrome();
     top.title = art.title;
     top.loaded = true;
     setReaderHead(art.title);
@@ -818,6 +836,152 @@ async function renderArticle(title, restoreScroll = 0) {
       : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
   }
 }
+
+// ---------- Leser: Titelbild ----------
+const heroEl = $('reader-hero'), heroImg = $('reader-hero-img'), heroCredit = $('reader-credit');
+let heroH = 0;
+const leadCache = new Map();
+const bigEnough = u => { const m = u && u.match(/\/(\d+)px-/); return !!u && (!m || Number(m[1]) >= 400); };
+async function leadImage(title) {
+  if (leadCache.size > 60) leadCache.clear();
+  if (!leadCache.has(title)) leadCache.set(title, api({ titles: title, redirects: '1', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '900' })
+    .then(d => d.query?.pages?.[0]?.thumbnail?.source || null).catch(() => null));
+  return leadCache.get(title);
+}
+function setHero(thumb) {
+  const on = !!thumb;
+  reader.classList.toggle('has-hero', on);
+  heroEl.hidden = !on;
+  heroCredit.hidden = true;
+  heroImg.style.transform = '';
+  if (on) {
+    if (heroImg.getAttribute('src') !== thumb) heroImg.src = thumb;
+    heroH = heroEl.offsetHeight;
+    imageCredit(thumb).then(c => {
+      if (!c || heroImg.getAttribute('src') !== thumb) return;
+      heroCredit.textContent = '📷 ' + [c.artist || 'Wikimedia Commons', c.license].filter(Boolean).join(' · ');
+      heroCredit.href = c.page;
+      heroCredit.hidden = false;
+    });
+  } else { heroImg.removeAttribute('src'); heroH = 0; }
+  readerChrome();
+}
+// Titelbild für einen Artikel: das Bild der Karte, sonst das Hauptbild des Artikels (einmal nachgefragt).
+function heroFor(entry) {
+  const t = entry.thumb || (bigEnough(entry.item?.thumb) ? entry.item.thumb : null);
+  if (t) { entry.thumb = t; setHero(t); return; }
+  setHero(null);
+  if (entry.thumb === null) return;
+  leadImage(entry.title).then(u => {
+    entry.thumb = u || null;
+    if (u && readerStack[readerStack.length - 1] === entry && !reader.hidden && readerScroll.scrollTop < 10) setHero(u);
+  });
+}
+// Kopfleiste: über dem Titelbild durchsichtig, darunter als Glasleiste mit Titel. Das Bild wandert langsamer mit.
+function readerChrome() {
+  const y = readerScroll.scrollTop;
+  reader.classList.toggle('solid', !heroH || y > heroH - 64);
+  if (heroH && y < heroH && !reduceMotion) heroImg.style.transform = `translate3d(0, ${(y * .35).toFixed(1)}px, 0)`;
+}
+function visibleRect(elm) {
+  const r = elm.getBoundingClientRect();
+  return r.width > 40 && r.bottom > 40 && r.top < innerHeight - 40 ? r : null;
+}
+const insetOf = r => `inset(${r.top.toFixed(1)}px ${(innerWidth - r.right).toFixed(1)}px ${(innerHeight - r.bottom).toFixed(1)}px ${r.left.toFixed(1)}px round 28px)`;
+// Schließen: Steht der Artikel noch am Anfang und liegt seine Karte dahinter, schrumpft er zurück in das Kartenbild.
+function closeReaderSmart(fromPopstate) {
+  const title = readSession?.item?.title;
+  const card = title && $('view-feed').classList.contains('active') && [...nearCards].find(c => c.classList.contains('active') && c.dataset.title === title);
+  const ph = card && card.querySelector('.card-photo');
+  if (!ph || reduceMotion || !reader.animate || !reader.classList.contains('has-hero') || readerScroll.scrollTop > 60) return closeReader(fromPopstate);
+  // Die Ansicht dahinter ist gerade verkleinert – das Ziel ist das Kartenbild in voller Größe.
+  const v = $('view-feed').getBoundingClientRect(), k = v.width / innerWidth || 1, pr = ph.getBoundingClientRect();
+  const r = { top: (pr.top - v.top) / k, left: (pr.left - v.left) / k, right: (pr.right - v.left) / k, bottom: (pr.bottom - v.top) / k };
+  reader.classList.add('closing');
+  closeReader(fromPopstate);
+  const a = reader.animate([{ clipPath: 'inset(0px 0px 0px 0px round 0px)', opacity: 1 }, { clipPath: insetOf(r), opacity: 1, offset: .8 }, { clipPath: insetOf(r), opacity: 0 }],
+    { duration: 430, easing: 'cubic-bezier(.3, .7, .2, 1)' });
+  a.onfinish = a.oncancel = () => reader.classList.remove('closing');
+}
+function closeReaderAll() { readerStack.length = 0; closeReader(false); }
+
+// ---------- Blätter mit dem Finger nach unten wegziehen ----------
+// Am Kopf des Blatts oder wenn der Inhalt ganz oben steht: Das Blatt folgt dem Finger, die Ansicht dahinter kommt näher.
+function sheetDrag(sheet, scroller, close) {
+  let st = null;
+  sheet.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || sheet.hidden) return;
+    const t = e.touches[0];
+    const inHead = !scroller.contains(e.target);
+    if ((!inHead && scroller.scrollTop > 0) || e.target.closest('input, select, table')) return;
+    st = { x: t.clientX, y: t.clientY, d: 0, dir: null, vy: 0, ly: t.clientY, lt: performance.now(), inHead, behind: document.querySelector('.view.active'), armed: false };
+  }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (!st) return;
+    const t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if (!st.dir) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (dy <= 0 || Math.abs(dy) < Math.abs(dx) * 1.2 || (!st.inHead && scroller.scrollTop > 0)) { st = null; return; }
+      st.dir = 'down';
+      st.y = t.clientY; // ab hier zählen, damit nichts springt
+      sheet.classList.add('dragging');
+      st.behind?.classList.add('pulling');
+    }
+    const now = performance.now();
+    if (now > st.lt) st.vy = st.vy * .4 + (t.clientY - st.ly) / (now - st.lt) * .6;
+    st.ly = t.clientY; st.lt = now;
+    const d = Math.max(0, t.clientY - st.y);
+    st.d = d;
+    sheet.style.transform = `translate3d(0, ${d}px, 0) scale(${(1 - Math.min(1, d / innerHeight) * .1).toFixed(4)})`;
+    sheet.style.borderRadius = Math.min(40, d / 2.5) + 'px';
+    st.behind?.style.setProperty('--pull', Math.min(1, d / 340).toFixed(3));
+    if (!st.armed && d > 130) { st.armed = true; haptic(); } else if (st.armed && d < 110) st.armed = false;
+  }, { passive: true });
+  const end = () => {
+    if (!st) return;
+    const s = st; st = null;
+    if (s.dir !== 'down') return;
+    sheet.classList.remove('dragging');
+    const reset = () => { s.behind?.classList.remove('pulling'); s.behind?.style.removeProperty('--pull'); };
+    if (s.d > 130 || (s.vy > .55 && s.d > 36)) {
+      sheet.style.transition = 'transform .26s cubic-bezier(.4, 0, .8, .3)';
+      sheet.style.transform = `translate3d(0, ${innerHeight}px, 0)`;
+      setTimeout(() => {
+        sheet.style.transition = 'none';
+        close();
+        reset();
+        requestAnimationFrame(() => requestAnimationFrame(() => { sheet.style.transition = ''; sheet.style.transform = ''; sheet.style.borderRadius = ''; }));
+      }, 250);
+    } else {
+      sheet.style.transition = 'transform .45s cubic-bezier(.3, 1.3, .5, 1), border-radius .3s';
+      sheet.style.transform = ''; sheet.style.borderRadius = '';
+      s.behind?.classList.remove('pulling');
+      s.behind?.style.setProperty('--pull', 0);
+      setTimeout(() => { sheet.style.transition = ''; reset(); }, 460);
+    }
+  };
+  sheet.addEventListener('touchend', end, { passive: true });
+  sheet.addEventListener('touchcancel', end, { passive: true });
+}
+
+// Leichtes Tipp-Feedback. iPhone: über einen unsichtbaren System-Schalter (ab iOS 17.4), Android: kurze Vibration.
+function haptic() {
+  try {
+    if (navigator.vibrate) { navigator.vibrate(8); return; }
+    const label = document.createElement('label');
+    label.style.display = 'none';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    label.append(input);
+    document.head.append(label);
+    label.click();
+    label.remove();
+  } catch {}
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('.sb, .seg button, .tpick, .opt, .switch, .tchip, .gchoice .btn, .tabbar button, #reader-save, #reader-speak')) haptic();
+}, true);
 
 // Lizenzhinweis unter jedem Artikel (CC BY-SA verlangt Quelle, Autoren und Lizenz).
 function sourceNote(title) {
@@ -921,7 +1085,6 @@ function ttsStart() {
   const topY = readerScroll.getBoundingClientRect().top;
   const start = Math.max(0, nodes.findIndex(n => n.getBoundingClientRect().bottom > topY + 4));
   Object.assign(tts, { on: true, token: tts.token + 1, nodes, ni: start, chunks: [], ci: 0 });
-  speakBtn.textContent = '⏹';
   speakBtn.classList.add('on');
   speakBtn.setAttribute('aria-label', T('Vorlesen stoppen', 'Stop reading'));
   // Bildschirm anlassen – bei gesperrtem Handy stoppt die Stimme sonst.
@@ -963,7 +1126,6 @@ function ttsStop() {
   tts.token++;
   speechSynthesis.cancel();
   readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
-  speakBtn.textContent = '🔊';
   speakBtn.classList.remove('on');
   speakBtn.setAttribute('aria-label', T('Vorlesen', 'Read aloud'));
   tts.lock?.release().catch(() => {});
@@ -1007,19 +1169,20 @@ function readerBack(fromPopstate = false) {
       readerBody.innerHTML = '';
       readerBody.append(prev.frag);
       prev.frag = null;
+      heroFor(prev);
       readerScroll.scrollTop = prev.scroll;
-      requestAnimationFrame(() => { readerScroll.scrollTop = prev.scroll; });
-    } else renderArticle(prev.title, prev.scroll);
+      requestAnimationFrame(() => { readerScroll.scrollTop = prev.scroll; readerChrome(); });
+    } else { heroFor(prev); renderArticle(prev.title, prev.scroll); }
     if (fromPopstate) history.pushState({ reader: true }, '');
     saveSnapSoon();
     return;
   }
-  closeReader(fromPopstate);
+  closeReaderSmart(fromPopstate);
 }
 function closeReader(fromPopstate) {
   ttsStop();
   reader.hidden = true;
-  setTimeout(() => { if (reader.hidden) readerBody.innerHTML = ''; }, 380); // erst leeren, wenn das Blatt hinausgeglitten ist
+  setTimeout(() => { if (reader.hidden) { readerBody.innerHTML = ''; heroImg.removeAttribute('src'); } }, 480); // erst leeren, wenn das Blatt verschwunden ist
   if (readSession) {
     const secs = (Date.now() - readSession.start) / 1000;
     if (secs > 25) {
@@ -1406,7 +1569,13 @@ function activateView(v, { anim = true, rendered = false } = {}) {
   if (v === 'feed' && topicsDirty) { topicsDirty = false; resetFeed(); }
   if (v === 'feed') feedFx();
 }
-document.querySelectorAll('.tabbar button').forEach(btn => { btn.onclick = () => activateView(btn.dataset.view); });
+document.querySelectorAll('.tabbar button').forEach(btn => {
+  btn.onclick = () => {
+    // Den schon aktiven Tab antippen = zurück nach oben (wie in iOS)
+    if (btn.classList.contains('active')) { (btn.dataset.view === 'feed' ? feedEl : $('view-' + btn.dataset.view)).scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    activateView(btn.dataset.view);
+  };
+});
 
 // ---------- Seitlich wischen zwischen den Bereichen ----------
 // Die Seite folgt dem Finger 1:1, die Nachbarseite gleitet daneben herein, die Leuchtmarke unten wandert mit.
@@ -1570,7 +1739,32 @@ $('wipe').onclick = async () => {
 readerScroll.addEventListener('scroll', () => {
   const max = readerScroll.scrollHeight - readerScroll.clientHeight;
   $('reader-progress').style.transform = `scaleX(${max > 0 ? clamp(readerScroll.scrollTop / max, 0, 1) : 0})`;
+  readerChrome();
 }, { passive: true });
+readerBody.lang = LANG; // für saubere Silbentrennung
+
+// ---------- Blätter wegziehen, große Titel, Schriftgröße ----------
+sheetDrag(reader, readerScroll, closeReaderAll);
+sheetDrag(thinkEl, thinkScroll, () => closeThink(false));
+sheetDrag($('game'), $('game-scroll'), () => closeTrolley(false));
+// Große Titel: Beim Scrollen erscheint oben eine Glasleiste mit dem Titel in klein.
+document.querySelectorAll('.view').forEach(v => {
+  const label = v.querySelector('.navbar span');
+  if (!label) return;
+  v.addEventListener('scroll', () => {
+    if (!label.textContent) label.textContent = v.querySelector('.page-head h1').textContent;
+    v.classList.toggle('scrolled', v.scrollTop > 52);
+  }, { passive: true });
+});
+function setRsize(v) {
+  document.documentElement.style.setProperty('--reader-size', v + 'px');
+  document.querySelectorAll('#rsize-seg button').forEach(b => { const on = Number(b.dataset.v) === v; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+}
+setRsize([16, 18, 21].includes(store.get('rsize', 18)) ? store.get('rsize', 18) : 18);
+document.querySelectorAll('#rsize-seg button').forEach(b => {
+  b.setAttribute('role', 'radio');
+  b.onclick = () => { const v = Number(b.dataset.v); store.set('rsize', v); setRsize(v); };
+});
 
 // ---------- 3D-Effekt beim Neigen (Einstellung) ----------
 const tiltBox = $('tilt');
@@ -1617,7 +1811,7 @@ function saveSnap() {
     sessionStorage.setItem(SNAP_KEY, JSON.stringify({
       t: Date.now(), lang: LANG, idx: idx - from,
       items: cards.slice(from, idx + 10).map(c => cardItems.get(c)),
-      reader: !reader.hidden && top ? { title: top.title, scroll: readerScroll.scrollTop } : null,
+      reader: !reader.hidden && top?.loaded ? { title: top.title, scroll: readerScroll.scrollTop } : null, // nur Artikel, die wirklich geladen sind
     }));
   } catch {}
 }

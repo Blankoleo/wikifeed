@@ -24,6 +24,7 @@
   </main>
 
   <section id="view-search" class="view">
+    <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head"><h1 data-en="Search">Suche</h1></header>
     <form id="search-form" class="search-box" action="#" role="search">
       <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" data-en-ph="Search Wikipedia …" data-en-aria="Search Wikipedia" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
@@ -33,6 +34,7 @@
   </section>
 
   <section id="view-think" class="view">
+    <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head">
       <h1 data-en="Think">Denken</h1>
       <p class="sub" id="think-stats"></p>
@@ -41,12 +43,14 @@
   </section>
 
   <section id="view-saved" class="view">
+    <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head"><h1 data-en="Saved">Gemerkt</h1></header>
     <ul id="saved-list" class="list"></ul>
-    <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap 🔖 in the feed to keep articles for later – they can then be read without an internet connection too.">Noch nichts gemerkt. Tippe im Feed auf 🔖, um Artikel für später zu speichern – sie sind dann auch ohne Internet lesbar.</p>
+    <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap “Save” on a card to keep an article for later – it can then be read without an internet connection too.">Noch nichts gemerkt. Tippe auf einer Karte auf „Merken“, um einen Artikel für später aufzuheben – er ist dann auch ohne Internet lesbar.</p>
   </section>
 
   <section id="view-topics" class="view">
+    <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head">
       <h1 data-en="Settings">Einstellungen</h1>
       <p class="sub" id="stats"></p>
@@ -64,6 +68,14 @@
             <button type="button" data-v="38" data-en="Small">Klein</button>
             <button type="button" data-v="50" data-en="Medium">Mittel</button>
             <button type="button" data-v="64" data-en="Large">Groß</button>
+          </div>
+        </div>
+        <div class="set-block">
+          <div class="set-label" data-en="Text size in articles">Schriftgröße in Artikeln</div>
+          <div id="rsize-seg" class="seg" role="radiogroup" aria-label="Schriftgröße in Artikeln" data-en-aria="Text size in articles">
+            <button type="button" data-v="16" data-en="Small">Klein</button>
+            <button type="button" data-v="18" data-en="Medium">Mittel</button>
+            <button type="button" data-v="21" data-en="Large">Groß</button>
           </div>
         </div>
         <div class="set-block">
@@ -148,7 +160,7 @@
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 2.2<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 2.3<br><span id="dims"></span></p>
     </div>
   </section>
 
@@ -163,7 +175,7 @@
 
   <div id="think" class="think-sheet" hidden>
     <header class="think-head">
-      <button id="think-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
+      <button id="think-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="think-title" class="reader-title"></div>
       <span class="icon-btn" aria-hidden="true"></span>
     </header>
@@ -174,7 +186,7 @@
 
   <div id="game" class="game-sheet" hidden>
     <header class="think-head">
-      <button id="game-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
+      <button id="game-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="game-title" class="reader-title"></div>
       <span class="icon-btn" aria-hidden="true"></span>
     </header>
@@ -185,14 +197,15 @@
 
   <div id="reader" class="reader" hidden>
     <header class="reader-head">
-      <button id="reader-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back">‹</button>
+      <button id="reader-back" class="rbtn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="reader-title" class="reader-title"></div>
-      <button id="reader-speak" class="icon-btn" aria-label="Vorlesen" data-en-aria="Read aloud">🔊</button>
-      <button id="reader-save" class="icon-btn" aria-label="Merken" data-en-aria="Save">🔖</button>
-      <a id="reader-ext" class="icon-btn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen" data-en-aria="Open on Wikipedia">↗</a>
+      <button id="reader-speak" class="rbtn" aria-label="Vorlesen" data-en-aria="Read aloud"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2.5"/></svg></button>
+      <button id="reader-save" class="rbtn" aria-label="Merken" data-en-aria="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 3.6h10.4a1 1 0 0 1 1 1v16l-6.2-4-6.2 4v-16a1 1 0 0 1 1-1z"/></svg></button>
+      <a id="reader-ext" class="rbtn" target="_blank" rel="noopener" aria-label="Auf Wikipedia öffnen" data-en-aria="Open on Wikipedia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8.5 8.5M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4"/></svg></a>
       <i id="reader-progress"></i>
     </header>
     <div id="reader-scroll" class="reader-scroll">
+      <div id="reader-hero" class="reader-hero" hidden><img id="reader-hero-img" alt=""><a id="reader-credit" class="hero-credit" target="_blank" rel="noopener" hidden></a></div>
       <article id="reader-body" class="reader-body"></article>
     </div>
   </div>
