@@ -59,9 +59,17 @@
           <div id="theme-picks" class="theme-picks"></div>
         </div>
         <div class="set-block">
-          <div class="set-label set-label-row"><span data-en="Size of the text box">Größe der Textbox</span><output id="panel-val"></output></div>
-          <input type="range" id="panel" class="slider" min="30" max="75" step="1" aria-label="Größe der Textbox" data-en-aria="Size of the text box">
-          <div class="slider-ends"><span data-en="More picture">Mehr Bild</span><span data-en="More text">Mehr Text</span></div>
+          <div class="set-label" data-en="Size of the text box">Größe der Textbox</div>
+          <div id="panel-seg" class="seg" role="radiogroup" aria-label="Größe der Textbox" data-en-aria="Size of the text box">
+            <button type="button" data-v="38" data-en="Small">Klein</button>
+            <button type="button" data-v="50" data-en="Medium">Mittel</button>
+            <button type="button" data-v="64" data-en="Large">Groß</button>
+          </div>
+        </div>
+        <div class="set-block">
+          <div class="set-label set-label-row"><span data-en="Size of the bottom bar">Größe der Leiste unten</span><output id="tabscale-val"></output></div>
+          <input type="range" id="tabscale" class="slider" min="80" max="140" step="5" aria-label="Größe der Leiste unten" data-en-aria="Size of the bottom bar">
+          <div class="slider-ends"><span data-en="Smaller">Kleiner</span><span data-en="Larger">Größer</span></div>
         </div>
         <label class="set-row">
           <span class="set-text"><b data-en="3D effect when tilting">3D-Effekt beim Neigen</b><small data-en="Cards move along when you tilt your phone.">Karten bewegen sich mit, wenn du das Handy neigst.</small></span>
@@ -140,7 +148,7 @@
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 17<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 18<br><span id="dims"></span></p>
     </div>
   </section>
 

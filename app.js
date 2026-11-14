@@ -1377,15 +1377,32 @@ function renderThemePicks() {
 }
 renderThemePicks();
 
-// ---------- Größe der Textbox (Schieberegler) ----------
-const panelInput = $('panel');
-const panelShow = v => { $('panel-val').textContent = Math.round(v) + ' %'; };
-panelInput.value = store.get('panel', 50);
-panelShow(panelInput.value);
-panelInput.oninput = () => {
-  document.documentElement.style.setProperty('--panel', panelInput.value);
-  panelShow(panelInput.value);
-  store.set('panel', Number(panelInput.value));
+// ---------- Größe der Textbox (Klein / Mittel / Groß) ----------
+const PANEL_STEPS = [38, 50, 64];
+const snapPanel = v => PANEL_STEPS.reduce((best, x) => Math.abs(x - v) < Math.abs(best - v) ? x : best, 50);
+function setPanel(v) {
+  document.documentElement.style.setProperty('--panel', v);
+  document.querySelectorAll('#panel-seg button').forEach(b => {
+    const on = Number(b.dataset.v) === v;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', on);
+  });
+}
+setPanel(snapPanel(Number(store.get('panel', 50))));
+document.querySelectorAll('#panel-seg button').forEach(b => {
+  b.setAttribute('role', 'radio');
+  b.onclick = () => { const v = Number(b.dataset.v); store.set('panel', v); setPanel(v); };
+});
+
+// ---------- Größe der Leiste unten (Schieberegler) ----------
+const tabInput = $('tabscale');
+tabInput.value = store.get('tabscale', 100);
+const tabShow = () => { $('tabscale-val').textContent = tabInput.value + ' %'; };
+tabShow();
+tabInput.oninput = () => {
+  document.documentElement.style.setProperty('--tab-scale', tabInput.value / 100);
+  tabShow();
+  store.set('tabscale', Number(tabInput.value));
 };
 
 // ---------- Alle Daten auf diesem Gerät löschen ----------

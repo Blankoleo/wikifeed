@@ -19,7 +19,8 @@
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   /* Nur ein Teil des iPhone-Randes unten: so sitzt die Leiste tiefer, bleibt aber über dem Home-Strich. */
   --tab-pad: calc(env(safe-area-inset-bottom) * 0.4);
-  --tab-h: calc(44px + var(--tab-pad));
+  --tab-scale: 1;   /* Größe der Leiste unten (Schieberegler in den Einstellungen) */
+  --tab-h: calc(44px * var(--tab-scale) + var(--tab-pad));
   --panel: 50;   /* Anteil der Textbox an der Kartenhöhe in Prozent (Schieberegler) */
 }
 
@@ -356,6 +357,13 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 .slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); }
 .slider-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
+/* Auswahl in Stufen (Klein / Mittel / Groß) */
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--line); }
+.seg button { padding: 8px 6px; border: 0; border-radius: 10px; background: none; color: var(--muted); font-weight: 600; font-size: 14.5px;
+  transition: background .3s, color .3s, box-shadow .3s, transform .25s var(--spring); }
+.seg button:active { transform: scale(.95); }
+.seg button.on { color: var(--text); background: var(--glass-a); box-shadow: 0 4px 12px -4px var(--shadow), inset 0 1px 0 var(--glass-hi); }
+
 /* Farbwahl */
 .theme-picks { display: flex; gap: 6px; justify-content: space-between; }
 .tpick { flex: 1; display: grid; justify-items: center; gap: 6px; padding: 4px 0; background: none; border: 0; font-size: 12px; color: var(--muted); }
@@ -551,14 +559,14 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 .tabbar::before { content: ""; position: absolute; top: -1px; left: 12%; right: 12%; height: 1px; pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--tab-edge), transparent); }
 /* Leuchtende Marke, die federnd zum aktiven Tab gleitet */
-.tab-ind { position: absolute; top: 3px; left: 0; width: 20%; height: 38px; pointer-events: none;
+.tab-ind { position: absolute; top: calc(3px * var(--tab-scale)); left: 0; width: 20%; height: calc(38px * var(--tab-scale)); pointer-events: none;
   transform: translate3d(calc(var(--i, 0) * 100%), 0, 0); transition: transform .55s var(--spring); }
 .tab-ind::before { content: ""; position: absolute; inset: 0 16%; border-radius: 14px; background: var(--ind-bg);
   box-shadow: 0 0 24px var(--ind-glow), inset 0 1px 0 rgba(255, 255, 255, .22); }
-.tabbar button { position: relative; flex: 1; min-width: 0; background: none; border: 0; padding: 0; color: var(--muted); font-size: 11px; line-height: 1.2;
+.tabbar button { position: relative; flex: 1; min-width: 0; background: none; border: 0; padding: 0; color: var(--muted); font-size: calc(11px * min(var(--tab-scale), 1.1)); line-height: 1.2;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: color .3s; }
-.tabbar button span { position: relative; display: block; width: 21px; height: 21px; transition: transform .45s var(--spring); }
-.tabbar button svg { display: block; width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button span { position: relative; display: block; width: calc(21px * var(--tab-scale)); height: calc(21px * var(--tab-scale)); transition: transform .45s var(--spring); }
+.tabbar button svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar button em { font-style: normal; white-space: nowrap; letter-spacing: -.01em; }
 .tabbar button.active { color: var(--text); }
 .tabbar button.active span { transform: translate3d(0, -1px, 0) scale(1.12); }
@@ -624,3 +632,5 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+[data-theme="nacht"] .seg button.on { background: rgba(255, 255, 255, .18); }
