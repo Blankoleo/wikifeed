@@ -221,6 +221,13 @@ body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hid
 .extract { flex: 1; min-height: 0; color: var(--text2); font-size: 15.5px; line-height: 1.55; margin: 0; overflow: hidden;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 34px), transparent); mask-image: linear-gradient(#000 calc(100% - 34px), transparent); }
 
+/* Quellen: Bildnachweis oben links auf dem Bild, Textquelle unten in der Textbox */
+.credit { position: absolute; z-index: 3; left: 12px; top: 12px; max-width: calc(100% - 84px); padding: 3px 9px; border-radius: 99px;
+  font-size: 10.5px; line-height: 1.4; color: rgba(255, 255, 255, .92); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: rgba(10, 10, 16, .32); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  opacity: calc(.95 - var(--a) * 2); transform: translate3d(0, calc(var(--p) * 54px), 0); animation: rise .6s var(--ease) backwards; }
+.src { flex: none; margin-top: 8px; font-size: 11px; letter-spacing: .02em; color: var(--muted); }
+
 /* Ebene 4: Seitenleiste im TikTok-Stil, rechts über dem Bild */
 .side { position: absolute; z-index: 3; right: 10px; bottom: 54px; display: flex; flex-direction: column; align-items: center; gap: 12px;
   opacity: calc(1 - var(--a) * 1.7); transform: translate3d(0, calc(var(--p) * -36px), 0); }
@@ -335,6 +342,8 @@ details.set-more summary::after { content: "›"; font-size: 22px; line-height: 
 details.set-more[open] summary::after { transform: rotate(90deg); }
 details.set-more[open] > :not(summary) { animation: rise .45s var(--ease) backwards; }
 details.set-more p { color: var(--muted); font-size: 14px; margin: 10px 0 4px; }
+details.set-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.set-text b.danger { color: var(--bad); }
 details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 /* Schieberegler */
 .set-label-row { display: flex; justify-content: space-between; align-items: baseline; }
@@ -589,6 +598,7 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 
 #reader-speak.on { background: #ffe9b0; }
 .reader-body .tts-now { background: #fff1c2; box-shadow: 0 0 0 5px #fff1c2; border-radius: 4px; }
+.reader-body .art-source { font: 13px/1.5 -apple-system, sans-serif; color: #777; margin-top: 34px; padding-top: 14px; border-top: 1px solid #e5e2da; }
 .reader-body .offnote { font: 13px/1.4 -apple-system, sans-serif; color: #2e7d4f; margin-bottom: 8px; }
 
 .toast { position: fixed; left: 50%; bottom: calc(var(--tab-h) + 18px); transform: translate(-50%, 24px) scale(.9); opacity: 0;

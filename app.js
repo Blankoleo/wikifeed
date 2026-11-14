@@ -323,6 +323,48 @@ const ICONS = {
   share: '<path d="M12 14.5V3.8M7.8 7.8 12 3.6l4.2 4.2"/><path d="M5.2 12.2v6.6a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6v-6.6"/>',
 };
 
+// Bildnachweis: Urheber und Lizenz eines Wikimedia-Bildes, geladen erst wenn die Karte vorn ist.
+const creditCache = new Map();
+function fileFromThumb(url) {
+  const m = url.match(/\/wikipedia\/([a-z-]+)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?]+)/i);
+  if (!m) return null;
+  const host = m[1] === 'commons' ? 'commons.wikimedia.org' : m[1] + '.wikipedia.org';
+  return { host, file: decodeURIComponent(m[2]) };
+}
+async function imageCredit(url) {
+  const f = fileFromThumb(url);
+  if (!f) return null;
+  const key = f.host + '|' + f.file;
+  if (creditCache.has(key)) return creditCache.get(key);
+  const pr = (async () => {
+    const u = new URL('https://' + f.host + '/w/api.php');
+    Object.entries({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'imageinfo', iiprop: 'extmetadata', iiextmetadatafilter: 'Artist|LicenseShortName|Credit', titles: 'File:' + f.file })
+      .forEach(([k, v]) => u.searchParams.set(k, v));
+    const d = await (await fetch(u)).json();
+    const md = d.query?.pages?.[0]?.imageinfo?.[0]?.extmetadata || {};
+    const txt = h => h ? (new DOMParser().parseFromString(h, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    const artist = txt(md.Artist?.value) || txt(md.Credit?.value);
+    return { artist: artist.length > 60 ? artist.slice(0, 58) + '…' : artist, license: txt(md.LicenseShortName?.value),
+      page: 'https://' + f.host + '/wiki/File:' + encodeURIComponent(f.file.replace(/ /g, '_')) };
+  })().catch(() => null);
+  creditCache.set(key, pr);
+  return pr;
+}
+async function showCredit(card, item) {
+  if (!item.thumb || card.dataset.credit) return;
+  card.dataset.credit = '1';
+  const c = await imageCredit(item.thumb);
+  const stage = card.querySelector('.card-stage');
+  if (!stage) return;
+  const a = el('a', 'credit');
+  a.href = c?.page || item.thumb;
+  a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = '📷 ' + (c ? [c.artist || T('Wikimedia Commons', 'Wikimedia Commons'), c.license].filter(Boolean).join(' · ') : 'Wikimedia');
+  a.title = T('Bildquelle und Lizenz', 'Image source and licence');
+  a.onclick = e => e.stopPropagation();
+  stage.append(a);
+}
+
 // Funken, die beim Herz und beim Merken aus dem Knopf sprühen.
 function burst(btn, emojis) {
   btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
@@ -404,6 +446,7 @@ const viewObs = new IntersectionObserver(entries => {
     const item = cardItems.get(card);
     if (item) {
       markSeen(item.title);
+      showCredit(card, item);
       if (item.aotd) lstore.set('aotdSeen', today());
     }
     let after = 0;
@@ -456,7 +499,7 @@ function addCard(item, afterEl) {
   if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
-  body.append(meta, h, p);
+  body.append(meta, h, p, el('div', 'src', T('Wikipedia · CC BY-SA 4.0', 'Wikipedia · CC BY-SA 4.0')));
 
   // Seitenleiste im TikTok-Stil: Herz, Merken, Weniger davon, Teilen.
   const side = el('div', 'side');
@@ -574,16 +617,28 @@ const ART_CACHE = 'wikifeed-articles';
 const canCache = 'caches' in window;
 const artKey = t => 'offline-article/' + (LANG === 'de' ? '' : LANG + '/') + encodeURIComponent(t);
 
-function cleanArticle(htmlText) {
-  const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-  doc.querySelectorAll('script, link, meta, .navbox, .mw-references-wrap, .reflist, ol.references, sup.reference, .mw-editsection, .sisterproject, #normdaten, .mw-empty-elt').forEach(n => n.remove());
-  doc.querySelectorAll('img').forEach(img => {
-    const src = img.getAttribute('src');
-    if (src?.startsWith('//')) img.setAttribute('src', 'https:' + src);
-    const ss = img.getAttribute('srcset');
-    if (ss) img.setAttribute('srcset', ss.replace(/(^|,\s*)\/\//g, '$1https://'));
-    img.loading = 'lazy';
+// Fremdes HTML entschärfen: keine Skripte, Rahmen, Formulare, Ereignis-Attribute oder javascript:-Links.
+function sanitize(doc) {
+  doc.querySelectorAll('script, noscript, iframe, frame, object, embed, applet, form, input, button, textarea, select, base, link, meta').forEach(n => n.remove());
+  doc.querySelectorAll('*').forEach(n => {
+    for (const a of [...n.attributes]) {
+      const name = a.name.toLowerCase(), val = a.value.replace(/[\s\u0000-\u001f]/g, '').toLowerCase();
+      if (name.startsWith('on') || name === 'formaction' || name === 'srcdoc') n.removeAttribute(a.name);
+      else if (['href', 'src', 'xlink:href', 'action', 'poster', 'data'].includes(name) && /^(javascript|vbscript|data:text)/.test(val)) n.removeAttribute(a.name);
+    }
   });
+  return doc;
+}
+function cleanArticle(htmlText) {
+  const doc = sanitize(new DOMParser().parseFromString(htmlText, 'text/html'));
+  doc.querySelectorAll('.navbox, .mw-references-wrap, .reflist, ol.references, sup.reference, .mw-editsection, .sisterproject, #normdaten, .mw-empty-elt').forEach(n => n.remove());
+  // Adressen ohne Protokoll ("//upload.wikimedia.org/…") immer als https laden – auch bei Videos und Tönen.
+  doc.querySelectorAll('[src], [poster], [srcset]').forEach(n => {
+    for (const a of ['src', 'poster']) { const v = n.getAttribute(a); if (v?.startsWith('//')) n.setAttribute(a, 'https:' + v); }
+    const ss = n.getAttribute('srcset');
+    if (ss) n.setAttribute('srcset', ss.replace(/(^|,\s*)\/\//g, '$1https://'));
+  });
+  doc.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; });
   return doc;
 }
 async function fetchArticle(title) {
@@ -694,13 +749,14 @@ async function renderArticle(title, restoreScroll = 0) {
     // Gemerkte Artikel kommen sofort aus dem Offline-Speicher, alles andere aus dem Netz.
     const off = await offlineGet(title);
     let art;
-    if (off) art = { title: off.title, doc: new DOMParser().parseFromString(off.html, 'text/html'), offline: true };
+    if (off) art = { title: off.title, doc: sanitize(new DOMParser().parseFromString(off.html, 'text/html')), offline: true };
     else art = await fetchArticle(title);
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
     readerBody.append(el('h1', 'art-title', art.title));
     if (art.offline) readerBody.append(el('div', 'offnote', T('📥 Offline gespeichert', '📥 Saved offline')));
     readerBody.append(...art.doc.body.childNodes);
+    readerBody.append(sourceNote(art.title));
     readerScroll.scrollTop = restoreScroll;
     top.title = art.title;
   } catch (e) {
@@ -710,6 +766,17 @@ async function renderArticle(title, restoreScroll = 0) {
       ? T('Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (🔖) kannst du auch ohne Netz lesen.', 'You are offline and this article is not saved. Saved articles (🔖) can be read without a connection.')
       : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
   }
+}
+
+// Lizenzhinweis unter jedem Artikel (CC BY-SA verlangt Quelle, Autoren und Lizenz).
+function sourceNote(title) {
+  const base = 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
+  const box = el('p', 'art-source');
+  const link = (href, text) => { const a = el('a', null, text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
+  box.append(T('Quelle: Artikel „', 'Source: article “'), link(base, title), T('“ aus der Wikipedia. Text unter ', '” from Wikipedia. Text licensed under '),
+    link(T('https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'https://creativecommons.org/licenses/by-sa/4.0/'), 'CC BY-SA 4.0'),
+    T('. Autorinnen und Autoren: ', '. Authors: '), link(base.replace('/wiki/', '/w/index.php?action=history&title='), T('Versionsgeschichte', 'version history')), '.');
+  return box;
 }
 
 // ---------- Vorlesen ----------
@@ -1319,6 +1386,15 @@ panelInput.oninput = () => {
   document.documentElement.style.setProperty('--panel', panelInput.value);
   panelShow(panelInput.value);
   store.set('panel', Number(panelInput.value));
+};
+
+// ---------- Alle Daten auf diesem Gerät löschen ----------
+$('wipe').onclick = async () => {
+  if (!confirm(T('Wirklich alles löschen? Gemerkte Artikel, Antworten, Einstellungen und Gelerntes sind danach weg. Das lässt sich nicht rückgängig machen.',
+    'Really delete everything? Saved articles, answers, settings and what the app has learned will be gone. This cannot be undone.'))) return;
+  try { Object.keys(localStorage).filter(k => k.startsWith('wf.')).forEach(k => localStorage.removeItem(k)); } catch {}
+  try { if ('caches' in window) await caches.delete(ART_CACHE); } catch {}
+  location.reload();
 };
 
 // ---------- Leser: Lesefortschritt ----------

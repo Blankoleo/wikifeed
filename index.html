@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <!-- Sicherheitsregel: Die Seite darf nur eigene Skripte ausführen und Inhalte nur von Wikipedia/Wikimedia laden. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org; media-src https://*.wikimedia.org; connect-src 'self' https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07080d">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,17 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <script>
-    (function () {
-      var t; try { t = JSON.parse(localStorage.getItem('wf.theme')); } catch (e) {}
-      if (['sand', 'salbei', 'himmel', 'rose', 'nacht'].indexOf(t) < 0) t = 'sand';
-      document.documentElement.dataset.theme = t;
-      var pn; try { pn = JSON.parse(localStorage.getItem('wf.panel')); } catch (e) {}
-      if (pn >= 30 && pn <= 75) document.documentElement.style.setProperty('--panel', pn);
-      // Helle Schemata: dunkle Schrift in der Statusleiste (wirkt nach einem Neustart der App)
-      if (t !== 'nacht') document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'default';
-    })();
-  </script>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
   <title>WikiFeed</title>
 </head>
@@ -131,7 +123,24 @@
           <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
         </details>
       </div>
-      <p class="version">WikiFeed · Version 16<br><span id="dims"></span></p>
+      <h3 class="set-h" data-en="About this app">Über diese App</h3>
+      <div class="set-group">
+        <details class="set-more">
+          <summary data-en="Sources &amp; licences">Quellen &amp; Lizenzen</summary>
+          <p data-en="Article texts come from Wikipedia and are licensed under CC BY-SA 4.0; the authors are listed in each article’s version history (↗ in the reader opens the original). Pictures come from Wikimedia Commons or Wikipedia, each under its own licence – author and licence are shown on the picture.">Artikeltexte stammen aus der Wikipedia und stehen unter der Lizenz CC BY-SA 4.0; die Autorinnen und Autoren stehen in der Versionsgeschichte des jeweiligen Artikels (↗ im Leser öffnet das Original). Bilder stammen von Wikimedia Commons bzw. Wikipedia, jeweils unter eigener Lizenz – Urheber und Lizenz stehen auf dem Bild.</p>
+          <p data-en="Thought experiments and the trolley classics: own texts by WikiFeed. Dilemma stack: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Survey figures: Awad et al. (2020), PNAS 117(5).">Gedankenspiele und Trolley-Klassiker: eigene Texte von WikiFeed. Dilemma-Stapel: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Umfragezahlen: Awad u. a. (2020), PNAS 117(5).</p>
+          <p data-en="WikiFeed is not affiliated with Wikipedia or the Wikimedia Foundation.">WikiFeed ist kein Angebot der Wikipedia oder der Wikimedia Foundation.</p>
+        </details>
+        <details class="set-more">
+          <summary data-en="Privacy">Datenschutz</summary>
+          <p data-en="WikiFeed has no accounts, no advertising, no tracking and no server of its own. Everything you save, like or answer stays on this device only (browser storage) and is never sent anywhere.">WikiFeed hat keine Konten, keine Werbung, kein Tracking und keinen eigenen Server. Alles, was du merkst, magst oder beantwortest, bleibt nur auf diesem Gerät (Browser-Speicher) und wird nirgendwohin geschickt.</p>
+          <p data-en="To show articles and pictures, your device loads them directly from Wikipedia/Wikimedia (Wikimedia Foundation, USA). The app itself is delivered by GitHub Pages (GitHub Inc., USA). Both technically receive your IP address and browser details, as with any website, and process them under their own privacy policies.">Um Artikel und Bilder anzuzeigen, lädt dein Gerät sie direkt bei Wikipedia/Wikimedia (Wikimedia Foundation, USA). Die App selbst wird von GitHub Pages (GitHub Inc., USA) ausgeliefert. Beide erhalten dabei technisch – wie bei jeder Website – deine IP-Adresse und Browserangaben und verarbeiten sie nach ihren eigenen Datenschutzerklärungen.</p>
+          <p data-en="Reading aloud uses your device’s built-in voice; the tilt effect reads the motion sensor only on the device.">Vorlesen nutzt die eingebaute Stimme deines Geräts, der Neige-Effekt liest den Lagesensor nur auf dem Gerät.</p>
+          <p><a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" target="_blank" rel="noopener" data-en="Wikimedia privacy policy ↗">Datenschutz Wikimedia ↗</a> · <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener" data-en="GitHub privacy statement ↗">Datenschutz GitHub ↗</a></p>
+        </details>
+        <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
+      </div>
+      <p class="version">WikiFeed · Version 17<br><span id="dims"></span></p>
     </div>
   </section>
 
