@@ -641,10 +641,19 @@ function cleanArticle(htmlText) {
   doc.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; });
   return doc;
 }
+// Zuletzt gelesene Artikel bleiben im Speicher: Zurückgehen oder erneutes Öffnen lädt nichts nach.
+const articleMem = new Map();
 async function fetchArticle(title) {
-  const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
-  if (d.error) throw new Error(d.error.info);
-  return { title: d.parse.title, doc: cleanArticle(d.parse.text) };
+  let a = articleMem.get(title);
+  if (!a) {
+    const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
+    if (d.error) throw new Error(d.error.info);
+    a = { title: d.parse.title, html: d.parse.text };
+    articleMem.set(title, a);
+    articleMem.set(a.title, a);
+    while (articleMem.size > 40) articleMem.delete(articleMem.keys().next().value);
+  }
+  return { title: a.title, doc: cleanArticle(a.html) };
 }
 async function offlineGet(title) {
   if (!canCache) return null;
@@ -726,22 +735,37 @@ const readerScroll = document.getElementById('reader-scroll');
 const readerStack = [];
 let readSession = null; // { item, start }
 
-async function openReader(title, item = null) {
+// Wenn der Leser gerade geschlossen wurde, läuft history.back() noch – erst danach neu öffnen,
+// sonst landet der neue Eintrag im Verlauf durcheinander und der Leser schließt sich sofort wieder.
+let popPending = null, popResolve = null;
+function waitPop() {
+  popPending = new Promise(res => { popResolve = res; setTimeout(res, 600); }).then(() => { popPending = null; popResolve = null; });
+}
+async function openReader(title, item = null, restoreScroll = 0) {
+  if (popPending) await popPending;
   if (!readerStack.length) {
     readSession = { item, start: Date.now() };
     history.pushState({ reader: true }, '');
+  } else {
+    // aktuellen Artikel samt Scrollstelle aufheben, damit „Zurück“ sofort wieder da ist
+    const cur = readerStack[readerStack.length - 1];
+    cur.scroll = readerScroll.scrollTop;
+    if (cur.loaded) { cur.frag = document.createDocumentFragment(); cur.frag.append(...readerBody.childNodes); }
   }
   readerStack.push({ title, item, scroll: 0 });
-  if (readerStack.length > 1) readerStack[readerStack.length - 2].scroll = readerScroll.scrollTop;
   reader.hidden = false;
-  await renderArticle(title);
+  saveSnapSoon();
+  await renderArticle(title, restoreScroll);
+}
+function setReaderHead(title) {
+  $('reader-title').textContent = title;
+  $('reader-ext').href = 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
+  $('reader-save').classList.toggle('on', isSaved(title));
 }
 
 async function renderArticle(title, restoreScroll = 0) {
   const top = readerStack[readerStack.length - 1];
-  document.getElementById('reader-title').textContent = title;
-  document.getElementById('reader-ext').href = 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
-  document.getElementById('reader-save').classList.toggle('on', isSaved(title));
+  setReaderHead(title);
   ttsStop();
   readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>' + T('Lade Artikel …', 'Loading article …') + '</div>';
   readerScroll.scrollTop = 0;
@@ -759,6 +783,8 @@ async function renderArticle(title, restoreScroll = 0) {
     readerBody.append(sourceNote(art.title));
     readerScroll.scrollTop = restoreScroll;
     top.title = art.title;
+    top.loaded = true;
+    setReaderHead(art.title);
   } catch (e) {
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
@@ -949,8 +975,18 @@ function readerBack(fromPopstate = false) {
   readerStack.pop();
   if (readerStack.length) {
     const prev = readerStack[readerStack.length - 1];
-    renderArticle(prev.title, prev.scroll);
+    if (prev.frag) {
+      // aufgehobenen Artikel einfach wieder einsetzen – kein Laden, keine Fehlermeldung
+      ttsStop();
+      setReaderHead(prev.title);
+      readerBody.innerHTML = '';
+      readerBody.append(prev.frag);
+      prev.frag = null;
+      readerScroll.scrollTop = prev.scroll;
+      requestAnimationFrame(() => { readerScroll.scrollTop = prev.scroll; });
+    } else renderArticle(prev.title, prev.scroll);
     if (fromPopstate) history.pushState({ reader: true }, '');
+    saveSnapSoon();
     return;
   }
   closeReader(fromPopstate);
@@ -973,10 +1009,12 @@ function closeReader(fromPopstate) {
     }
     readSession = null;
   }
-  if (!fromPopstate && history.state?.reader) history.back();
+  if (!fromPopstate && history.state?.reader) { waitPop(); history.back(); }
+  saveSnapSoon();
 }
 document.getElementById('reader-back').onclick = () => readerBack(false);
 window.addEventListener('popstate', e => {
+  if (popResolve) { popResolve(); return; } // das war unser eigenes history.back() beim Schließen
   if (!reader.hidden) readerBack(true);
   else if (!thinkEl.hidden && !e.state?.think) closeThink(true);
 });
@@ -1447,10 +1485,49 @@ if (LANG === 'en') {
 $('lang-select').value = LANG;
 $('lang-select').onchange = e => { store.set('lang', e.target.value); location.reload(); };
 
+// ---------- Feed-Zustand über ein Neuladen hinweg behalten ----------
+// Lädt sich die App neu (Update, iPhone hat sie im Hintergrund beendet), geht es an derselben Karte weiter –
+// mit den Karten davor und danach, und ein offener Artikel öffnet sich wieder an derselben Stelle.
+const SNAP_KEY = 'wf.snap';
+let snapTimer = null;
+function saveSnap() {
+  clearTimeout(snapTimer);
+  try {
+    const cards = [...feedEl.querySelectorAll('.card')].filter(c => cardItems.has(c));
+    if (!cards.length) return;
+    const h = feedEl.clientHeight || 1;
+    let idx = cards.findIndex(c => c.offsetTop + h / 2 > feedEl.scrollTop);
+    if (idx < 0) idx = cards.length - 1;
+    const from = Math.max(0, idx - 30);
+    const top = readerStack[readerStack.length - 1];
+    sessionStorage.setItem(SNAP_KEY, JSON.stringify({
+      t: Date.now(), lang: LANG, idx: idx - from,
+      items: cards.slice(from, idx + 30).map(c => cardItems.get(c)),
+      reader: !reader.hidden && top ? { title: top.title, scroll: readerScroll.scrollTop } : null,
+    }));
+  } catch {}
+}
+function saveSnapSoon() { clearTimeout(snapTimer); snapTimer = setTimeout(saveSnap, 500); }
+function restoreSnap() {
+  let s;
+  try { s = JSON.parse(sessionStorage.getItem(SNAP_KEY)); } catch {}
+  if (!s || s.lang !== LANG || !s.items?.length || Date.now() - s.t > 6 * 3600e3) return false;
+  s.items.forEach(it => addCard(it));
+  const card = [...feedEl.querySelectorAll('.card')][Math.min(s.idx, s.items.length - 1)];
+  if (card) feedEl.scrollTop = card.offsetTop;
+  feedFx();
+  if (s.reader?.title) openReader(s.reader.title, null, s.reader.scroll || 0);
+  return true;
+}
+feedEl.addEventListener('scroll', saveSnapSoon, { passive: true });
+readerScroll.addEventListener('scroll', saveSnapSoon, { passive: true });
+window.addEventListener('pagehide', saveSnap);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnap(); });
+
 // ---------- Start ----------
 renderSaved();
 updateThinkDot();
-loadMore();
+if (!restoreSnap()) loadMore();
 setTimeout(offlineBackfill, 4000);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').then(reg => {

@@ -597,6 +597,12 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 .reader-body figcaption, .reader-body .thumbcaption { font: 14px/1.4 -apple-system, sans-serif; color: #666; }
 .reader-body table { display: block; max-width: 100%; overflow-x: auto; font: 14px/1.4 -apple-system, sans-serif; border-collapse: collapse; }
 .reader-body .infobox, .reader-body table.wikitable { margin: 12px 0; }
+/* Auf dem Handy nichts neben den Text schieben: Infokästen und Bilder stehen über die volle Breite. */
+.reader-body table, .reader-body .infobox, .reader-body .float-right, .reader-body .float-left, .reader-body .tright, .reader-body .tleft,
+.reader-body .floatright, .reader-body .floatleft, .reader-body figure, .reader-body .thumb {
+  float: none !important; clear: both; margin-left: 0 !important; margin-right: 0 !important; max-width: 100% !important; }
+.reader-body table.infobox, .reader-body .infobox { width: 100% !important; }
+.reader-body .thumbinner { width: auto !important; max-width: 100%; }
 .reader-body td, .reader-body th { padding: 4px 6px; vertical-align: top; }
 .reader-body .mw-editsection, .reader-body .navbox, .reader-body .noprint, .reader-body .metadata,
 .reader-body sup.reference, .reader-body .mw-empty-elt, .reader-body .sisterproject, .reader-body #normdaten,
