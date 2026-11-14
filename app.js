@@ -1389,6 +1389,7 @@ document.getElementById('reset').onclick = () => {
 document.querySelectorAll('.tabbar button').forEach(btn => {
   btn.onclick = () => {
     const v = btn.dataset.view;
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('from-left', 'from-right'));
     document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b === btn));
     btn.parentElement.style.setProperty('--i', [...btn.parentElement.querySelectorAll('button')].indexOf(btn));
     document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
@@ -1400,6 +1401,55 @@ document.querySelectorAll('.tabbar button').forEach(btn => {
     if (v === 'feed') feedFx();
   };
 });
+
+// ---------- Seitlich wischen zwischen den Bereichen ----------
+// Nach links wischen = nächster Tab, nach rechts = vorheriger. Nicht, solange ein Artikel, Gedankenspiel oder das Spiel offen ist,
+// und nicht auf Elementen, die selbst seitlich bewegt werden (Schieberegler, Filterleiste, Auswahllisten).
+const TAB_ORDER = [...document.querySelectorAll('.tabbar button')].map(b => b.dataset.view);
+const sheetOpen = () => !reader.hidden || !thinkEl.hidden || !$('game').hidden;
+const swipe = { on: false, x: 0, y: 0, t: 0, dx: 0, dir: null, view: null };
+document.addEventListener('touchstart', e => {
+  const tch = e.touches[0];
+  if (e.touches.length !== 1 || sheetOpen()) return;
+  if (tch.clientX < 24 || tch.clientX > innerWidth - 24) return;               // Bildschirmrand gehört dem System
+  if (e.target.closest('input, select, textarea, .fchips, .tabbar')) return;
+  const view = document.querySelector('.view.active');
+  if (!view) return;
+  Object.assign(swipe, { on: true, x: tch.clientX, y: tch.clientY, t: performance.now(), dx: 0, dir: null, view });
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!swipe.on) return;
+  const tch = e.touches[0], dx = tch.clientX - swipe.x, dy = tch.clientY - swipe.y;
+  if (!swipe.dir) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.4 ? 'x' : 'y';                 // erst entscheiden: seitlich oder hoch/runter
+    if (swipe.dir === 'y') { swipe.on = false; return; }
+    swipe.view.style.transition = 'none';
+  }
+  const i = TAB_ORDER.indexOf(swipe.view.id.replace('view-', ''));
+  const edge = (dx > 0 && i === 0) || (dx < 0 && i === TAB_ORDER.length - 1);
+  swipe.dx = dx;
+  swipe.view.style.transform = `translate3d(${dx * (edge ? .12 : .35)}px, 0, 0)`; // am Ende nur leicht nachgeben
+  swipe.view.style.opacity = String(1 - Math.min(Math.abs(dx) / innerWidth, .5) * .6);
+}, { passive: true });
+function swipeEnd() {
+  if (!swipe.on) return;
+  swipe.on = false;
+  const v = swipe.view, dx = swipe.dx;
+  v.style.transition = ''; v.style.transform = ''; v.style.opacity = '';
+  if (swipe.dir !== 'x') return;
+  const fast = Math.abs(dx) / Math.max(1, performance.now() - swipe.t) > .45;
+  if (Math.abs(dx) < 70 && !(fast && Math.abs(dx) > 30)) return;
+  const i = TAB_ORDER.indexOf(v.id.replace('view-', '')) + (dx < 0 ? 1 : -1);
+  if (i < 0 || i >= TAB_ORDER.length) return;
+  document.querySelector(`.tabbar button[data-view="${TAB_ORDER[i]}"]`).click();
+  const nv = $('view-' + TAB_ORDER[i]);
+  nv.classList.remove('from-left', 'from-right');
+  void nv.offsetWidth;
+  nv.classList.add(dx < 0 ? 'from-right' : 'from-left');
+}
+document.addEventListener('touchend', swipeEnd, { passive: true });
+document.addEventListener('touchcancel', swipeEnd, { passive: true });
 
 let toastTimer;
 function toast(msg) {

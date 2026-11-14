@@ -143,6 +143,12 @@ body:has(#view-feed.active) .aurora i { display: none; }
 .view.active { display: block; animation: view-in .45s var(--ease); }
 #view-feed { padding: 0; overflow: hidden; }
 @keyframes view-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+/* Seitliches Wischen: Hoch/runter scrollt der Browser selbst, seitlich übernimmt die App. */
+.view { touch-action: pan-y; }
+.view.active.from-right { animation: slide-r .38s var(--ease); }
+.view.active.from-left { animation: slide-l .38s var(--ease); }
+@keyframes slide-r { from { opacity: .3; transform: translate3d(28%, 0, 0); } }
+@keyframes slide-l { from { opacity: .3; transform: translate3d(-28%, 0, 0); } }
 /* Liegt ein Blatt (Leser, Gedankenspiel, Spiel) darüber, rückt die Ansicht dahinter nach hinten. */
 body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hidden])) .view.active { transform: scale(.93); opacity: .35; }
 body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hidden])) :is(.card, .aurora) * { animation-play-state: paused !important; }
