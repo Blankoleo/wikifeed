@@ -1386,67 +1386,106 @@ document.getElementById('reset').onclick = () => {
 };
 
 // ---------- Navigation ----------
-document.querySelectorAll('.tabbar button').forEach(btn => {
-  btn.onclick = () => {
-    const v = btn.dataset.view;
-    document.querySelectorAll('.view').forEach(x => x.classList.remove('from-left', 'from-right'));
-    document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b === btn));
-    btn.parentElement.style.setProperty('--i', [...btn.parentElement.querySelectorAll('button')].indexOf(btn));
-    document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
-    if (v === 'topics') renderTopics();
-    if (v === 'saved') renderSaved();
-    if (v === 'think') renderDenken();
-    if (v === 'search' && !searchInput.value.trim()) { searchList.innerHTML = ''; renderSearchHint(); }
-    if (v === 'feed' && topicsDirty) { topicsDirty = false; resetFeed(); }
-    if (v === 'feed') feedFx();
-  };
-});
+const TAB_ORDER = [...document.querySelectorAll('.tabbar button')].map(b => b.dataset.view);
+const tabbarEl = document.querySelector('.tabbar');
+// Inhalt eines Bereichs aufbauen (auch schon, während er beim Wischen hereingleitet)
+function renderView(v) {
+  if (v === 'topics') renderTopics();
+  if (v === 'saved') renderSaved();
+  if (v === 'think') renderDenken();
+  if (v === 'search' && !searchInput.value.trim()) { searchList.innerHTML = ''; renderSearchHint(); }
+}
+function activateView(v, { anim = true, rendered = false } = {}) {
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  tabbarEl.style.setProperty('--i', TAB_ORDER.indexOf(v));
+  document.querySelectorAll('.view').forEach(x => {
+    x.classList.toggle('active', x.id === 'view-' + v);
+    x.classList.toggle('no-anim', !anim);
+  });
+  if (!rendered) renderView(v);
+  if (v === 'feed' && topicsDirty) { topicsDirty = false; resetFeed(); }
+  if (v === 'feed') feedFx();
+}
+document.querySelectorAll('.tabbar button').forEach(btn => { btn.onclick = () => activateView(btn.dataset.view); });
 
 // ---------- Seitlich wischen zwischen den Bereichen ----------
-// Nach links wischen = nächster Tab, nach rechts = vorheriger. Nicht, solange ein Artikel, Gedankenspiel oder das Spiel offen ist,
-// und nicht auf Elementen, die selbst seitlich bewegt werden (Schieberegler, Filterleiste, Auswahllisten).
-const TAB_ORDER = [...document.querySelectorAll('.tabbar button')].map(b => b.dataset.view);
+// Die Seite folgt dem Finger 1:1, die Nachbarseite gleitet daneben herein, die Leuchtmarke unten wandert mit.
+// Nicht, solange ein Artikel, Gedankenspiel oder das Spiel offen ist, und nicht auf Elementen,
+// die selbst seitlich bewegt werden (Schieberegler, Filterleiste, Auswahllisten) oder am Bildschirmrand.
 const sheetOpen = () => !reader.hidden || !thinkEl.hidden || !$('game').hidden;
-const swipe = { on: false, x: 0, y: 0, t: 0, dx: 0, dir: null, view: null };
+const swipe = { on: false, busy: false };
+const SWIPE_EASE = 'transform .34s cubic-bezier(.22, .9, .25, 1)';
+function setX(el, x, ease) {
+  el.style.transition = ease || 'none';
+  el.style.transform = x == null ? '' : `translate3d(${x}px, 0, 0)`;
+}
+function clearPeek() {
+  document.querySelectorAll('.view.peek').forEach(p => { p.classList.remove('peek'); setX(p, null); p.style.transition = ''; });
+}
 document.addEventListener('touchstart', e => {
   const tch = e.touches[0];
-  if (e.touches.length !== 1 || sheetOpen()) return;
-  if (tch.clientX < 24 || tch.clientX > innerWidth - 24) return;               // Bildschirmrand gehört dem System
+  if (swipe.busy || e.touches.length !== 1 || sheetOpen()) return;
+  if (tch.clientX < 24 || tch.clientX > innerWidth - 24) return;
   if (e.target.closest('input, select, textarea, .fchips, .tabbar')) return;
-  const view = document.querySelector('.view.active');
-  if (!view) return;
-  Object.assign(swipe, { on: true, x: tch.clientX, y: tch.clientY, t: performance.now(), dx: 0, dir: null, view });
+  const cur = document.querySelector('.view.active');
+  if (!cur) return;
+  Object.assign(swipe, { on: true, x: tch.clientX, y: tch.clientY, dx: 0, dir: null, cur, idx: TAB_ORDER.indexOf(cur.id.replace('view-', '')),
+    nb: null, nbIdx: -1, w: innerWidth, vx: 0, lx: tch.clientX, lt: performance.now() });
 }, { passive: true });
 document.addEventListener('touchmove', e => {
   if (!swipe.on) return;
   const tch = e.touches[0], dx = tch.clientX - swipe.x, dy = tch.clientY - swipe.y;
   if (!swipe.dir) {
-    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-    swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.4 ? 'x' : 'y';                 // erst entscheiden: seitlich oder hoch/runter
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
     if (swipe.dir === 'y') { swipe.on = false; return; }
-    swipe.view.style.transition = 'none';
+    swipe.cur.style.willChange = 'transform';
+    tabbarEl.classList.add('dragging');
   }
-  const i = TAB_ORDER.indexOf(swipe.view.id.replace('view-', ''));
-  const edge = (dx > 0 && i === 0) || (dx < 0 && i === TAB_ORDER.length - 1);
+  // Geschwindigkeit aus den letzten Bewegungen (für einen schnellen „Schubs“)
+  const now = performance.now();
+  if (now > swipe.lt) { swipe.vx = swipe.vx * .4 + (tch.clientX - swipe.lx) / (now - swipe.lt) * .6; }
+  swipe.lx = tch.clientX; swipe.lt = now;
   swipe.dx = dx;
-  swipe.view.style.transform = `translate3d(${dx * (edge ? .12 : .35)}px, 0, 0)`; // am Ende nur leicht nachgeben
-  swipe.view.style.opacity = String(1 - Math.min(Math.abs(dx) / innerWidth, .5) * .6);
+  const nbIdx = swipe.idx + (dx < 0 ? 1 : -1);
+  const valid = nbIdx >= 0 && nbIdx < TAB_ORDER.length;
+  if (nbIdx !== swipe.nbIdx) {                       // Richtung gewechselt: andere Nachbarseite zeigen
+    clearPeek();
+    swipe.nbIdx = nbIdx;
+    swipe.nb = valid ? $('view-' + TAB_ORDER[nbIdx]) : null;
+    if (swipe.nb) { renderView(TAB_ORDER[nbIdx]); swipe.nb.classList.add('peek'); swipe.nb.style.willChange = 'transform'; }
+  }
+  if (swipe.nb) {
+    setX(swipe.cur, dx);
+    setX(swipe.nb, dx + (dx < 0 ? swipe.w : -swipe.w));
+    tabbarEl.style.setProperty('--i', swipe.idx - dx / swipe.w);
+  } else setX(swipe.cur, dx * .22);                 // am Ende nur leicht nachgeben
 }, { passive: true });
 function swipeEnd() {
   if (!swipe.on) return;
   swipe.on = false;
-  const v = swipe.view, dx = swipe.dx;
-  v.style.transition = ''; v.style.transform = ''; v.style.opacity = '';
+  const { cur, nb, dx, w, idx, nbIdx } = swipe;
+  tabbarEl.classList.remove('dragging');
   if (swipe.dir !== 'x') return;
-  const fast = Math.abs(dx) / Math.max(1, performance.now() - swipe.t) > .45;
-  if (Math.abs(dx) < 70 && !(fast && Math.abs(dx) > 30)) return;
-  const i = TAB_ORDER.indexOf(v.id.replace('view-', '')) + (dx < 0 ? 1 : -1);
-  if (i < 0 || i >= TAB_ORDER.length) return;
-  document.querySelector(`.tabbar button[data-view="${TAB_ORDER[i]}"]`).click();
-  const nv = $('view-' + TAB_ORDER[i]);
-  nv.classList.remove('from-left', 'from-right');
-  void nv.offsetWidth;
-  nv.classList.add(dx < 0 ? 'from-right' : 'from-left');
+  const commit = nb && (Math.abs(dx) > w * .28 || (Math.abs(swipe.vx) > .35 && Math.sign(swipe.vx) === Math.sign(dx)));
+  swipe.busy = true;
+  const done = () => {
+    cur.style.willChange = ''; setX(cur, null); cur.style.transition = '';
+    if (commit) activateView(TAB_ORDER[nbIdx], { anim: false, rendered: true });
+    clearPeek();
+    if (nb) nb.style.willChange = '';
+    swipe.busy = false;
+  };
+  if (commit) {
+    setX(cur, dx < 0 ? -w : w, SWIPE_EASE);
+    setX(nb, 0, SWIPE_EASE);
+    tabbarEl.style.setProperty('--i', nbIdx);
+  } else {
+    setX(cur, 0, SWIPE_EASE);
+    if (nb) setX(nb, dx < 0 ? w : -w, SWIPE_EASE);
+    tabbarEl.style.setProperty('--i', idx);
+  }
+  setTimeout(done, 350);
 }
 document.addEventListener('touchend', swipeEnd, { passive: true });
 document.addEventListener('touchcancel', swipeEnd, { passive: true });

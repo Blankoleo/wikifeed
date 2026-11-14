@@ -132,7 +132,7 @@ body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 
 .aurora i:nth-child(2) { right: -50vmax; top: 5vmax; background: radial-gradient(closest-side, var(--au2), transparent); animation: blob-b 32s ease-in-out infinite alternate; }
 .aurora i:nth-child(3) { left: -25vmax; bottom: -60vmax; background: radial-gradient(closest-side, var(--au3), transparent); animation: blob-c 29s ease-in-out infinite alternate; }
 .aurora::after { content: ""; position: absolute; inset: 0; background: var(--grain); opacity: var(--grain-op); mix-blend-mode: overlay; }
-body:has(#view-feed.active) .aurora i { display: none; }
+body:has(#view-feed.active) .aurora i { opacity: 0; animation-play-state: paused; }
 @keyframes blob-a { to { transform: translate3d(18vmax, 14vmax, 0) scale(1.15); } }
 @keyframes blob-b { to { transform: translate3d(-20vmax, 22vmax, 0) scale(.85); } }
 @keyframes blob-c { to { transform: translate3d(22vmax, -18vmax, 0) scale(1.2); } }
@@ -145,10 +145,9 @@ body:has(#view-feed.active) .aurora i { display: none; }
 @keyframes view-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
 /* Seitliches Wischen: Hoch/runter scrollt der Browser selbst, seitlich übernimmt die App. */
 .view { touch-action: pan-y; }
-.view.active.from-right { animation: slide-r .38s var(--ease); }
-.view.active.from-left { animation: slide-l .38s var(--ease); }
-@keyframes slide-r { from { opacity: .3; transform: translate3d(28%, 0, 0); } }
-@keyframes slide-l { from { opacity: .3; transform: translate3d(-28%, 0, 0); } }
+.view.peek { display: block; pointer-events: none; }
+.view.active.no-anim { animation: none; }
+.tabbar.dragging .tab-ind { transition: none; }
 /* Liegt ein Blatt (Leser, Gedankenspiel, Spiel) darüber, rückt die Ansicht dahinter nach hinten. */
 body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hidden])) .view.active { transform: scale(.93); opacity: .35; }
 body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hidden])) :is(.card, .aurora) * { animation-play-state: paused !important; }
