@@ -218,7 +218,7 @@ function closeTrolley(fromPopstate) {
 $('game-back').onclick = () => { if (gameMode) renderGameMenu(); else closeTrolley(false); };
 window.addEventListener('popstate', e => { if (!gameEl.hidden && !e.state?.trolley) closeTrolley(true); });
 
-function screen(title) {
+function gameScreen(title) {
   $('game-title').textContent = title;
   gameBody.innerHTML = '';
   gameScroll.scrollTop = 0;
@@ -248,7 +248,7 @@ function choiceButtons(yes, no, onPick) {
 
 function renderGameMenu() {
   gameMode = null;
-  const b = screen(T('Weichensteller', 'Pull the Lever'));
+  const b = gameScreen(T('Weichensteller', 'Pull the Lever'));
   b.append(el('div', 'ghero', '🚋'), el('h1', null, T('Weichensteller', 'Pull the Lever')),
     el('p', 'gintro', T('Eine Bahn rast heran, und du stehst am Hebel. Jede Entscheidung kostet jemanden das Leben – auch die, nichts zu tun.', 'A tram is hurtling closer, and you are at the lever. Every decision costs someone their life – including the decision to do nothing.')));
   const cDone = TROLLEY_CLASSICS.filter(c => tg.classics[c.id] != null).length;
@@ -318,7 +318,7 @@ function startClassics() {
 }
 function showClassic(i) {
   const c = TROLLEY_CLASSICS[i];
-  const b = screen(T('Klassiker', 'Classics'));
+  const b = gameScreen(T('Klassiker', 'Classics'));
   const sc = makeScene(c);
   b.append(el('p', 'gstep', T(`Fall ${i + 1} von ${TROLLEY_CLASSICS.length}`, `Case ${i + 1} of ${TROLLEY_CLASSICS.length}`)), el('h2', null, c.title), sc.el, el('p', null, c.text), el('p', 'gq', c.q));
   b.append(choiceButtons(c.yes, c.no, async yes => {
@@ -380,7 +380,7 @@ let endlessRun = 0;
 function startEndless() { gameMode = 'endless'; endlessRun = 0; showEndless(); }
 function showEndless() {
   const cs = rollCase();
-  const b = screen(T('Endlos', 'Endless'));
+  const b = gameScreen(T('Endlos', 'Endless'));
   const sc = makeScene({ scene: 'switch', main: grpEmoji(cs.main), side: grpEmoji(cs.side) });
   const line = (label, g, note) => { const p = el('p', 'gline'); p.append(el('b', null, label + ': '), grpText(g) + (note ? ` (${note})` : '')); return p; };
   b.append(el('p', 'gstep', T(`Runde ${endlessRun + 1} von 10`, `Round ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the tram hits the main track.')));
@@ -406,7 +406,7 @@ function showEndless() {
   }));
 }
 function showEndlessSummary() {
-  const b = screen(T('Endlos', 'Endless'));
+  const b = gameScreen(T('Endlos', 'Endless'));
   b.append(el('div', 'ghero', '📊'), el('h2', null, T('Dein Muster', 'Your pattern')), el('p', 'gintro', T(`Ausgewertet sind alle ${tg.endless.n} Runden, die du bisher gespielt hast.`, `This covers all ${tg.endless.n} rounds you have played so far.`)));
   const pat = patternBlock();
   if (pat) b.append(pat);
@@ -435,7 +435,7 @@ function startStack() {
   gameMode = 'stack';
   const done = TROLLEY_STACK.filter(d => tg.stack[d.n] != null).length;
   if (done > 0 && done < TROLLEY_STACK.length) return showStack();
-  const b = screen(T('Dilemma-Stapel', 'Dilemma stack'));
+  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
   b.append(el('div', 'ghero', '📚'), el('h2', null, T('Dilemma-Stapel', 'Dilemma stack')),
     el('p', null, T('Diese 46 Fälle stammen aus der psychologischen Forschung. Jedes Szenario kommt zweimal vor, in zwei Varianten, die sich in einem entscheidenden Detail unterscheiden.', 'These 46 cases come from psychological research. Each scenario appears twice, in two variants that differ in one decisive detail.')),
     el('p', null, T('Sie sind bewusst hart: Es geht immer um Leben und Tod, manchmal um Kinder. Du kannst jederzeit aufhören, dein Stand bleibt gespeichert.', 'They are deliberately tough: it is always about life and death, sometimes about children. You can stop at any time; your progress is saved.')));
@@ -451,7 +451,7 @@ function showStack() {
   const d = TROLLEY_STACK.find(x => x.n === n);
   const [icon, title] = TROLLEY_STACK_TITLES[d.s];
   const done = order.filter(x => tg.stack[x] != null).length;
-  const b = screen(T('Dilemma-Stapel', 'Dilemma stack'));
+  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
   b.append(el('p', 'gstep', T(`Fall ${done + 1} von ${order.length}`, `Case ${done + 1} of ${order.length}`)), el('div', 'ghero small', icon), el('h2', null, title), el('p', null, d.text), el('p', null, d.act), el('p', 'gq', d.q));
   b.append(choiceButtons(T('Ja', 'Yes'), T('Nein', 'No'), yes => {
     tg.stack[d.n] = yes ? 1 : 0;
@@ -468,7 +468,7 @@ function showStack() {
   }));
 }
 function showStackEnd() {
-  const b = screen(T('Dilemma-Stapel', 'Dilemma stack'));
+  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
   b.append(el('div', 'ghero', '🏁'), el('h2', null, T('Alle 46 Fälle beantwortet', 'All 46 cases answered')));
   const pat = patternBlock();
   if (pat) b.append(pat);

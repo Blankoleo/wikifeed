@@ -449,12 +449,11 @@ function addCard(item, afterEl) {
   if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
-  const read = el('button', 'read-btn', T('Weiterlesen →', 'Read more →'));
+  // Ein Tipp auf Bild oder Text öffnet den Artikel.
   const openIt = () => openReader(item.title, item);
-  read.onclick = openIt;
-  h.onclick = openIt;
-  p.onclick = openIt;
-  body.append(meta, h, p, read);
+  img.onclick = openIt;
+  body.onclick = openIt;
+  body.append(meta, h, p);
 
   const actions = el('div', 'actions');
   const mk = (cls, icon, label) => { const b = el('button', 'act ' + cls); b.textContent = icon; b.setAttribute('aria-label', label); return b; };
@@ -1067,25 +1066,55 @@ function thinkProfile() {
   }
   return { axes, right, total };
 }
-function thinkRow(t, sub) {
-  const li = el('li');
-  const rec = state.think[t.id];
-  const tx = el('div', 't');
-  tx.append(el('b', null, t.title), el('small', null, sub || (rec ? T('Deine Antwort: ', 'Your answer: ') + optLabel(t.opts[rec.a]) : t.q)));
-  li.append(el('div', 'thumb think-thumb', t.icon), tx);
-  if (rec) li.append(el('span', 'done', '✓'));
-  li.onclick = () => openThink(t.id);
-  return li;
+const FIELD_SHORT = {
+  ethik: T('Ethik', 'Ethics'), geist: T('Geist', 'Mind'), ich: T('Ich', 'Self'), physik: T('Physik', 'Physics'),
+  logik: T('Logik', 'Logic'), wahl: T('Entscheiden', 'Decisions'), wissen: T('Wissen', 'Knowledge'),
+};
+let thinkFilter = 'all';
+function thinkTile(t, i) {
+  const done = !!state.think[t.id];
+  const b = el('button', 'ttile' + (done ? ' done' : ''));
+  b.style.animationDelay = Math.min(i * .03, .3) + 's';
+  b.append(el('span', 'tt-i', t.icon), el('b', null, t.title), el('small', null, done ? T('Beantwortet', 'Answered') : FIELD_SHORT[t.field]));
+  b.onclick = () => openThink(t.id);
+  return b;
+}
+function renderThinkGrid(grid) {
+  grid.innerHTML = '';
+  THOUGHTS.filter(t => thinkFilter === 'all' || t.field === thinkFilter).forEach((t, i) => grid.append(thinkTile(t, i)));
 }
 function renderDenken() {
   const box = $('think-list');
+  const keep = $('view-think').scrollTop;
   box.innerHTML = '';
   if (typeof THOUGHTS === 'undefined') return;
   const done = THOUGHTS.filter(t => state.think[t.id]).length;
   $('think-stats').textContent = T(`${done} von ${THOUGHTS.length} durchdacht`, `${done} of ${THOUGHTS.length} explored`);
+  const prog = el('div', 'think-prog'); const pi = el('i'); pi.style.width = (done / THOUGHTS.length * 100) + '%'; prog.append(pi);
+  box.append(prog);
 
-  // Einstieg ins Trolley-Spiel (trolley.js)
+  // 1) Heute: das Gedankenspiel des Tages als große Karte
+  const d = dailyThought();
+  const rec = state.think[d.id];
+  box.append(el('div', 'th-h', T('Heute', 'Today')));
+  const hero = el('button', 'think-hero');
+  hero.append(el('span', 'th-tag', T('💭 Gedankenspiel des Tages', '💭 Thought experiment of the day')), el('span', 'th-icon', d.icon),
+    el('h3', null, d.title), el('p', null, d.q),
+    el('span', 'th-cta' + (rec ? ' done' : ''), rec ? T('Deine Antwort: ', 'Your answer: ') + optLabel(d.opts[rec.a]) : T('Jetzt nachdenken →', 'Think it through →')));
+  hero.onclick = () => openThink(d.id);
+  box.append(hero);
+  const res = pendingResolve();
+  if (res) {
+    const r = el('button', 'think-resolve');
+    r.append(el('span', null, '💡'), el('b', null, T('Auflösung von gestern: ', 'Yesterday’s resolution: ') + res.title), el('span', null, '›'));
+    r.onclick = () => openThink(res.id);
+    box.append(r);
+  }
+  updateThinkDot();
+
+  // 2) Spiel
   if (typeof openTrolley === 'function') {
+    box.append(el('div', 'th-h', T('Spiel', 'Game')));
     const g = el('button', 'game-banner');
     const gt = el('div', 'gb-t');
     gt.append(el('b', null, T('Weichensteller', 'Pull the Lever')), el('small', null, T('Das Trolley-Spiel: Klassiker, Endlos-Modus und 46 Fälle aus der Forschung', 'The trolley game: classics, endless mode and 46 research dilemmas')));
@@ -1094,50 +1123,43 @@ function renderDenken() {
     box.append(g);
   }
 
-  const d = dailyThought();
-  const today1 = el('ul', 'list');
-  today1.append(thinkRow(d, state.think[d.id] ? null : T('Heute: ', 'Today: ') + d.q));
-  box.append(el('h2', null, T('Gedankenspiel des Tages', 'Thought experiment of the day')), today1);
-  const res = pendingResolve();
-  if (res) {
-    const ul = el('ul', 'list');
-    ul.append(thinkRow(res, T('💡 Die Auflösung ist da – tippen zum Ansehen', '💡 The resolution is here – tap to view')));
-    box.append(el('h2', null, T('Auflösung von gestern', 'Yesterday’s resolution')), ul);
-  }
-  updateThinkDot();
-
+  // 3) Wo du stehst – erst, wenn es etwas zu zeigen gibt
   const { axes, right, total } = thinkProfile();
-  box.append(el('h2', null, T('Wo du stehst', 'Where you stand')));
-  const prof = el('div', 'profile');
-  for (const [key, f] of Object.entries(THINK_FIELDS)) {
-    if (!f.axis) continue;
-    const vals = axes[key] || [];
-    const row = el('div', 'axis');
-    row.append(el('div', 'axis-name', f.label));
-    if (vals.length < 2) {
-      row.append(el('div', 'axis-empty', T(`Noch zu wenig Antworten (${vals.length} von 2)`, `Not enough answers yet (${vals.length} of 2)`)));
-    } else {
+  const rows = Object.entries(THINK_FIELDS).filter(([key, f]) => f.axis && (axes[key] || []).length >= 2);
+  if (rows.length || total) {
+    box.append(el('div', 'th-h', T('Wo du stehst', 'Where you stand')));
+    const prof = el('div', 'profile glass');
+    for (const [key, f] of rows) {
+      const vals = axes[key];
       const avg = vals.reduce((a, c) => a + c, 0) / vals.length;
-      const bar = el('div', 'axis-bar');
-      const dot = el('i');
-      dot.style.left = ((avg + 1) / 2 * 100) + '%';
-      bar.append(dot);
-      const ends = el('div', 'axis-ends');
-      ends.append(el('span', null, f.axis[0]), el('span', null, f.axis[1]));
-      row.append(bar, ends);
+      const row = el('div', 'axis');
+      const bar = el('div', 'axis-bar'); const dot = el('i'); dot.style.left = ((avg + 1) / 2 * 100) + '%'; bar.append(dot);
+      const ends = el('div', 'axis-ends'); ends.append(el('span', null, f.axis[0]), el('span', null, f.axis[1]));
+      row.append(el('div', 'axis-name', f.label), bar, ends);
+      prof.append(row);
     }
-    prof.append(row);
+    if (total) prof.append(el('p', 'axis-score', T(`Rätsel mit eindeutiger Lösung: ${right} von ${total} richtig`, `Puzzles with a definite answer: ${right} of ${total} correct`)));
+    box.append(prof);
   }
-  if (total) prof.append(el('p', 'axis-score', T(`Rätsel mit eindeutiger Lösung: ${right} von ${total} richtig`, `Puzzles with a definite answer: ${right} of ${total} correct`)));
-  box.append(prof);
 
-  for (const [key, f] of Object.entries(THINK_FIELDS)) {
-    const items = THOUGHTS.filter(t => t.field === key);
-    if (!items.length) continue;
-    const ul = el('ul', 'list');
-    items.forEach(t => ul.append(thinkRow(t)));
-    box.append(el('h2', null, `${f.label} · ${items.filter(t => state.think[t.id]).length}/${items.length}`), ul);
+  // 4) Sammlung mit Filter nach Gebiet
+  const head = el('div', 'th-h', T('Alle Gedankenspiele', 'All thought experiments'));
+  head.append(el('small', null, `${done}/${THOUGHTS.length}`));
+  box.append(head);
+  const chips = el('div', 'fchips');
+  const grid = el('div', 'tgrid');
+  for (const key of ['all', ...Object.keys(THINK_FIELDS)]) {
+    const c = el('button', 'tchip' + (thinkFilter === key ? ' on' : ''), key === 'all' ? T('Alle', 'All') : FIELD_SHORT[key]);
+    c.onclick = () => {
+      thinkFilter = key;
+      chips.querySelectorAll('.tchip').forEach(x => x.classList.toggle('on', x === c));
+      renderThinkGrid(grid);
+    };
+    chips.append(c);
   }
+  box.append(chips, grid);
+  renderThinkGrid(grid);
+  $('view-think').scrollTop = keep;
 }
 
 // ---------- Themen-Seite ----------
@@ -1214,6 +1236,36 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
 }
+
+// ---------- Farbschemata ----------
+const THEMES = [
+  { id: 'sand', name: T('Sand', 'Sand'), bg: '#efe6d8', sw: 'linear-gradient(135deg, #f6e9d6 30%, #eec39c 70%, #e7b3a6)' },
+  { id: 'salbei', name: T('Salbei', 'Sage'), bg: '#e5eadb', sw: 'linear-gradient(135deg, #edf1e3 30%, #b9d6b0 70%, #a9cfc4)' },
+  { id: 'himmel', name: T('Himmel', 'Sky'), bg: '#e4eaf3', sw: 'linear-gradient(135deg, #eef2f8 30%, #b5cdef 70%, #d5caf0)' },
+  { id: 'rose', name: T('Rosé', 'Rosé'), bg: '#f3e6e4', sw: 'linear-gradient(135deg, #f8ecea 30%, #f0b9c2 70%, #f5d2b9)' },
+  { id: 'nacht', name: T('Nacht', 'Night'), bg: '#07080d', sw: 'linear-gradient(135deg, #0b0d18 30%, #3448d6 70%, #7d35c9)' },
+];
+function applyTheme(id) {
+  const th = THEMES.find(t => t.id === id) || THEMES[0];
+  document.documentElement.dataset.theme = th.id;
+  document.querySelector('meta[name="theme-color"]').content = th.bg;
+  document.querySelectorAll('.tpick').forEach(b => b.classList.toggle('on', b.dataset.theme === th.id));
+}
+function renderThemePicks() {
+  const box = $('theme-picks');
+  box.innerHTML = '';
+  for (const th of THEMES) {
+    const b = el('button', 'tpick');
+    b.type = 'button';
+    b.dataset.theme = th.id;
+    const sw = el('i'); sw.style.background = th.sw;
+    b.append(sw, el('span', null, th.name));
+    b.onclick = () => { store.set('theme', th.id); applyTheme(th.id); };
+    box.append(b);
+  }
+  applyTheme(document.documentElement.dataset.theme);
+}
+renderThemePicks();
 
 // ---------- Leser: Lesefortschritt ----------
 readerScroll.addEventListener('scroll', () => {

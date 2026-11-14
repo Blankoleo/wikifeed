@@ -11,6 +11,15 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      var t; try { t = JSON.parse(localStorage.getItem('wf.theme')); } catch (e) {}
+      if (['sand', 'salbei', 'himmel', 'rose', 'nacht'].indexOf(t) < 0) t = 'sand';
+      document.documentElement.dataset.theme = t;
+      // Helle Schemata: dunkle Schrift in der Statusleiste (wirkt nach einem Neustart der App)
+      if (t !== 'nacht') document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'default';
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
   <title>WikiFeed</title>
 </head>
@@ -45,53 +54,77 @@
 
   <section id="view-topics" class="view">
     <header class="page-head">
-      <h1 data-en="Your topics">Deine Themen</h1>
+      <h1 data-en="Settings">Einstellungen</h1>
       <p class="sub" id="stats"></p>
     </header>
     <div class="pad">
-      <div id="topic-chips" class="chips"></div>
-
-      <label class="toggle">
-        <input type="checkbox" id="quality">
-        <span><b data-en="Top articles only">Nur Top-Artikel</b><br><small data-en="Prefers featured and good articles – no short, dry stubs.">Bevorzugt exzellente &amp; lesenswerte Artikel – keine kurzen, trockenen Stubs.</small></span>
-      </label>
-
-      <h2 data-en="Language">Sprache</h2>
-      <p class="hint" data-en="Switches the whole app: texts, Wikipedia articles, thought experiments and the trolley game. Saved and already seen articles are kept separately for each language.">Stellt die ganze App um: Texte, Wikipedia-Artikel, Gedankenspiele und das Trolley-Spiel. Gemerkte und schon gesehene Artikel werden je Sprache getrennt geführt.</p>
-      <div class="voice-row">
-        <select id="lang-select" aria-label="Sprache" data-en-aria="Language">
-          <option value="de">Deutsch</option>
-          <option value="en">English</option>
-        </select>
-      </div>
-
-      <h2 data-en="Motion">Bewegung</h2>
-      <label class="toggle">
-        <input type="checkbox" id="tilt">
-        <span><b data-en="3D effect when tilting">3D-Effekt beim Neigen</b><br><small data-en="The layers of a card shift when you tilt your phone. The iPhone asks for access to “Motion &amp; Orientation” for this.">Die Ebenen einer Karte verschieben sich, wenn du das Handy neigst. Das iPhone fragt dafür nach Zugriff auf „Bewegung und Ausrichtung“.</small></span>
-      </label>
-
-      <div id="voice-box">
-        <h2 data-en="Reading voice">Vorlesestimme</h2>
-        <p class="hint" data-en="Voice and speed for 🔊 in the reader. You hear a sample when you choose.">Stimme und Tempo für 🔊 im Leser. Beim Auswählen hörst du eine Probe.</p>
-        <div class="voice-row">
-          <select id="voice-select" aria-label="Stimme" data-en-aria="Voice"></select>
-          <select id="rate-select" aria-label="Tempo" data-en-aria="Speed">
-            <option value="0.85" data-en="Slow">Langsam</option>
-            <option value="1">Normal</option>
-            <option value="1.15" data-en="Brisk">Zügig</option>
-            <option value="1.3" data-en="Fast">Schnell</option>
-          </select>
-          <button id="voice-test" class="btn" type="button" data-en="Sample">Probe</button>
+      <h3 class="set-h" data-en="Appearance">Aussehen</h3>
+      <div class="set-group">
+        <div class="set-block">
+          <div class="set-label" data-en="Colour">Farbe</div>
+          <div id="theme-picks" class="theme-picks"></div>
         </div>
-        <p class="hint tip" data-en="Nicer voices: on the iPhone go to Settings → Accessibility → Spoken Content → Voices → English and download a voice marked “Enhanced” or “Premium” (e.g. Ava or Zoe). It will then appear in this list."><b>Noch schönere Stimmen:</b> Auf dem iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch eine Stimme mit „Erweitert“ oder „Premium“ laden (z. B. Anna oder Petra). Danach erscheint sie hier in der Liste.</p>
+        <label class="set-row">
+          <span class="set-text"><b data-en="3D effect when tilting">3D-Effekt beim Neigen</b><small data-en="Cards move along when you tilt your phone.">Karten bewegen sich mit, wenn du das Handy neigst.</small></span>
+          <input type="checkbox" id="tilt" class="switch">
+        </label>
       </div>
 
-      <h2 data-en="What the app has learned about you">Was die App über dich gelernt hat</h2>
-      <p class="hint" data-en="👍 and long reading make a topic more frequent, 👎 makes it rarer.">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
-      <div id="weights" class="weights"></div>
-      <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
-      <p class="version">WikiFeed · Version 14<br><span id="dims"></span></p>
+      <h3 class="set-h" data-en="Feed">Feed</h3>
+      <div class="set-group">
+        <div class="set-block">
+          <div class="set-label"><span data-en="Topics">Themen</span><small data-en="Tap to switch on or off">Antippen zum An- und Abwählen</small></div>
+          <div id="topic-chips" class="chips"></div>
+        </div>
+        <label class="set-row">
+          <span class="set-text"><b data-en="Top articles only">Nur Top-Artikel</b><small data-en="Prefers featured articles, no short stubs.">Ausgezeichnete Artikel bevorzugen, keine kurzen Stummel.</small></span>
+          <input type="checkbox" id="quality" class="switch">
+        </label>
+      </div>
+
+      <h3 class="set-h" data-en="Language &amp; reading aloud">Sprache &amp; Vorlesen</h3>
+      <div class="set-group">
+        <label class="set-row">
+          <span class="set-text"><b data-en="Language">Sprache</b></span>
+          <select id="lang-select" aria-label="Sprache" data-en-aria="Language">
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <div id="voice-box">
+          <label class="set-row">
+            <span class="set-text"><b data-en="Voice">Stimme</b></span>
+            <select id="voice-select" aria-label="Stimme" data-en-aria="Voice"></select>
+          </label>
+          <label class="set-row">
+            <span class="set-text"><b data-en="Speed">Tempo</b></span>
+            <select id="rate-select" aria-label="Tempo" data-en-aria="Speed">
+              <option value="0.85" data-en="Slow">Langsam</option>
+              <option value="1">Normal</option>
+              <option value="1.15" data-en="Brisk">Zügig</option>
+              <option value="1.3" data-en="Fast">Schnell</option>
+            </select>
+          </label>
+          <button id="voice-test" class="set-row" type="button">
+            <span class="set-text"><b data-en="Play a sample">Stimmprobe anhören</b></span><span class="set-go">▶</span>
+          </button>
+          <details class="set-more">
+            <summary data-en="Get nicer voices">Schönere Stimmen laden</summary>
+            <p data-en="On the iPhone: Settings → Accessibility → Spoken Content → Voices → English. Download a voice marked “Enhanced” or “Premium” (e.g. Ava or Zoe); it then appears under “Voice”.">Auf dem iPhone: Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch. Eine Stimme mit „Erweitert“ oder „Premium“ laden (z. B. Anna oder Petra), danach erscheint sie oben unter „Stimme“.</p>
+          </details>
+        </div>
+      </div>
+
+      <h3 class="set-h" data-en="Learned">Gelerntes</h3>
+      <div class="set-group">
+        <details class="set-more">
+          <summary data-en="What the app has learned about you">Was die App über dich gelernt hat</summary>
+          <p data-en="👍 and long reading make a topic more frequent, 👎 makes it rarer.">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
+          <div id="weights" class="weights"></div>
+          <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
+        </details>
+      </div>
+      <p class="version">WikiFeed · Version 15<br><span id="dims"></span></p>
     </div>
   </section>
 
@@ -101,7 +134,7 @@
     <button data-view="search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></span><em data-en="Search">Suche</em></button>
     <button data-view="think"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></span><em data-en="Think">Denken</em></button>
     <button data-view="saved"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg></span><em data-en="Saved">Gemerkt</em></button>
-    <button data-view="topics"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.4"/><circle cx="8" cy="17" r="2.4"/></svg></span><em data-en="Topics">Themen</em></button>
+    <button data-view="topics"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.4"/><circle cx="8" cy="17" r="2.4"/></svg></span><em data-en="Settings">Einstellungen</em></button>
   </nav>
 
   <div id="think" class="think-sheet" hidden>
