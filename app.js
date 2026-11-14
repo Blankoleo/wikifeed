@@ -202,6 +202,138 @@ const cardItems = new WeakMap();
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
+// ---------- Effekte: Bildfarben, Tiefe, Bewegung ----------
+// Jede Karte bekommt die Farben ihres Bildes (--c1…--c4, --glow). Beim Scrollen und Neigen
+// verschieben sich die Ebenen der Karte unterschiedlich stark (--p, --a, --tx, --ty in style.css).
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fxCanvas = document.createElement('canvas');
+fxCanvas.width = fxCanvas.height = 8;
+const fxCtx = fxCanvas.getContext('2d', { willReadFrequently: true });
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+const hsl = (h, s, l) => `hsl(${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
+function setPalette(card, cols, glow) {
+  cols.forEach((c, i) => card.style.setProperty('--c' + (i + 1), c));
+  card.style.setProperty('--glow', glow);
+}
+// Vorläufige Farben aus dem Titel – gelten, bis das Bild geladen ist (oder wenn es keins gibt).
+function hashPalette(card, title) {
+  let n = 0;
+  for (let i = 0; i < title.length; i++) n = (n * 31 + title.charCodeAt(i)) >>> 0;
+  const h = n % 360;
+  setPalette(card, [hsl(h, .5, .27), hsl((h + 45) % 360, .5, .25), hsl((h + 290) % 360, .45, .2), hsl((h + 160) % 360, .4, .2)], hsl(h, .85, .76));
+}
+// Das Bild auf 8×8 Punkte verkleinern und aus den vier Ecken je eine Farbe lesen.
+function imagePalette(card, im) {
+  try {
+    fxCtx.drawImage(im, 0, 0, 8, 8);
+    const d = fxCtx.getImageData(0, 0, 8, 8).data;
+    let best = null;
+    const cols = [[0, 0], [4, 0], [0, 4], [4, 4]].map(([x0, y0]) => {
+      let r = 0, g = 0, b = 0;
+      for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const i = ((y0 + y) * 8 + x0 + x) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+      let [h, sat, l] = rgbToHsl(r / 16, g / 16, b / 16);
+      if (sat < .1) { h = 224; sat = .16; }                   // Grau bleibt kühles Grau statt bunt zu werden
+      else { if (!best || sat > best[1]) best = [h, sat]; sat = clamp(sat * 1.4, .38, .82); }
+      return hsl(h, sat, clamp(l * .8, .17, .36));
+    });
+    setPalette(card, cols, best ? hsl(best[0], clamp(best[1] * 1.5, .6, .95), .76) : hsl(224, .75, .8));
+  } catch {}
+}
+
+// Scroll-Fortschritt je Karte: --p von -1 (oben raus) über 0 (vorn) bis 1 (unten), --a ist der Betrag.
+const nearCards = new Set();
+let fxQueued = false;
+function queueFx() { if (!fxQueued) { fxQueued = true; requestAnimationFrame(feedFx); } }
+function feedFx() {
+  fxQueued = false;
+  const h = feedEl.clientHeight;
+  if (!h) return;
+  const top = feedEl.scrollTop;
+  for (const c of nearCards) {
+    const p = clamp((c.offsetTop - top) / h, -1, 1);
+    if (!reduceMotion) { c.style.setProperty('--p', p.toFixed(3)); c.style.setProperty('--a', Math.abs(p).toFixed(3)); }
+    c.classList.toggle('active', Math.abs(p) < .55); // knapp über der Mitte: beim Wechsel ist nie eine Karte ohne Text zu sehen
+  }
+}
+const nearObs = new IntersectionObserver(entries => {
+  for (const en of entries) {
+    if (en.isIntersecting) nearCards.add(en.target);
+    else { nearCards.delete(en.target); en.target.classList.remove('active'); }
+  }
+  feedFx(); // sofort, nicht erst im nächsten Bild: so steht die vordere Karte sicher mit Text da
+}, { root: feedEl, rootMargin: '60% 0px' });
+feedEl.addEventListener('scroll', queueFx, { passive: true });
+window.addEventListener('resize', queueFx);
+
+// Neigen: Maus am Rechner, Lagesensor am Handy. Die Werte gleiten weich nach.
+const tilt = { x: 0, y: 0, tx: 0, ty: 0, raf: 0 };
+function tiltTo(x, y) {
+  tilt.tx = clamp(x, -1, 1); tilt.ty = clamp(y, -1, 1);
+  if (!tilt.raf) tilt.raf = requestAnimationFrame(tiltStep);
+}
+function tiltStep() {
+  tilt.x += (tilt.tx - tilt.x) * .12; tilt.y += (tilt.ty - tilt.y) * .12;
+  feedEl.style.setProperty('--tx', tilt.x.toFixed(3));
+  feedEl.style.setProperty('--ty', tilt.y.toFixed(3));
+  tilt.raf = (Math.abs(tilt.tx - tilt.x) > .003 || Math.abs(tilt.ty - tilt.y) > .003) ? requestAnimationFrame(tiltStep) : 0;
+}
+if (!reduceMotion) {
+  feedEl.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const r = feedEl.getBoundingClientRect();
+    tiltTo(((e.clientX - r.left) / r.width - .5) * 2, ((e.clientY - r.top) / r.height - .5) * 2);
+  });
+  feedEl.addEventListener('pointerleave', () => tiltTo(0, 0));
+}
+let gyroBase = null;
+let gyroOn = false;
+function onOrient(e) {
+  if (e.gamma == null || e.beta == null || !$('view-feed').classList.contains('active')) return;
+  if (!gyroBase) gyroBase = { b: e.beta, g: e.gamma };
+  // Die Ruhelage wandert langsam mit, damit die Karte in jeder Handhaltung gerade steht.
+  gyroBase.b += (e.beta - gyroBase.b) * .02; gyroBase.g += (e.gamma - gyroBase.g) * .02;
+  tiltTo((e.gamma - gyroBase.g) / 16, (e.beta - gyroBase.b) / 16);
+}
+async function gyroStart() {
+  if (gyroOn) return true;
+  try {
+    if (typeof DeviceOrientationEvent === 'undefined') return false;
+    // iPhone: Der Lagesensor braucht eine Erlaubnis, und die Frage darf nur nach einem Fingertipp kommen.
+    if (typeof DeviceOrientationEvent.requestPermission === 'function' && await DeviceOrientationEvent.requestPermission() !== 'granted') return false;
+    window.addEventListener('deviceorientation', onOrient);
+    gyroOn = true;
+    return true;
+  } catch { return false; }
+}
+function gyroStop() { window.removeEventListener('deviceorientation', onOrient); gyroOn = false; gyroBase = null; tiltTo(0, 0); }
+
+// Funken, die beim 👍 und 🔖 aus dem Knopf sprühen.
+function burst(btn, emojis) {
+  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+  if (reduceMotion || !btn.animate) return;
+  const r = btn.getBoundingClientRect();
+  for (let i = 0; i < 11; i++) {
+    const sp = el('span', 'spark', emojis[i % emojis.length]);
+    sp.style.left = (r.left + r.width / 2) + 'px';
+    sp.style.top = (r.top + r.height / 2) + 'px';
+    document.body.append(sp);
+    const ang = -Math.PI / 2 + (Math.random() - .5) * 2.1, dist = 70 + Math.random() * 100;
+    sp.animate([
+      { transform: 'translate(-50%, -50%) scale(.3)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(ang) * dist}px), calc(-50% + ${Math.sin(ang) * dist}px)) scale(${.8 + Math.random() * .9}) rotate(${(Math.random() - .5) * 90}deg)`, opacity: 0 },
+    ], { duration: 700 + Math.random() * 500, easing: 'cubic-bezier(.15,.8,.3,1)' }).onfinish = () => sp.remove();
+  }
+}
+
 function stateCard(kind, msg) {
   feedEl.querySelector('.state-card')?.remove();
   const c = el('div', 'card state-card');
@@ -278,6 +410,8 @@ function placeCard(card, afterEl) {
   if (afterEl?.isConnected) { afterEl.after(card); }
   else { const sc = feedEl.querySelector('.state-card'); if (sc) sc.before(card); else feedEl.append(card); }
   viewObs.observe(card);
+  nearObs.observe(card);
+  queueFx();
   return card;
 }
 
@@ -287,9 +421,25 @@ function addCard(item, afterEl) {
   cardItems.set(card, item);
   feedTitles.add(item.title);
 
-  const img = el('div', 'card-img');
-  if (item.thumb) img.style.backgroundImage = `url("${item.thumb}")`;
-  else { img.classList.add('placeholder'); img.textContent = item.title[0]; card.classList.add('noimg'); }
+  // Ebenen: Farb-Nebel, schwebendes Bild, Glasfläche mit Text, Knöpfe.
+  hashPalette(card, item.title);
+  const bg = el('div', 'card-bg');
+  const img = el('div', 'card-photo');
+  const noImage = () => { img.textContent = ''; img.classList.add('placeholder'); img.append(el('b', null, item.title[0])); card.classList.add('noimg'); };
+  if (item.thumb) {
+    const im = new Image();
+    im.crossOrigin = 'anonymous'; // nötig, um die Bildfarben lesen zu dürfen
+    im.decoding = 'async';
+    im.loading = 'lazy';
+    im.alt = '';
+    im.onload = () => { img.classList.add('ready'); if (im.crossOrigin) imagePalette(card, im); };
+    im.onerror = () => {
+      if (im.crossOrigin) { im.removeAttribute('crossorigin'); im.src = item.thumb; } // zweiter Versuch ohne Farb-Auslesen
+      else noImage();
+    };
+    im.src = item.thumb;
+    img.append(im);
+  } else noImage();
 
   const body = el('div', 'card-body');
   const meta = el('div', 'meta');
@@ -321,13 +471,16 @@ function addCard(item, afterEl) {
     if (item.seed) dropSeed(item.seed);
     dropSeed(item.title);
     toast(item.topic ? T(`Weniger ${topicLabel(item.topic)}`, `Less ${topicLabel(item.topic)}`) : T('Weniger davon', 'Less of this'));
-    setTimeout(() => next(card), 350);
+    card.classList.add('gone');
+    setTimeout(() => next(card), 380);
+    setTimeout(() => card.classList.remove('gone'), 1300);
   };
   good.onclick = () => {
     if (good.classList.contains('on')) return;
     adjust(item.topic, 1.3);
     if (bad.classList.contains('on')) { adjust(item.topic, 1 / 0.7); bad.classList.remove('on'); }
     good.classList.add('on');
+    burst(good, ['👍', '✨', '💚']);
     addSeed(item);
     insertSimilar(card, item);
     toast(T('👍 Ähnliche Artikel kommen als Nächstes', '👍 Similar articles coming up next'));
@@ -335,12 +488,12 @@ function addCard(item, afterEl) {
   save.onclick = () => {
     const on = toggleSaved(item);
     save.classList.toggle('on', on);
-    if (on) adjust(item.topic, 1.1);
+    if (on) { adjust(item.topic, 1.1); burst(save, ['🔖', '✨']); }
     toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
   };
   actions.append(bad, save, good);
 
-  card.append(img, body, actions);
+  card.append(bg, img, body, actions);
   return placeCard(card, afterEl);
 }
 
@@ -355,6 +508,8 @@ function resetFeed() {
   cardCount = 0;
   feedTitles.clear();
   viewObs.disconnect();
+  nearObs.disconnect();
+  nearCards.clear();
   feedEl.innerHTML = '';
   feedEl.scrollTop = 0;
   loadMore();
@@ -694,7 +849,7 @@ function readerBack(fromPopstate = false) {
 function closeReader(fromPopstate) {
   ttsStop();
   reader.hidden = true;
-  readerBody.innerHTML = '';
+  setTimeout(() => { if (reader.hidden) readerBody.innerHTML = ''; }, 380); // erst leeren, wenn das Blatt hinausgeglitten ist
   if (readSession) {
     const secs = (Date.now() - readSession.start) / 1000;
     if (secs > 25) {
@@ -1040,12 +1195,14 @@ document.querySelectorAll('.tabbar button').forEach(btn => {
   btn.onclick = () => {
     const v = btn.dataset.view;
     document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b === btn));
+    btn.parentElement.style.setProperty('--i', [...btn.parentElement.querySelectorAll('button')].indexOf(btn));
     document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
     if (v === 'topics') renderTopics();
     if (v === 'saved') renderSaved();
     if (v === 'think') renderDenken();
     if (v === 'search' && !searchInput.value.trim()) { searchList.innerHTML = ''; renderSearchHint(); }
     if (v === 'feed' && topicsDirty) { topicsDirty = false; resetFeed(); }
+    if (v === 'feed') feedFx();
   };
 });
 
@@ -1056,6 +1213,28 @@ function toast(msg) {
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+// ---------- Leser: Lesefortschritt ----------
+readerScroll.addEventListener('scroll', () => {
+  const max = readerScroll.scrollHeight - readerScroll.clientHeight;
+  $('reader-progress').style.transform = `scaleX(${max > 0 ? clamp(readerScroll.scrollTop / max, 0, 1) : 0})`;
+}, { passive: true });
+
+// ---------- 3D-Effekt beim Neigen (Einstellung) ----------
+const tiltBox = $('tilt');
+tiltBox.checked = store.get('tilt', false);
+tiltBox.onchange = async () => {
+  if (!tiltBox.checked) { store.set('tilt', false); gyroStop(); return; }
+  const ok = await gyroStart();
+  store.set('tilt', ok);
+  tiltBox.checked = ok;
+  toast(ok ? T('3D-Effekt an – neig das Handy im Feed', '3D effect on – tilt your phone in the feed') : T('Lagesensor nicht verfügbar oder nicht erlaubt', 'Motion sensor unavailable or not allowed'));
+};
+// War der Effekt an, braucht das iPhone nach jedem Start einen Fingertipp, bevor der Sensor wieder liefern darf.
+if (tiltBox.checked && !reduceMotion) {
+  const arm = () => { document.removeEventListener('click', arm, true); gyroStart(); };
+  document.addEventListener('click', arm, true);
 }
 
 // ---------- Sprache ----------

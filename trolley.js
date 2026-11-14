@@ -211,7 +211,7 @@ function openTrolley() {
 function closeTrolley(fromPopstate) {
   gameEl.hidden = true;
   gameMode = null;
-  gameBody.innerHTML = '';
+  setTimeout(() => { if (gameEl.hidden) gameBody.innerHTML = ''; }, 380); // erst leeren, wenn das Blatt hinausgeglitten ist
   if (!fromPopstate && history.state?.trolley) history.back();
   if ($('view-think').classList.contains('active') && typeof renderDenken === 'function') renderDenken();
 }
