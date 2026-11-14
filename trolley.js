@@ -324,11 +324,9 @@ function showClassic(i) {
   b.append(choiceButtons(c.yes, c.no, async yes => {
     tg.classics[c.id] = yes ? 1 : 0;
     saveTg();
-    const voted = castVote('classic', c.id, yes ? 1 : 0);
     await sc.play(yes);
     const r = el('div', 'gresult');
     if (c.stat != null) r.append(bar(T('So viele würden hier eingreifen', 'Share who would intervene here'), c.stat, STAT_SOURCE));
-    r.append(voteBox('classic', c.id, [c.no, c.yes], yes ? 1 : 0, voted));
     r.append(el('p', null, c.note));
     const last = i === TROLLEY_CLASSICS.length - 1;
     const next = el('button', 'btn gnext', last ? T('Fertig – zum Menü', 'Done – back to the menu') : T('Nächster Fall →', 'Next case →'));
@@ -458,12 +456,10 @@ function showStack() {
   b.append(choiceButtons(T('Ja', 'Yes'), T('Nein', 'No'), yes => {
     tg.stack[d.n] = yes ? 1 : 0;
     saveTg();
-    const voted = castVote('stack', d.n, yes ? 1 : 0);
     const r = el('div', 'gresult');
     const chips = el('div', 'meta');
     chips.append(el('span', 'chip', d.p ? T('✋ Eigenhändig', '✋ With your own hands') : T('🎛️ Aus der Distanz', '🎛️ From a distance')), el('span', 'chip', d.i ? T('🎯 Tod als Mittel', '🎯 Death as a means') : T('↪️ Tod als Nebenfolge', '↪️ Death as a side effect')));
     r.append(chips, el('p', 'gnote', (d.p ? T('Hier müsstest du selbst Hand anlegen. ', 'Here you would have to do it with your own hands. ') : T('Hier löst du den Tod nur aus der Ferne aus. ', 'Here you only trigger the death from afar. ')) + (d.i ? T('Der Tod des Opfers ist das Mittel, das die anderen rettet.', 'The victim’s death is the means that saves the others.') : T('Der Tod des Opfers ist eine Nebenfolge der Rettung.', 'The victim’s death is a side effect of the rescue.'))));
-    r.append(voteBox('stack', d.n, [T('Nein', 'No'), T('Ja', 'Yes')], yes ? 1 : 0, voted));
     const next = el('button', 'btn gnext', T('Weiter →', 'Next →'));
     next.onclick = showStack;
     r.append(next);

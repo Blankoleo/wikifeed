@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <!-- Sicherheitsregel: Die Seite darf nur eigene Skripte ausführen und Inhalte nur von Wikipedia/Wikimedia laden. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org; media-src https://*.wikimedia.org; connect-src 'self' https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org https://*.supabase.co; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org; media-src https://*.wikimedia.org; connect-src 'self' https://*.wikipedia.org https://*.wikimedia.org https://wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07080d">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -143,13 +143,12 @@
           <summary data-en="Privacy">Datenschutz</summary>
           <p data-en="WikiFeed has no accounts, no advertising, no tracking and no server of its own. Everything you save, like or answer stays on this device only (browser storage) and is never sent anywhere.">WikiFeed hat keine Konten, keine Werbung, kein Tracking und keinen eigenen Server. Alles, was du merkst, magst oder beantwortest, bleibt nur auf diesem Gerät (Browser-Speicher) und wird nirgendwohin geschickt.</p>
           <p data-en="To show articles and pictures, your device loads them directly from Wikipedia/Wikimedia (Wikimedia Foundation, USA). The app itself is delivered by GitHub Pages (GitHub Inc., USA). Both technically receive your IP address and browser details, as with any website, and process them under their own privacy policies.">Um Artikel und Bilder anzuzeigen, lädt dein Gerät sie direkt bei Wikipedia/Wikimedia (Wikimedia Foundation, USA). Die App selbst wird von GitHub Pages (GitHub Inc., USA) ausgeliefert. Beide erhalten dabei technisch – wie bei jeder Website – deine IP-Adresse und Browserangaben und verarbeiten sie nach ihren eigenen Datenschutzerklärungen.</p>
-          <p data-en="Votes on thought experiments and in the trolley game are stored anonymously with Supabase (servers in Frankfurt, Germany): only the question, your answer and a random device number – no name, no e-mail. Only the totals can be read. When sending a vote, Supabase technically receives your IP address.">Abstimmungen bei Gedankenspielen und im Trolley-Spiel werden anonym bei Supabase gespeichert (Server in Frankfurt): nur die Frage, deine Antwort und eine zufällige Geräte-Nummer – kein Name, keine E-Mail. Auslesen lassen sich nur die Summen. Beim Senden erhält Supabase technisch deine IP-Adresse.</p>
           <p data-en="Reading aloud uses your device’s built-in voice; the tilt effect reads the motion sensor only on the device.">Vorlesen nutzt die eingebaute Stimme deines Geräts, der Neige-Effekt liest den Lagesensor nur auf dem Gerät.</p>
           <p><a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" target="_blank" rel="noopener" data-en="Wikimedia privacy policy ↗">Datenschutz Wikimedia ↗</a> · <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener" data-en="GitHub privacy statement ↗">Datenschutz GitHub ↗</a></p>
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 19<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 18<br><span id="dims"></span></p>
     </div>
   </section>
 
@@ -200,7 +199,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="backend.js"></script>
   <script src="i18n.js"></script>
   <script src="thoughts.js"></script>
   <script src="thoughts.en.js"></script>

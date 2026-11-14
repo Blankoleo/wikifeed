@@ -1,8 +1,8 @@
 // Netz zuerst (damit Updates sofort ankommen), Cache als Offline-Fallback.
 // Bei jeder App-Änderung die Nummer erhöhen: dann laden sich offene Apps von selbst neu.
-const CACHE = 'wikifeed-v19';
+const CACHE = 'wikifeed-v18';
 const ARTICLES = 'wikifeed-articles'; // gemerkte Artikel + Bilder, von app.js befüllt – nie automatisch löschen
-const FILES = ['./', 'index.html', 'theme.js', 'style.css', 'app.js', 'backend.js', 'i18n.js', 'thoughts.js', 'thoughts.en.js', 'trolley-data.js', 'trolley.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const FILES = ['./', 'index.html', 'theme.js', 'style.css', 'app.js', 'i18n.js', 'thoughts.js', 'thoughts.en.js', 'trolley-data.js', 'trolley.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(FILES.map(f => fetch(f, { cache: 'no-cache' }).then(r => { if (r.ok) return c.put(f, r); })))));
   self.skipWaiting();
