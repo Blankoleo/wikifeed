@@ -16,6 +16,8 @@
       var t; try { t = JSON.parse(localStorage.getItem('wf.theme')); } catch (e) {}
       if (['sand', 'salbei', 'himmel', 'rose', 'nacht'].indexOf(t) < 0) t = 'sand';
       document.documentElement.dataset.theme = t;
+      var pn; try { pn = JSON.parse(localStorage.getItem('wf.panel')); } catch (e) {}
+      if (pn >= 30 && pn <= 75) document.documentElement.style.setProperty('--panel', pn);
       // Helle Schemata: dunkle Schrift in der Statusleiste (wirkt nach einem Neustart der App)
       if (t !== 'nacht') document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'default';
     })();
@@ -63,6 +65,11 @@
         <div class="set-block">
           <div class="set-label" data-en="Colour">Farbe</div>
           <div id="theme-picks" class="theme-picks"></div>
+        </div>
+        <div class="set-block">
+          <div class="set-label set-label-row"><span data-en="Size of the text box">Größe der Textbox</span><output id="panel-val"></output></div>
+          <input type="range" id="panel" class="slider" min="30" max="75" step="1" aria-label="Größe der Textbox" data-en-aria="Size of the text box">
+          <div class="slider-ends"><span data-en="More picture">Mehr Bild</span><span data-en="More text">Mehr Text</span></div>
         </div>
         <label class="set-row">
           <span class="set-text"><b data-en="3D effect when tilting">3D-Effekt beim Neigen</b><small data-en="Cards move along when you tilt your phone.">Karten bewegen sich mit, wenn du das Handy neigst.</small></span>
@@ -124,7 +131,7 @@
           <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
         </details>
       </div>
-      <p class="version">WikiFeed · Version 15<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 16<br><span id="dims"></span></p>
     </div>
   </section>
 

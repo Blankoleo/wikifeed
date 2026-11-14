@@ -20,6 +20,7 @@
   /* Nur ein Teil des iPhone-Randes unten: so sitzt die Leiste tiefer, bleibt aber über dem Home-Strich. */
   --tab-pad: calc(env(safe-area-inset-bottom) * 0.4);
   --tab-h: calc(44px + var(--tab-pad));
+  --panel: 50;   /* Anteil der Textbox an der Kartenhöhe in Prozent (Schieberegler) */
 }
 
 /* Nacht (dunkel) */
@@ -171,8 +172,12 @@ body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hid
 .card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--grain); opacity: var(--grain-op); mix-blend-mode: overlay; pointer-events: none; }
 @keyframes drift { to { transform: rotate(9deg) scale(1.18); } }
 
-/* Ebene 2: das schwebende Bild */
-.card-photo { position: relative; flex: 1 1 120px; min-height: 120px; border-radius: 28px; overflow: hidden; cursor: pointer;
+/* Ebene 2: das schwebende Bild (mit der Seitenleiste auf einer gemeinsamen Bühne) */
+.card-stage { position: relative; flex: 1 1 90px; min-height: 90px; container-type: size; }
+/* Wird das Bild durch eine große Textbox flach, passt sich die Seitenleiste an. */
+@container (max-height: 345px) { .card-stage .sb small { display: none; } .card-stage .side { gap: 10px; } }
+@container (max-height: 265px) { .card-stage .side { flex-direction: row; } }
+.card-photo { position: absolute; inset: 0; border-radius: 28px; overflow: hidden; cursor: pointer;
   background: color-mix(in oklab, var(--c1) var(--mix), var(--mixbase));
   box-shadow: 0 44px 70px -34px color-mix(in srgb, var(--glow) 60%, transparent), 0 22px 44px -20px var(--shadow);
   transform-origin: 50% 62%; will-change: transform;
@@ -199,7 +204,7 @@ body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hid
   -webkit-mask-image: linear-gradient(#000 35%, transparent 105%); mask-image: linear-gradient(#000 35%, transparent 105%); }
 
 /* Ebene 3: Glasfläche mit dem Text – Antippen öffnet den Artikel */
-.card-body { position: relative; z-index: 2; flex: 0 1 auto; min-height: 0; margin: -40px 6px 0; padding: 16px 18px 16px; cursor: pointer;
+.card-body { position: relative; z-index: 2; flex: 0 0 calc(var(--panel) * 1%); min-height: 0; margin: -40px 6px 0; padding: 16px 18px 16px; cursor: pointer;
   display: flex; flex-direction: column; border-radius: 24px; border: 1px solid var(--glass-border); background: var(--card-glass);
   -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
   box-shadow: 0 26px 50px -26px var(--shadow), inset 0 1px 0 var(--glass-hi);
@@ -213,38 +218,46 @@ body:has(.reader:not([hidden]), .think-sheet:not([hidden]), .game-sheet:not([hid
 .chip.sim { color: color-mix(in oklab, var(--glow) var(--glow-mix), var(--glow-base)); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card h2 { font: 700 30px/1.1 var(--serif); letter-spacing: -.01em; margin: 0 0 10px; text-wrap: balance;
   overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; text-shadow: var(--h-shadow); }
-.extract { color: var(--text2); font-size: 15.5px; line-height: 1.5; margin: 0; overflow: hidden;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; }
+.extract { flex: 1; min-height: 0; color: var(--text2); font-size: 15.5px; line-height: 1.55; margin: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 34px), transparent); mask-image: linear-gradient(#000 calc(100% - 34px), transparent); }
 
-/* Ebene 4: Knöpfe */
-.actions { display: flex; justify-content: center; gap: 22px; padding: 12px 0 0; flex: none;
-  opacity: calc(1 - var(--a) * 1.7); transform: translate3d(0, calc(var(--p) * -44px), 0); }
-.act { position: relative; width: 58px; height: 58px; border-radius: 50%; font-size: 24px; display: grid; place-items: center;
-  border: 1px solid var(--glass-border); background: linear-gradient(160deg, var(--glass-a), var(--glass-b));
-  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: 0 14px 28px -14px var(--shadow), inset 0 1px 0 var(--glass-hi);
-  transition: transform .3s var(--spring), background .3s, box-shadow .3s, border-color .3s; }
-.act:active { transform: scale(.84); }
-.act.pop { animation: pop .55s var(--spring); }
-@keyframes pop { 0% { transform: scale(.7); } 55% { transform: scale(1.22); } 100% { transform: scale(1); } }
-.act.on.like { background: rgba(76, 209, 138, .26); border-color: var(--good); box-shadow: 0 0 0 5px rgba(76, 209, 138, .12), 0 12px 32px -8px rgba(76, 209, 138, .75); }
-.act.on.dislike { background: rgba(255, 107, 107, .26); border-color: var(--bad); box-shadow: 0 0 0 5px rgba(255, 107, 107, .12), 0 12px 32px -8px rgba(255, 107, 107, .7); }
-.act.on.save { background: color-mix(in srgb, var(--accent) 28%, transparent); border-color: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 12%, transparent), 0 12px 32px -8px color-mix(in srgb, var(--accent) 75%, transparent); }
+/* Ebene 4: Seitenleiste im TikTok-Stil, rechts über dem Bild */
+.side { position: absolute; z-index: 3; right: 10px; bottom: 54px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  opacity: calc(1 - var(--a) * 1.7); transform: translate3d(0, calc(var(--p) * -36px), 0); }
+.sb { display: grid; justify-items: center; gap: 3px; padding: 0; background: none; border: 0; color: #fff; }
+.sb-i { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(10, 10, 16, .26); -webkit-backdrop-filter: blur(12px) saturate(150%); backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 6px 16px -6px rgba(0, 0, 0, .5);
+  transition: transform .35s var(--spring), background .3s; }
+.sb svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); transition: fill .25s, stroke .25s; }
+.sb small { font-size: 10.5px; font-weight: 600; letter-spacing: .01em; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); }
+.sb:active .sb-i { transform: scale(.82); }
+.sb.like.on svg { fill: #ff3b5c; stroke: #ff3b5c; }
+.sb.save.on svg { fill: #ffc94a; stroke: #ffc94a; }
+.sb.pop .sb-i { animation: pop .55s var(--spring); }
+@keyframes pop { 0% { transform: scale(.7); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
+/* großes Herz beim Doppeltippen */
+.bigheart { position: absolute; z-index: 4; font-size: 96px; line-height: 1; pointer-events: none; transform: translate(-50%, -50%);
+  filter: drop-shadow(0 10px 24px rgba(255, 40, 80, .55)); animation: bigheart .9s var(--ease) forwards; }
+@keyframes bigheart { 0% { transform: translate(-50%, -50%) scale(.2) rotate(-12deg); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1.15) rotate(-8deg); opacity: 1; }
+  45% { transform: translate(-50%, -50%) scale(.95) rotate(-8deg); } 100% { transform: translate(-50%, -110%) scale(1.3) rotate(-8deg); opacity: 0; } }
 .spark { position: fixed; z-index: 40; pointer-events: none; font-size: 20px; will-change: transform, opacity; }
 
 /* Auftritt: Text und Knöpfe gleiten gestaffelt herein, sobald die Karte vorn ist */
-.card-body > *, .actions > * { opacity: 0; transform: translate3d(0, 18px, 0); transition: opacity .35s ease, transform .35s ease; }
-.card.active .card-body > *, .card.active .actions > * { opacity: 1; transform: none; transition: opacity .6s ease, transform .75s var(--ease); }
+.card-body > *, .side > * { opacity: 0; transform: translate3d(0, 18px, 0); transition: opacity .35s ease, transform .35s ease; }
+.side > * { transform: translate3d(16px, 0, 0); }
+.card.active .card-body > *, .card.active .side > * { opacity: 1; transform: none; transition: opacity .6s ease, transform .75s var(--ease); }
 .card.active .card-body > :nth-child(2) { transition-delay: .07s; }
 .card.active .card-body > :nth-child(3) { transition-delay: .14s; }
-.card.active .actions > :nth-child(1) { transition-delay: .2s; }
-.card.active .actions > :nth-child(2) { transition-delay: .26s; }
-.card.active .actions > :nth-child(3) { transition-delay: .32s; }
-.card.active .actions > .act:active { transition-delay: 0s; }
+.card.active .side > :nth-child(1) { transition-delay: .18s; }
+.card.active .side > :nth-child(2) { transition-delay: .23s; }
+.card.active .side > :nth-child(3) { transition-delay: .28s; }
+.card.active .side > :nth-child(4) { transition-delay: .33s; }
 /* 👎: die Karte kippt weg */
 .card.gone .card-photo { transition: transform .5s cubic-bezier(.5, 0, .8, .3), opacity .5s; opacity: 0;
   transform: perspective(900px) translate3d(-30%, 8%, 0) rotateZ(-14deg) rotateY(-30deg) scale(.8); }
-.card.gone .card-body, .card.gone .actions { transition: transform .45s cubic-bezier(.5, 0, .8, .3), opacity .4s; opacity: 0; transform: translate3d(0, 40px, 0) scale(.96); }
+.card.gone .card-body, .card.gone .side { transition: transform .45s cubic-bezier(.5, 0, .8, .3), opacity .4s; opacity: 0; transform: translate3d(0, 40px, 0) scale(.96); }
 
 .state-card { display: grid; place-items: center; text-align: center; padding: 30px; color: var(--muted); }
 .state-card .btn { margin-top: 16px; }
@@ -323,6 +336,17 @@ details.set-more[open] summary::after { transform: rotate(90deg); }
 details.set-more[open] > :not(summary) { animation: rise .45s var(--ease) backwards; }
 details.set-more p { color: var(--muted); font-size: 14px; margin: 10px 0 4px; }
 details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
+/* Schieberegler */
+.set-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+.set-label-row output { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 0; background: none; cursor: pointer; }
+.slider::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+.slider::-moz-range-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: #fff; border: 0;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .3), 0 0 0 1px rgba(0, 0, 0, .06); }
+.slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); }
+.slider-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
 /* Farbwahl */
 .theme-picks { display: flex; gap: 6px; justify-content: space-between; }
 .tpick { flex: 1; display: grid; justify-items: center; gap: 6px; padding: 4px 0; background: none; border: 0; font-size: 12px; color: var(--muted); }
@@ -582,8 +606,8 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 }
 @media (max-height: 700px) {
   .card h2 { font-size: 25px; }
-  .extract { -webkit-line-clamp: 5; }
-  .act { width: 50px; height: 50px; font-size: 21px; }
+  .sb-i { width: 40px; height: 40px; }
+  .side { gap: 9px; bottom: 46px; }
   .card-body { margin-top: -32px; padding: 13px 16px 14px; }
 }
 /* Wer am Gerät „Bewegung reduzieren“ eingestellt hat, bekommt eine ruhige Fassung. */

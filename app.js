@@ -116,7 +116,7 @@ async function api(params) {
 
 const CARD_PROPS = {
   generator: 'search', gsrsort: 'random', gsrnamespace: '0',
-  prop: 'extracts|pageimages|info', exintro: '1', explaintext: '1', exsentences: '6', exlimit: 'max',
+  prop: 'extracts|pageimages|info', exintro: '1', explaintext: '1', exsentences: '10', exlimit: 'max',
   piprop: 'thumbnail', pithumbsize: '900', pilimit: 'max',
 };
 
@@ -183,7 +183,7 @@ async function fetchAotd() {
     const j = await res.json();
     const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
     if (!title) return null;
-    const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '6', piprop: 'thumbnail', pithumbsize: '900' });
+    const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '10', piprop: 'thumbnail', pithumbsize: '900' });
     const p = q.query?.pages?.[0];
     a = { day, item: { title: p?.title || title, extract: p?.extract || j.tfa.extract || '', thumb: p?.thumbnail?.source || null, topic: null, top: false, aotd: true } };
     lstore.set('aotd', a);
@@ -316,7 +316,14 @@ async function gyroStart() {
 }
 function gyroStop() { window.removeEventListener('deviceorientation', onOrient); gyroOn = false; gyroBase = null; tiltTo(0, 0); }
 
-// Funken, die beim 👍 und 🔖 aus dem Knopf sprühen.
+const ICONS = {
+  heart: '<path d="M12 20.3s-7.4-4.5-9.2-9.1C1.5 7.9 3.5 4.6 7 4.6c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.5 0 5.5 3.3 4.2 6.6-1.8 4.6-9.2 9.1-9.2 9.1z"/>',
+  bookmark: '<path d="M6.8 3.6h10.4a1 1 0 0 1 1 1v16l-6.2-4-6.2 4v-16a1 1 0 0 1 1-1z"/>',
+  less: '<circle cx="12" cy="12" r="8.4"/><path d="M8 12h8"/>',
+  share: '<path d="M12 14.5V3.8M7.8 7.8 12 3.6l4.2 4.2"/><path d="M5.2 12.2v6.6a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6v-6.6"/>',
+};
+
+// Funken, die beim Herz und beim Merken aus dem Knopf sprühen.
 function burst(btn, emojis) {
   btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
   if (reduceMotion || !btn.animate) return;
@@ -449,24 +456,48 @@ function addCard(item, afterEl) {
   if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
-  // Ein Tipp auf Bild oder Text öffnet den Artikel.
-  const openIt = () => openReader(item.title, item);
-  img.onclick = openIt;
-  body.onclick = openIt;
   body.append(meta, h, p);
 
-  const actions = el('div', 'actions');
-  const mk = (cls, icon, label) => { const b = el('button', 'act ' + cls); b.textContent = icon; b.setAttribute('aria-label', label); return b; };
-  const bad = mk('dislike', '👎', T('Nicht interessant', 'Not interested'));
-  const save = mk('save', '🔖', T('Merken', 'Save'));
-  const good = mk('like', '👍', T('Mehr davon', 'More like this'));
+  // Seitenleiste im TikTok-Stil: Herz, Merken, Weniger davon, Teilen.
+  const side = el('div', 'side');
+  const mk = (cls, svgPath, label) => {
+    const b = el('button', 'sb ' + cls);
+    b.setAttribute('aria-label', label);
+    const ic = el('span', 'sb-i');
+    ic.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${svgPath}</svg>`;
+    b.append(ic, el('small', null, label));
+    return b;
+  };
+  const like = mk('like', ICONS.heart, T('Gefällt mir', 'Like'));
+  const save = mk('save', ICONS.bookmark, T('Merken', 'Save'));
+  const less = mk('less', ICONS.less, T('Weniger', 'Less'));
+  const share = mk('share', ICONS.share, T('Teilen', 'Share'));
   if (isSaved(item.title)) save.classList.add('on');
 
-  bad.onclick = () => {
-    if (bad.classList.contains('on')) return;
+  const doLike = () => {
+    if (like.classList.contains('on')) return;
+    adjust(item.topic, 1.3);
+    like.classList.add('on');
+    burst(like, ['❤️', '✨']);
+    addSeed(item);
+    insertSimilar(card, item);
+    toast(T('❤️ Ähnliche Artikel kommen als Nächstes', '❤️ Similar articles coming up next'));
+  };
+  like.onclick = () => {
+    if (!like.classList.contains('on')) return doLike();
+    like.classList.remove('on');           // zweites Antippen nimmt das Herz zurück
+    adjust(item.topic, 1 / 1.3);
+    dropSeed(item.title);
+  };
+  save.onclick = () => {
+    const on = toggleSaved(item);
+    save.classList.toggle('on', on);
+    if (on) { adjust(item.topic, 1.1); burst(save, ['✨']); }
+    toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
+  };
+  less.onclick = () => {
     adjust(item.topic, 0.7);
-    if (good.classList.contains('on')) { adjust(item.topic, 1 / 1.3); good.classList.remove('on'); }
-    bad.classList.add('on');
+    if (like.classList.contains('on')) { adjust(item.topic, 1 / 1.3); like.classList.remove('on'); }
     if (item.seed) dropSeed(item.seed);
     dropSeed(item.title);
     toast(item.topic ? T(`Weniger ${topicLabel(item.topic)}`, `Less ${topicLabel(item.topic)}`) : T('Weniger davon', 'Less of this'));
@@ -474,25 +505,37 @@ function addCard(item, afterEl) {
     setTimeout(() => next(card), 380);
     setTimeout(() => card.classList.remove('gone'), 1300);
   };
-  good.onclick = () => {
-    if (good.classList.contains('on')) return;
-    adjust(item.topic, 1.3);
-    if (bad.classList.contains('on')) { adjust(item.topic, 1 / 0.7); bad.classList.remove('on'); }
-    good.classList.add('on');
-    burst(good, ['👍', '✨', '💚']);
-    addSeed(item);
-    insertSimilar(card, item);
-    toast(T('👍 Ähnliche Artikel kommen als Nächstes', '👍 Similar articles coming up next'));
+  share.onclick = async () => {
+    const url = 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(item.title.replace(/ /g, '_'));
+    try {
+      if (navigator.share) await navigator.share({ title: item.title, url });
+      else { await navigator.clipboard.writeText(url); toast(T('Link kopiert', 'Link copied')); }
+    } catch {}
   };
-  save.onclick = () => {
-    const on = toggleSaved(item);
-    save.classList.toggle('on', on);
-    if (on) { adjust(item.topic, 1.1); burst(save, ['🔖', '✨']); }
-    toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
-  };
-  actions.append(bad, save, good);
+  side.append(like, save, less, share);
 
-  card.append(bg, img, body, actions);
+  // Antippen öffnet den Artikel, Doppeltippen aufs Bild ist ein Herz.
+  const openIt = () => openReader(item.title, item);
+  body.onclick = openIt;
+  let tapTimer = null;
+  img.onclick = e => {
+    if (tapTimer) {
+      clearTimeout(tapTimer); tapTimer = null;
+      const r = stage.getBoundingClientRect();
+      const hh = el('span', 'bigheart', '❤️');
+      hh.style.left = (e.clientX - r.left) + 'px';
+      hh.style.top = (e.clientY - r.top) + 'px';
+      stage.append(hh);
+      setTimeout(() => hh.remove(), 900);
+      doLike();
+      return;
+    }
+    tapTimer = setTimeout(() => { tapTimer = null; openIt(); }, 260);
+  };
+
+  const stage = el('div', 'card-stage');
+  stage.append(img, side);
+  card.append(bg, stage, body);
   return placeCard(card, afterEl);
 }
 
@@ -618,7 +661,7 @@ function renderSaved() {
   }
 }
 function syncSaveButtons() {
-  feedEl.querySelectorAll('.card[data-title]').forEach(c => c.querySelector('.act.save')?.classList.toggle('on', isSaved(c.dataset.title)));
+  feedEl.querySelectorAll('.card[data-title]').forEach(c => c.querySelector('.sb.save')?.classList.toggle('on', isSaved(c.dataset.title)));
 }
 
 // ---------- Leser ----------
@@ -1266,6 +1309,17 @@ function renderThemePicks() {
   applyTheme(document.documentElement.dataset.theme);
 }
 renderThemePicks();
+
+// ---------- Größe der Textbox (Schieberegler) ----------
+const panelInput = $('panel');
+const panelShow = v => { $('panel-val').textContent = Math.round(v) + ' %'; };
+panelInput.value = store.get('panel', 50);
+panelShow(panelInput.value);
+panelInput.oninput = () => {
+  document.documentElement.style.setProperty('--panel', panelInput.value);
+  panelShow(panelInput.value);
+  store.set('panel', Number(panelInput.value));
+};
 
 // ---------- Leser: Lesefortschritt ----------
 readerScroll.addEventListener('scroll', () => {
