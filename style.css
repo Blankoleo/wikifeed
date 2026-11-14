@@ -476,6 +476,18 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 .think-twistnote { margin-top: 14px !important; padding: 12px 14px; background: var(--field); border: 1px solid var(--line); border-radius: 14px; }
 .think-body .btn { margin-top: 18px; width: 100%; padding: 13px 18px; }
 
+/* ---------- Gemeinschaft: So haben andere geantwortet ---------- */
+.votes { display: grid; gap: 12px; margin: 16px 0 6px; padding: 14px 16px; border-radius: 18px; animation: rise .5s var(--ease) backwards; }
+.votes:empty { display: none; }
+.votes-h { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.votes-load, .votes-few, .votes-n { color: var(--muted) !important; font-size: 13px; margin: 0 !important; }
+.vrow-top { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; line-height: 1.3; }
+.vrow-top b { font-variant-numeric: tabular-nums; }
+.vrow-line { height: 8px; margin-top: 5px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.vrow-line i { display: block; height: 100%; border-radius: 99px; background: var(--muted); opacity: .55; transform-origin: left; animation: grow .9s var(--ease) backwards; }
+.vrow.mine .vrow-top span { font-weight: 650; }
+.vrow.mine .vrow-line i { background: linear-gradient(90deg, var(--accent2), var(--accent)); opacity: 1; }
+
 /* ---------- Trolley-Spiel ---------- */
 .game-banner { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; text-align: left; color: #fff;
   border: 0; border-radius: 22px; background: linear-gradient(135deg, #2b2360, #151726 70%); isolation: isolate;

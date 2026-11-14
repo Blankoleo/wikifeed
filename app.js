@@ -1046,11 +1046,94 @@ function renderSearchHint() {
 searchInput.oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 350); };
 $('search-form').onsubmit = e => { e.preventDefault(); clearTimeout(searchTimer); runSearch(); searchInput.blur(); };
 
+// ---------- Gemeinschaft: anonyme Abstimmungen (Supabase, siehe backend.js und supabase/setup.sql) ----------
+const community = typeof BACKEND !== 'undefined' && !!BACKEND.url && !!BACKEND.key;
+// Zufällige Geräte-Nummer: macht Stimmen änderbar und verhindert Doppelzählung, verrät aber nichts über dich.
+function deviceId() {
+  let id = store.get('device', null);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+    store.set('device', id);
+  }
+  return id;
+}
+async function rpc(fn, args) {
+  const headers = { 'Content-Type': 'application/json', apikey: BACKEND.key };
+  if (BACKEND.key.startsWith('eyJ')) headers.Authorization = 'Bearer ' + BACKEND.key; // ältere „anon“-Schlüssel
+  const res = await fetch(BACKEND.url.replace(/\/$/, '') + '/rest/v1/rpc/' + fn, { method: 'POST', headers, body: JSON.stringify(args) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+const voteCache = new Map();
+async function castVote(kind, item, choice) {
+  if (!community) return;
+  voteCache.delete(kind + '|' + item);
+  try { await rpc('cast_vote', { p_kind: kind, p_item: String(item), p_device: deviceId(), p_choice: choice }); } catch {}
+}
+async function voteCounts(kind, item) {
+  if (!community) return null;
+  const key = kind + '|' + item;
+  if (!voteCache.has(key)) {
+    voteCache.set(key, rpc('vote_counts', { p_kind: kind, p_item: String(item) })
+      .then(rows => { const c = {}; (rows || []).forEach(r => { c[r.choice] = Number(r.n); }); return c; })
+      .catch(() => { voteCache.delete(key); return null; }));
+  }
+  return voteCache.get(key);
+}
+// Kasten „So haben andere geantwortet“. Füllt sich, sobald die Zahlen da sind.
+function voteBox(kind, item, labels, mine, waitFor) {
+  const box = el('div', 'votes glass');
+  if (!community) return box;
+  box.append(el('div', 'votes-h', T('👥 So haben andere geantwortet', '👥 How others answered')), el('div', 'votes-load', '…'));
+  (async () => {
+    if (waitFor) await waitFor;
+    const c = await voteCounts(kind, item);
+    box.querySelector('.votes-load')?.remove();
+    if (!c) { box.remove(); return; }
+    const total = Object.values(c).reduce((a, b) => a + b, 0);
+    if (total < 3) {
+      box.append(el('p', 'votes-few', T(`Erst ${total} ${total === 1 ? 'Antwort' : 'Antworten'} – du bist unter den Ersten. Schau später nochmal vorbei.`,
+        `Only ${total} ${total === 1 ? 'answer' : 'answers'} so far – you are among the first. Check back later.`)));
+      return;
+    }
+    // Prozente so runden, dass sie zusammen genau 100 ergeben (größte Reste bekommen den Aufschlag).
+    const raw = labels.map((_, i) => (c[i] || 0) / total * 100);
+    const pcs = raw.map(Math.floor);
+    raw.map((v, i) => [v - pcs[i], i]).sort((a, b) => b[0] - a[0]).slice(0, 100 - pcs.reduce((a, b) => a + b, 0)).forEach(([, i]) => pcs[i]++);
+    labels.forEach((label, i) => {
+      const pc = pcs[i];
+      const row = el('div', 'vrow' + (i === mine ? ' mine' : ''));
+      const top = el('div', 'vrow-top');
+      top.append(el('span', null, label + (i === mine ? T(' · deine Wahl', ' · your choice') : '')), el('b', null, pc + ' %'));
+      const line = el('div', 'vrow-line'); const fill = el('i'); fill.style.width = pc + '%'; line.append(fill);
+      row.append(top, line);
+      box.append(row);
+    });
+    box.append(el('p', 'votes-n', T(`aus ${total} Antworten von WikiFeed-Nutzern`, `from ${total} answers by WikiFeed users`)));
+  })();
+  return box;
+}
+// Einmalig: schon gegebene Antworten anonym nachmelden, damit die Zahlen nicht bei null anfangen.
+async function voteBackfill() {
+  if (!community || store.get('votesSynced', false)) return;
+  try {
+    for (const [id, r] of Object.entries(state.think)) {
+      await rpc('cast_vote', { p_kind: 'think', p_item: id, p_device: deviceId(), p_choice: r.a });
+      if (r.t != null) await rpc('cast_vote', { p_kind: 'twist', p_item: id, p_device: deviceId(), p_choice: r.t });
+    }
+    store.set('votesSynced', true);
+  } catch {}
+}
+
 // ---------- Gedankenspiele ----------
 const thinkEl = $('think');
 const thinkBody = $('think-body');
 const thinkScroll = $('think-scroll');
 let thinkCur = null;
+let lastVote = null; // laufende Stimmabgabe – die Zahlen erst danach abfragen
 
 const thinkById = id => THOUGHTS.find(t => t.id === id);
 const optLabel = o => Array.isArray(o) ? o[0] : o;
@@ -1074,6 +1157,7 @@ function answerThink(t, i) {
   if (rec) { if (t.correct != null) return; rec.a = i; }
   else state.think[t.id] = { a: i, t: null, at: today(), reveal: false };
   saveThink();
+  lastVote = castVote('think', t.id, i);
   updateThinkDot();
 }
 // Gestern beantwortet, Auflösung noch nicht angesehen?
@@ -1133,6 +1217,7 @@ function renderThink() {
   if (dailyThought().id === t.id) meta.append(el('span', 'chip top', T('💭 Gedankenspiel des Tages', '💭 Thought experiment of the day')));
   b.append(el('div', 'think-icon', t.icon), meta, el('h1', null, t.title), el('p', 'think-text', t.text), el('p', 'think-q', t.q));
   b.append(optButtons(t.opts, rec ? rec.a : null, t.correct, i => { answerThink(t, i); renderThink(); }));
+  if (rec) b.append(voteBox('think', t.id, t.opts.map(optLabel), rec.a, lastVote));
   if (!rec) { b.append(el('p', 'think-note', T('Erst entscheiden – danach siehst du, was dafür und dagegen spricht.', 'Decide first – then you will see the arguments on both sides.'))); return; }
 
   if (thinkWaiting(t)) {
@@ -1151,8 +1236,8 @@ function renderThink() {
   for (const [head, txt] of t.args) b.append(el('h4', null, head), el('p', null, txt));
   if (t.twist) {
     b.append(el('h3', null, T('Und jetzt?', 'And now?')), el('p', null, t.twist.text), el('p', 'think-q', t.twist.q));
-    b.append(optButtons(t.twist.opts, rec.t, null, i => { rec.t = i; saveThink(); renderThink(); }));
-    if (rec.t != null) b.append(el('p', 'think-twistnote', t.twist.note));
+    b.append(optButtons(t.twist.opts, rec.t, null, i => { rec.t = i; saveThink(); lastVote = castVote('twist', t.id, i); renderThink(); }));
+    if (rec.t != null) b.append(voteBox('twist', t.id, t.twist.opts.map(optLabel), rec.t, lastVote), el('p', 'think-twistnote', t.twist.note));
   }
   b.append(el('h3', null, T('Hintergrund', 'Background')), el('p', null, t.info));
   const wiki = el('button', 'btn', T('Ganzen Artikel auf Wikipedia lesen →', 'Read the full Wikipedia article →'));
@@ -1450,6 +1535,7 @@ $('lang-select').onchange = e => { store.set('lang', e.target.value); location.r
 // ---------- Start ----------
 renderSaved();
 updateThinkDot();
+setTimeout(voteBackfill, 5000);
 loadMore();
 setTimeout(offlineBackfill, 4000);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
