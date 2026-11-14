@@ -266,11 +266,34 @@ function feedFx() {
 }
 const nearObs = new IntersectionObserver(entries => {
   for (const en of entries) {
-    if (en.isIntersecting) nearCards.add(en.target);
-    else { nearCards.delete(en.target); en.target.classList.remove('active'); }
+    const c = en.target, im = c.querySelector('.card-photo img');
+    if (en.isIntersecting) {
+      nearCards.add(c);
+      c.classList.add('near');
+      if (im && !im.getAttribute('src') && im.dataset.src) im.src = im.dataset.src;
+    } else {
+      nearCards.delete(c);
+      c.classList.remove('active', 'near');
+      // Bild freigeben, damit der Speicher nicht mit jeder Karte wächst
+      if (im && im.getAttribute('src')) { im.dataset.src = im.getAttribute('src'); im.removeAttribute('src'); c.querySelector('.card-photo')?.classList.remove('ready'); }
+    }
   }
   feedFx(); // sofort, nicht erst im nächsten Bild: so steht die vordere Karte sicher mit Text da
-}, { root: feedEl, rootMargin: '60% 0px' });
+}, { root: feedEl, rootMargin: '120% 0px' });
+
+// Höchstens 60 Karten behalten: sehr weit zurückliegende werden entfernt (die Scrollstelle bleibt dabei gleich).
+const MAX_CARDS = 60;
+function trimFeed() {
+  const cards = [...feedEl.querySelectorAll('.card')].filter(c => cardItems.has(c));
+  if (cards.length <= MAX_CARDS) return;
+  const h = feedEl.clientHeight || 1;
+  const cur = Math.round(feedEl.scrollTop / h);
+  const drop = Math.min(cards.length - MAX_CARDS, cur - 20);
+  if (drop <= 0) return;
+  let shift = 0;
+  for (const c of cards.slice(0, drop)) { shift += c.offsetHeight; viewObs.unobserve(c); nearObs.unobserve(c); nearCards.delete(c); c.remove(); }
+  feedEl.scrollTop -= shift;
+}
 feedEl.addEventListener('scroll', queueFx, { passive: true });
 window.addEventListener('resize', queueFx);
 
@@ -452,6 +475,7 @@ const viewObs = new IntersectionObserver(entries => {
     let after = 0;
     for (let n = card.nextElementSibling; n && after < 3; n = n.nextElementSibling) if (n.classList.contains('card') && !n.classList.contains('state-card')) after++;
     if (after < 3) loadMore();
+    setTimeout(trimFeed, 800);
   }
 }, { root: feedEl, threshold: 0.6 });
 
@@ -487,7 +511,7 @@ function addCard(item, afterEl) {
       if (im.crossOrigin) { im.removeAttribute('crossorigin'); im.src = item.thumb; } // zweiter Versuch ohne Farb-Auslesen
       else noImage();
     };
-    im.src = item.thumb;
+    im.dataset.src = item.thumb; // geladen wird erst, wenn die Karte in die Nähe kommt (nearObs)
     img.append(im);
   } else noImage();
 
@@ -753,6 +777,7 @@ async function openReader(title, item = null, restoreScroll = 0) {
     if (cur.loaded) { cur.frag = document.createDocumentFragment(); cur.frag.append(...readerBody.childNodes); }
   }
   readerStack.push({ title, item, scroll: 0 });
+  readerStack.slice(0, -5).forEach(e => { e.frag = null; }); // nur die letzten Artikel im Speicher halten
   reader.hidden = false;
   saveSnapSoon();
   await renderArticle(title, restoreScroll);
@@ -1498,19 +1523,26 @@ function saveSnap() {
     const h = feedEl.clientHeight || 1;
     let idx = cards.findIndex(c => c.offsetTop + h / 2 > feedEl.scrollTop);
     if (idx < 0) idx = cards.length - 1;
-    const from = Math.max(0, idx - 30);
+    const from = Math.max(0, idx - 15);
     const top = readerStack[readerStack.length - 1];
     sessionStorage.setItem(SNAP_KEY, JSON.stringify({
       t: Date.now(), lang: LANG, idx: idx - from,
-      items: cards.slice(from, idx + 30).map(c => cardItems.get(c)),
+      items: cards.slice(from, idx + 10).map(c => cardItems.get(c)),
       reader: !reader.hidden && top ? { title: top.title, scroll: readerScroll.scrollTop } : null,
     }));
   } catch {}
 }
 function saveSnapSoon() { clearTimeout(snapTimer); snapTimer = setTimeout(saveSnap, 500); }
+// Startet die Seite kurz hintereinander mehrmals neu, ist sie vermutlich abgestürzt (z. B. Speicher voll).
+// Dann nicht wieder dorthin springen, wo es passiert ist: erst den Artikel weglassen, beim nächsten Mal alles.
+const bootCount = Number(sessionStorage.getItem('wf.boot') || 0);
+sessionStorage.setItem('wf.boot', bootCount + 1);
+setTimeout(() => sessionStorage.removeItem('wf.boot'), 20000);
 function restoreSnap() {
   let s;
   try { s = JSON.parse(sessionStorage.getItem(SNAP_KEY)); } catch {}
+  if (bootCount >= 2) { sessionStorage.removeItem(SNAP_KEY); return false; }
+  if (s && bootCount >= 1) s.reader = null;
   if (!s || s.lang !== LANG || !s.items?.length || Date.now() - s.t > 6 * 3600e3) return false;
   s.items.forEach(it => addCard(it));
   const card = [...feedEl.querySelectorAll('.card')][Math.min(s.idx, s.items.length - 1)];
