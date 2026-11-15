@@ -105,13 +105,28 @@ function countRead() {
 }
 
 // ---------- Wikipedia-API ----------
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.info || data.error.code);
+    return data;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(T('Die Anfrage hat zu lange gedauert', 'The request took too long'));
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function api(params) {
   const url = new URL(API);
   const all = { action: 'query', format: 'json', formatversion: '2', origin: '*', ...params };
   for (const [k, v] of Object.entries(all)) url.searchParams.set(k, v);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
+  return fetchJson(url);
 }
 
 const CARD_PROPS = {
@@ -178,9 +193,7 @@ async function fetchAotd() {
   const day = today();
   let a = lstore.get('aotd', null);
   if (!a || a.day !== day) {
-    const res = await fetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const j = await res.json();
+    const j = await fetchJson(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
     const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
     if (!title) return null;
     const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '10', piprop: 'thumbnail', pithumbsize: '900' });
@@ -194,6 +207,7 @@ async function fetchAotd() {
 // ---------- Feed ----------
 const feedEl = document.getElementById('feed');
 let loading = false;
+let loadBlocked = false;
 let cardCount = 0;
 let feedGen = 0;
 const feedTitles = new Set();
@@ -423,7 +437,7 @@ function stateCard(kind, msg) {
   inner.append(el('p', null, msg));
   if (kind === 'error') {
     const b = el('button', 'btn', T('Nochmal versuchen', 'Try again'));
-    b.onclick = () => { c.remove(); loadMore(); };
+    b.onclick = () => { c.remove(); loadBlocked = false; loadMore(); };
     inner.append(b);
   }
   c.append(inner);
@@ -432,37 +446,47 @@ function stateCard(kind, msg) {
 }
 
 async function loadMore() {
-  if (loading) return;
+  if (loading || loadBlocked) return;
   if (!state.enabled.length) { stateCard('empty', T('Wähle unter „Themen“ mindestens ein Thema aus.', 'Pick at least one topic under “Topics”.')); return; }
   loading = true;
   const gen = feedGen;
   const first = cardCount === 0;
   const spinner = first ? stateCard('loading', T('Suche spannende Artikel …', 'Finding interesting articles …')) : null;
   try {
-    // 3 verschiedene Themen pro Ladevorgang, je ~4 Artikel -> gute Mischung.
-    const want = Math.min(3, state.enabled.length);
-    const topics = new Set();
-    for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
-    const aotdP = (cardCount === 0 && lstore.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
-    let items = [];
-    for (const t of topics) items = items.concat(await fetchTopic(t));
-    // Dazu Artikel, die einem ähneln, der dir gefallen hat.
-    if (state.seeds.length && Math.random() < 0.7) {
-      const seed = state.seeds[Math.floor(Math.random() * state.seeds.length)];
-      try { items = items.concat(await fetchSimilar(seed, 2)); } catch {}
+    // Höchstens drei Runden bei leeren Ergebnissen. Danach entscheidet der Nutzer.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // Themen und ähnliche Artikel parallel laden; einzelne Fehler lassen den Rest durch.
+      const want = Math.min(3, state.enabled.length);
+      const topics = new Set();
+      for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
+      const requests = [...topics].map(t => fetchTopic(t));
+      // Dazu Artikel, die einem ähneln, der dir gefallen hat.
+      if (state.seeds.length && Math.random() < 0.7) {
+        const seed = state.seeds[Math.floor(Math.random() * state.seeds.length)];
+        requests.push(fetchSimilar(seed, 2));
+      }
+      const aotdP = (attempt === 0 && cardCount === 0 && lstore.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : Promise.resolve(null);
+      const [results, aotd] = await Promise.all([Promise.allSettled(requests), aotdP]);
+      if (gen !== feedGen) return;
+      let items = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
+      if (!aotd && results.every(r => r.status === 'rejected')) throw results[0].reason;
+      const titles = new Set(feedTitles);
+      if (aotd) titles.add(aotd.title);
+      items = shuffle(items.filter(i => !titles.has(i.title) && titles.add(i.title)));
+      if (aotd) items.unshift(aotd);
+      if (!items.length) continue;
+      spinner?.remove();
+      feedEl.querySelector('.state-card')?.remove();
+      items.forEach(i => addCard(i));
+      return;
     }
-    const aotd = aotdP ? await aotdP : null;
-    if (gen !== feedGen) return;
-    const titles = new Set(feedTitles);
-    if (aotd) titles.add(aotd.title);
-    items = shuffle(items.filter(i => !titles.has(i.title) && titles.add(i.title)));
-    if (aotd) items.unshift(aotd);
     spinner?.remove();
-    if (!items.length) { loading = false; return loadMore(); }
-    items.forEach(i => addCard(i));
+    loadBlocked = true;
+    stateCard('error', T('Gerade keine neuen Artikel gefunden. Versuche es erneut oder wähle in den Einstellungen weitere Themen aus.', 'No new articles found right now. Try again or choose more topics in Settings.'));
   } catch (e) {
     if (gen !== feedGen) return;
     spinner?.remove();
+    loadBlocked = true;
     stateCard('error', navigator.onLine === false
       ? T('Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.', 'You are offline. You can still read your saved articles under “Saved”.')
       : T('Konnte keine Artikel laden (', 'Could not load articles (') + e.message + T('). Bist du online?', '). Are you online?'));
@@ -623,6 +647,7 @@ function next(card) {
 function resetFeed() {
   feedGen++;
   loading = false;
+  loadBlocked = false;
   cardCount = 0;
   feedTitles.clear();
   viewObs.disconnect();
@@ -738,11 +763,35 @@ function offlineBackfill() {
   state.saved.filter(s => !s.off).forEach(s => queueOffline(s.title));
 }
 window.addEventListener('online', offlineBackfill);
+function savedItems(items, query, sort) {
+  const q = query.trim().toLocaleLowerCase(LANG);
+  const filtered = items.filter(s => !q || [s.title, s.extract, topicLabel(s.topic)]
+    .some(text => (text || '').toLocaleLowerCase(LANG).includes(q)));
+  if (sort === 'oldest') filtered.reverse();
+  if (sort === 'az' || sort === 'za') {
+    filtered.sort((a, b) => a.title.localeCompare(b.title, LANG, { sensitivity: 'base', numeric: true }) * (sort === 'za' ? -1 : 1));
+  }
+  return filtered;
+}
+const savedSearch = $('saved-search');
+const savedSort = $('saved-sort');
+const savedSortPreference = store.get('savedSort', 'newest');
+savedSort.value = ['newest', 'oldest', 'az', 'za'].includes(savedSortPreference) ? savedSortPreference : 'newest';
+savedSearch.addEventListener('input', renderSaved);
+savedSort.addEventListener('change', () => { store.set('savedSort', savedSort.value); renderSaved(); });
+
 function renderSaved() {
   const ul = document.getElementById('saved-list');
   ul.innerHTML = '';
   document.getElementById('saved-empty').hidden = state.saved.length > 0;
-  for (const s of state.saved) {
+  $('saved-controls').hidden = state.saved.length === 0;
+  const items = savedItems(state.saved, savedSearch.value, savedSort.value);
+  const status = $('saved-status');
+  status.hidden = state.saved.length === 0;
+  status.textContent = items.length
+    ? T(`${items.length} von ${state.saved.length} Artikeln`, `${items.length} of ${state.saved.length} articles`)
+    : T('Keine passenden Artikel. Versuche einen anderen Suchbegriff.', 'No matching articles. Try another search term.');
+  for (const s of items) {
     const li = el('li');
     const th = el('div', 'thumb');
     if (s.thumb) th.style.backgroundImage = `url("${s.thumb}")`;
