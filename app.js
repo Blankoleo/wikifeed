@@ -107,13 +107,51 @@ function countRead() {
 }
 
 // ---------- Wikipedia-API ----------
-async function api(params) {
+// Höchstens drei Anfragen gleichzeitig – bei mehr drosselt Wikipedia (HTTP 429). Weitere warten in einer
+// kleinen Schlange; was der Nutzer gerade sehen will (Artikel, Suche), stellt sich vorne an.
+// Jede Anfrage wird nach 12 s abgebrochen; auf 429 folgt nach kurzer Pause genau ein zweiter Versuch.
+const API_MAX = 3, API_TIMEOUT = 12000;
+let apiActive = 0;
+const apiQueue = [];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function apiSlot(urgent) {
+  if (apiActive < API_MAX) { apiActive++; return Promise.resolve(); }
+  return new Promise(go => { if (urgent) apiQueue.unshift(go); else apiQueue.push(go); });
+}
+function apiFree() {
+  const go = apiQueue.shift();
+  if (go) go(); else apiActive--; // der Platz geht direkt an die nächste wartende Anfrage
+}
+async function wikiFetch(url, urgent = false) {
+  for (let attempt = 0; ; attempt++) {
+    await apiSlot(urgent);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), API_TIMEOUT);
+    let res;
+    try {
+      res = await fetch(url, { signal: ctl.signal });
+      if (res.status !== 429) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      }
+      if (attempt) throw new Error(T('Wikipedia ist gerade überlastet', 'Wikipedia is busy right now'));
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error(T('Wikipedia antwortet gerade nicht', 'Wikipedia is not responding'));
+      throw e;
+    } finally {
+      clearTimeout(timer);
+      apiFree();
+    }
+    // Gedrosselt: kurz warten (ohne einen Platz zu belegen), dann noch einmal.
+    const after = Number(res.headers.get('Retry-After'));
+    await sleep(after > 0 ? Math.min(after * 1000, 3000) : 1000 + Math.random() * 600);
+  }
+}
+function api(params, urgent = false) {
   const url = new URL(API);
   const all = { action: 'query', format: 'json', formatversion: '2', origin: '*', ...params };
   for (const [k, v] of Object.entries(all)) url.searchParams.set(k, v);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
+  return wikiFetch(url, urgent);
 }
 
 const CARD_PROPS = {
@@ -180,9 +218,7 @@ async function fetchAotd() {
   const day = today();
   let a = lstore.get('aotd', null);
   if (!a || a.day !== day) {
-    const res = await fetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const j = await res.json();
+    const j = await wikiFetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
     const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
     if (!title) return null;
     const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '10', piprop: 'thumbnail', pithumbsize: '900' });
@@ -196,6 +232,7 @@ async function fetchAotd() {
 // ---------- Feed ----------
 const feedEl = document.getElementById('feed');
 let loading = false;
+let loadBlocked = false; // nach einem Fehler oder drei leeren Runden: erst auf Knopfdruck weiter
 let cardCount = 0;
 let feedGen = 0;
 const feedTitles = new Set();
@@ -365,7 +402,7 @@ async function imageCredit(url) {
     const u = new URL('https://' + f.host + '/w/api.php');
     Object.entries({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'imageinfo', iiprop: 'extmetadata', iiextmetadatafilter: 'Artist|LicenseShortName|Credit', titles: 'File:' + f.file })
       .forEach(([k, v]) => u.searchParams.set(k, v));
-    const d = await (await fetch(u)).json();
+    const d = await wikiFetch(u);
     const md = d.query?.pages?.[0]?.imageinfo?.[0]?.extmetadata || {};
     const txt = h => h ? (new DOMParser().parseFromString(h, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim() : '';
     const artist = txt(md.Artist?.value) || txt(md.Credit?.value);
@@ -426,7 +463,7 @@ function stateCard(kind, msg) {
   inner.append(el('p', null, msg));
   if (kind === 'error') {
     const b = el('button', 'btn', T('Nochmal versuchen', 'Try again'));
-    b.onclick = () => { c.remove(); loadMore(); };
+    b.onclick = () => { c.remove(); loadBlocked = false; loadMore(); };
     inner.append(b);
   }
   c.append(inner);
@@ -435,44 +472,60 @@ function stateCard(kind, msg) {
 }
 
 async function loadMore() {
-  if (loading) return;
-  if (!state.enabled.length) { stateCard('empty', T('Wähle unter „Themen“ mindestens ein Thema aus.', 'Pick at least one topic under “Topics”.')); return; }
+  if (loading || loadBlocked) return;
+  if (!state.enabled.length) { stateCard('empty', T('Wähle unter „Einstellungen“ mindestens ein Thema aus.', 'Pick at least one topic under “Settings”.')); return; }
   loading = true;
   const gen = feedGen;
   const first = cardCount === 0;
   const spinner = first ? stateCard('loading', T('Suche spannende Artikel …', 'Finding interesting articles …')) : null;
   try {
-    // 3 verschiedene Themen pro Ladevorgang, je ~4 Artikel -> gute Mischung.
-    const want = Math.min(3, state.enabled.length);
-    const topics = new Set();
-    for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
-    const aotdP = (cardCount === 0 && lstore.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
-    let items = [];
-    for (const t of topics) items = items.concat(await fetchTopic(t));
-    // Dazu Artikel, die einem ähneln, der dir gefallen hat.
-    if (state.seeds.length && Math.random() < 0.7) {
-      const seed = state.seeds[Math.floor(Math.random() * state.seeds.length)];
-      try { items = items.concat(await fetchSimilar(seed, 2)); } catch {}
+    // Höchstens drei Runden, falls nichts Neues kommt – danach entscheidet der Nutzer (Knopf „Nochmal versuchen“).
+    for (let round = 0; round < 3; round++) {
+      const aotdP = (round === 0 && cardCount === 0 && lstore.get('aotdSeen', '') !== today()) ? fetchAotd().catch(() => null) : null;
+      // 3 verschiedene Themen pro Runde, je ~4 Artikel -> gute Mischung. Alle gleichzeitig angefragt
+      // (die Schlange in api() lässt höchstens drei auf einmal los); fällt eins aus, zählen die übrigen.
+      const want = Math.min(3, state.enabled.length);
+      const topics = new Set();
+      for (let tries = 0; topics.size < want && tries < 30; tries++) topics.add(pickTopic());
+      const jobs = [...topics].map(t => fetchTopic(t));
+      // Dazu Artikel, die einem ähneln, der dir gefallen hat.
+      if (state.seeds.length && Math.random() < 0.7) jobs.push(fetchSimilar(state.seeds[Math.floor(Math.random() * state.seeds.length)], 2));
+      const [results, aotd] = await Promise.all([Promise.allSettled(jobs), aotdP]);
+      if (gen !== feedGen) return;
+      const got = results.filter(r => r.status === 'fulfilled');
+      if (!got.length && !aotd) throw results[0].reason; // alles gescheitert: Fehler zeigen statt weiterzufragen
+      const titles = new Set(feedTitles);
+      if (aotd) titles.add(aotd.title);
+      const items = shuffle(got.flatMap(r => r.value).filter(i => !titles.has(i.title) && titles.add(i.title)));
+      if (aotd) items.unshift(aotd);
+      if (!items.length) continue;
+      spinner?.remove();
+      items.forEach(i => addCard(i));
+      return;
     }
-    const aotd = aotdP ? await aotdP : null;
-    if (gen !== feedGen) return;
-    const titles = new Set(feedTitles);
-    if (aotd) titles.add(aotd.title);
-    items = shuffle(items.filter(i => !titles.has(i.title) && titles.add(i.title)));
-    if (aotd) items.unshift(aotd);
     spinner?.remove();
-    if (!items.length) { loading = false; return loadMore(); }
-    items.forEach(i => addCard(i));
+    loadBlocked = true;
+    stateCard('error', T('Gerade kommen keine neuen Artikel. Versuche es gleich noch einmal oder wähle unter „Einstellungen“ weitere Themen.', 'No new articles right now. Try again in a moment or pick more topics under “Settings”.'));
   } catch (e) {
     if (gen !== feedGen) return;
     spinner?.remove();
+    loadBlocked = true;
     stateCard('error', navigator.onLine === false
       ? T('Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.', 'You are offline. You can still read your saved articles under “Saved”.')
-      : T('Konnte keine Artikel laden (', 'Could not load articles (') + e.message + T('). Bist du online?', '). Are you online?'));
+      : T('Konnte keine Artikel laden (', 'Could not load articles (') + e.message + (e instanceof TypeError // Netzfehler
+        ? T('). Bist du online?', '). Are you online?')
+        : T('). Versuche es gleich noch einmal.', '). Please try again in a moment.')));
   } finally {
     if (gen === feedGen) loading = false;
   }
 }
+// Wieder online: von selbst weiterladen, statt auf den Knopf zu warten.
+window.addEventListener('online', () => {
+  if (!loadBlocked) return;
+  loadBlocked = false;
+  feedEl.querySelector('.state-card')?.remove();
+  loadMore();
+});
 
 const viewObs = new IntersectionObserver(entries => {
   for (const en of entries) {
@@ -627,6 +680,7 @@ function next(card) {
 function resetFeed() {
   feedGen++;
   loading = false;
+  loadBlocked = false;
   cardCount = 0;
   feedTitles.clear();
   viewObs.disconnect();
@@ -680,10 +734,10 @@ function cleanArticle(htmlText) {
 }
 // Zuletzt gelesene Artikel bleiben im Speicher: Zurückgehen oder erneutes Öffnen lädt nichts nach.
 const articleMem = new Map();
-async function fetchArticle(title) {
+async function fetchArticle(title, urgent = true) {
   let a = articleMem.get(title);
   if (!a) {
-    const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' });
+    const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' }, urgent);
     if (d.error) throw new Error(d.error.code === 'missingtitle' ? T('Diesen Artikel gibt es (noch) nicht.', 'This article does not exist (yet).') : d.error.info);
     a = { title: d.parse.title, html: d.parse.text };
     articleMem.set(title, a);
@@ -703,7 +757,7 @@ async function offlineGet(title) {
 async function offlineSave(title) {
   if (!canCache || !isSaved(title)) return;
   const entry = state.saved.find(s => s.title === title);
-  const { title: realTitle, doc } = await fetchArticle(title);
+  const { title: realTitle, doc } = await fetchArticle(title, false); // im Hintergrund: hinten anstellen
   const imgs = [];
   // Videos/Audio gehen ohne Netz nicht – in der Offline-Kopie weglassen.
   doc.querySelectorAll('video, audio').forEach(v => (v.closest('figure') || v).remove());
@@ -742,11 +796,45 @@ function offlineBackfill() {
   state.saved.filter(s => !s.off).forEach(s => queueOffline(s.title));
 }
 window.addEventListener('online', offlineBackfill);
-function renderSaved() {
+// Suchen und Sortieren unter „Gemerkt“. Die gespeicherte Reihenfolge (neueste zuerst) bleibt dabei unangetastet,
+// sortiert wird nur eine Kopie für die Anzeige.
+const savedSearch = $('saved-search'), savedSort = $('saved-sort');
+const SAVED_SORTS = ['newest', 'oldest', 'az', 'za'];
+savedSort.value = SAVED_SORTS.includes(store.get('savedSort', 'newest')) ? store.get('savedSort', 'newest') : 'newest';
+const fold = s => (s || '').normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase(LANG); // „godel“ findet „Gödel“
+function savedView(query) {
+  const q = fold(query.trim());
+  const list = q ? state.saved.filter(s => [s.title, s.extract, s.topic && topicLabel(s.topic)].some(x => fold(x).includes(q))) : state.saved.slice();
+  const sort = savedSort.value;
+  if (sort === 'oldest') list.reverse();
+  else if (sort === 'az' || sort === 'za') {
+    const coll = new Intl.Collator(LANG, { sensitivity: 'base', numeric: true });
+    list.sort((a, b) => coll.compare(a.title, b.title) * (sort === 'za' ? -1 : 1));
+  }
+  return list;
+}
+let savedTimer = null;
+savedSearch.addEventListener('input', () => { clearTimeout(savedTimer); savedTimer = setTimeout(() => renderSaved(true), 120); });
+savedSort.addEventListener('change', () => { store.set('savedSort', savedSort.value); renderSaved(true); });
+$('saved-tools').onsubmit = e => { e.preventDefault(); clearTimeout(savedTimer); renderSaved(true); savedSearch.blur(); };
+
+function renderSaved(calm = false) {
   const ul = document.getElementById('saved-list');
   ul.innerHTML = '';
-  document.getElementById('saved-empty').hidden = state.saved.length > 0;
-  for (const s of state.saved) {
+  ul.classList.toggle('calm', calm === true); // beim Tippen und Umsortieren nicht jedes Mal neu einschweben lassen
+  const total = state.saved.length;
+  document.getElementById('saved-empty').hidden = total > 0;
+  // Suche und Sortierung erst ab zwei Artikeln
+  const tools = total > 1;
+  $('saved-tools').hidden = !tools;
+  const query = tools ? savedSearch.value.trim() : '';
+  const items = tools ? savedView(query) : state.saved;
+  const status = $('saved-status'), none = $('saved-none');
+  status.hidden = !query || !items.length;
+  status.textContent = T(`${items.length} von ${total} gemerkten Artikeln`, `${items.length} of ${total} saved articles`);
+  none.hidden = !query || items.length > 0;
+  none.textContent = T(`Nichts gefunden für „${query}“. Gesucht wird in Titel, Text und Thema.`, `Nothing found for “${query}”. Search looks at title, text and topic.`);
+  for (const s of items) {
     const li = el('li');
     const th = el('div', 'thumb');
     if (s.thumb) th.style.backgroundImage = `url("${s.thumb}")`;
@@ -849,7 +937,7 @@ const leadCache = new Map();
 const bigEnough = u => { const m = u && u.match(/\/(\d+)px-/); return !!u && (!m || Number(m[1]) >= 400); };
 async function leadImage(title) {
   if (leadCache.size > 60) leadCache.clear();
-  if (!leadCache.has(title)) leadCache.set(title, api({ titles: title, redirects: '1', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '900' })
+  if (!leadCache.has(title)) leadCache.set(title, api({ titles: title, redirects: '1', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '900' }, true)
     .then(d => d.query?.pages?.[0]?.thumbnail?.source || null).catch(() => null));
   return leadCache.get(title);
 }
@@ -1243,11 +1331,11 @@ async function runSearch() {
   const seq = ++searchSeq;
   if (q.length < 2) { searchList.innerHTML = ''; renderSearchHint(); return; }
   try {
-    const d = await api({ ...SEARCH_PROPS, generator: 'prefixsearch', gpssearch: q, gpslimit: '10', gpsnamespace: '0' });
+    const d = await api({ ...SEARCH_PROPS, generator: 'prefixsearch', gpssearch: q, gpslimit: '10', gpsnamespace: '0' }, true);
     let pages = (d.query?.pages || []).sort((a, b) => a.index - b.index);
     if (pages.length < 4) {
       // Kaum Treffer am Wortanfang -> zusätzlich Volltextsuche.
-      const d2 = await api({ ...SEARCH_PROPS, generator: 'search', gsrsearch: q, gsrlimit: '10', gsrnamespace: '0' });
+      const d2 = await api({ ...SEARCH_PROPS, generator: 'search', gsrsearch: q, gsrlimit: '10', gsrnamespace: '0' }, true);
       const have = new Set(pages.map(p => p.title));
       pages = pages.concat((d2.query?.pages || []).sort((a, b) => a.index - b.index).filter(p => !have.has(p.title)));
     }

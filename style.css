@@ -664,13 +664,13 @@ details.set-more .btn.ghost { margin-top: 14px; width: 100%; }
 
 /* ---------- Leere Zustände und Suchfeld ---------- */
 .empty { text-align: center; padding: 34px 34px 20px; line-height: 1.5; }
-#saved-empty::before, #search-hint::before { content: ""; display: block; width: 52px; height: 52px; margin: 26px auto 14px; background: var(--muted); opacity: .45;
+#saved-empty::before, #search-hint::before, #saved-none::before { content: ""; display: block; width: 52px; height: 52px; margin: 26px auto 14px; background: var(--muted); opacity: .45;
   -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
 #saved-empty::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M6.8 3.6h10.4a1 1 0 0 1 1 1v16l-6.2-4-6.2 4v-16a1 1 0 0 1 1-1z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M6.8 3.6h10.4a1 1 0 0 1 1 1v16l-6.2-4-6.2 4v-16a1 1 0 0 1 1-1z'/%3E%3C/svg%3E"); }
-#search-hint::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E");
+#search-hint::before, #saved-none::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E"); }
-#saved-empty[hidden], #search-hint[hidden] { display: none; }
+#saved-empty[hidden], #search-hint[hidden], #saved-none[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -809,3 +809,20 @@ button.th-row:active { background: color-mix(in srgb, var(--accent) 9%, transpar
 .gmode { min-height: 64px; }
 .game-body .chip { font-size: 13px; }
 .gchoice .btn { min-height: 52px; font-size: 17px; }
+
+/* ================= Version 2.41: Gemerkt durchsuchen und sortieren ================= */
+/* Suchfeld wie unter „Suche“, daneben die Sortierung als ruhige Pille (ohne Glas-Filter: bleibt sparsam im Speicher). */
+.saved-tools { display: flex; gap: 8px; align-items: stretch; }
+.saved-tools[hidden] { display: none; }
+.saved-tools input { flex: 1; min-width: 0; min-height: 48px; }
+.saved-sort { position: relative; flex: none; display: flex; align-items: stretch; max-width: 46%; }
+.saved-sort svg { position: absolute; left: 13px; top: 50%; margin-top: -9px; width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+.saved-sort select { width: 100%; min-height: 48px; font: inherit; font-size: 16px; font-weight: 600; padding: 0 14px 0 38px; border-radius: 16px;
+  border: 1px solid var(--glass-border); background: var(--field); color: var(--text); -webkit-appearance: none; appearance: none;
+  box-shadow: inset 0 1px 0 var(--glass-hi); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; cursor: pointer; transition: border-color .25s, box-shadow .25s; }
+.saved-sort select:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.saved-status { margin: 0; padding: 0 20px 8px; color: var(--muted); font-size: 14px; }
+.saved-status[hidden] { display: none; }
+.list.calm li { animation: none; }
+.state-card .btn { min-height: 44px; }
+@media (min-width: 700px) { .saved-status { max-width: 640px; margin-left: auto; margin-right: auto; } }
