@@ -4,6 +4,9 @@ const API = 'https://' + WIKI.host + '/w/api.php';
 // Gedankenspiele in der aktiven Sprache (thoughts.js / thoughts.en.js)
 // (i18n.js lädt nur die Datei der aktiven Sprache; fehlt sie, bleibt der Bereich leer statt die App anzuhalten)
 const THOUGHTS = (LANG === 'en' ? typeof THOUGHTS_EN !== 'undefined' && THOUGHTS_EN : typeof THOUGHTS_DE !== 'undefined' && THOUGHTS_DE) || [];
+// Seit 2.6: Alltagsdilemmata und Philosophen-Karten (denken.js / denken.en.js), gleiche Kennungen in beiden Sprachen
+const DENKEN = (LANG === 'en' ? typeof DENKEN_EN !== 'undefined' && DENKEN_EN : typeof DENKEN_DE !== 'undefined' && DENKEN_DE) || { people: {}, alltag: [], philo: [] };
+const THINK_ALL = THOUGHTS.concat(DENKEN.alltag || [], DENKEN.philo || []);
 // Fundstücke in der aktiven Sprache (fundstuecke.de.js / fundstuecke.en.js), nur vollständige Einträge
 const FUND = ((LANG === 'en' ? typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUECKE_EN : typeof FUNDSTUECKE_DE !== 'undefined' && FUNDSTUECKE_DE) || [])
   .filter(f => f && f.id && f.object && Array.isArray(f.steps) && f.steps.length >= 2 && f.steps.every(s => s && s.title));
@@ -1427,6 +1430,28 @@ const SYM = {
   cross: '<path d="M7 7l10 10M17 7L7 17"/>',
   checkc: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/>',
   crossc: '<circle cx="12" cy="12" r="8.5"/><path d="M9.4 9.4l5.2 5.2M14.6 9.4l-5.2 5.2"/>',
+  // seit 2.6: Alltag & Philosophen
+  pillar: '<path d="M4 9h16l-8-4.5z"/><path d="M6.5 11.5v6M10.17 11.5v6M13.83 11.5v6M17.5 11.5v6M4.5 20h15"/>',
+  home: '<path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5v10h12v-10"/><path d="M10 19.5v-5h4v5"/>',
+  coin: '<circle cx="12" cy="12" r="8.5"/><path d="M14.6 9.3A3 3 0 0 0 12 8c-1.6 0-2.7.8-2.7 2 0 2.8 5.6 1.4 5.6 4.1 0 1.2-1.2 2-2.9 2a3.2 3.2 0 0 1-2.8-1.4M12 6.4V8M12 16.1v1.5"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  cart: '<path d="M3 4.5h2.5l2.2 10.5h10.1l2-7.5H6.4"/><circle cx="9" cy="19" r="1.5"/><circle cx="16.5" cy="19" r="1.5"/>',
+  car: '<path d="M4 15.5v-3.2L6.2 7h11.6l2.2 5.3v3.2z"/><path d="M4 12.3h16"/><circle cx="7.8" cy="17.6" r="1.8"/><circle cx="16.2" cy="17.6" r="1.8"/>',
+  wifi: '<path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.7a7.6 7.6 0 0 1 11 0M9.5 15.8a3.4 3.4 0 0 1 5 0"/><circle cx="12" cy="18.8" r="1" fill="currentColor" stroke="none"/>',
+  seat: '<path d="M7.5 3.5v10h8.5l1.5 7M7.5 13.5L6 20.5M7.5 9.5h6.5"/>',
+  doc: '<path d="M6.5 3.5h7.5l4 4v13h-11.5z"/><path d="M14 3.5v4h4M9.5 12h5M9.5 15.5h5"/>',
+  chat: '<path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/>',
+  star: '<path d="M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.7l-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/>',
+  gift: '<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M3 9h18M12 9v11M12 9C10.5 5.5 6.5 4.5 6.5 7.2 6.5 9 12 9 12 9zm0 0c1.5-3.5 5.5-4.5 5.5-1.8C17.5 9 12 9 12 9z"/>',
+  music: '<path d="M9 18V5.5l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/>',
+  users: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3.3 2.7-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3"/>',
+  heart: '<path d="M12 19.5s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7.5 2.5c0 5.4-7.5 10-7.5 10z"/>',
+  paw: '<circle cx="6.8" cy="10.5" r="1.8"/><circle cx="10.2" cy="6.6" r="1.8"/><circle cx="13.8" cy="6.6" r="1.8"/><circle cx="17.2" cy="10.5" r="1.8"/><path d="M12 12c-2.6 0-5 3-5 5.3 0 1.6 1.3 2.4 2.8 2.1 1-.2 1.5-.6 2.2-.6s1.2.4 2.2.6c1.5.3 2.8-.5 2.8-2.1 0-2.3-2.4-5.3-5-5.3z"/>',
+  mountain: '<path d="M3 19.5l6.5-11 3.5 5.5 2.5-3.5 5.5 9z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+  own: '<path d="M7 3.5v17"/><path d="M7 14a5 5 0 0 1 5-5h6"/><path d="M15 6l3 3-3 3"/>',
+  dash: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12h7"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/>',
 };
 function symEl(name, cls) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1451,6 +1476,8 @@ const KINDS = {
   paradox: { label: T('Paradox · offen', 'Paradox · open'), short: T('Paradox', 'Paradox'), c: 'var(--k-violet)' },
   wahl: { label: T('Entscheidung', 'Decision'), short: T('Entscheidung', 'Decision'), c: 'var(--k-indigo)' },
   klassik: { label: T('Klassiker', 'Classic'), short: T('Klassiker', 'Classic'), c: 'var(--k-rose)' },
+  alltag: { label: T('Alltag', 'Everyday'), short: T('Alltag', 'Everyday'), c: 'var(--k-green)' },
+  philo: { label: T('Philosophen fragen', 'Ask the philosophers'), short: T('Philosophen', 'Philosophers'), c: 'var(--k-gold)' },
 };
 // Sammlungen mit Zwischenüberschriften (Konzept 3.10). Weitere Sammlungen erscheinen erst, wenn es Inhalte für sie gibt.
 const COLLECTIONS = [
@@ -1460,6 +1487,21 @@ const COLLECTIONS = [
       { kind: 'raetsel', title: T('Mit Lösung', 'With an answer'), ids: ['ziege', 'geburtstag', 'hilbert', 'achilles', 'affen', 'galilei', 'aufzug', 'zwillinge', 'olbers', 'maxwell', 'molyneux'] },
       { kind: 'paradox', title: T('Offene Paradoxien', 'Open paradoxes'), ids: ['haufen', 'theseus', 'luegner', 'hinrichtung', 'dornroeschen', 'grossvater', 'fermi'] },
       { kind: 'wahl', title: T('Entscheiden & Spiele', 'Decisions & games'), ids: ['newcomb', 'gefangene', 'buridan', 'pascal', 'allmende', 'ultimatum', 'petersburg'] },
+    ] },
+  { id: 'alltag', sym: 'home', fresh: true, title: T('Alltagsdilemmata', 'Everyday dilemmas'), sub: T('Was tust du, wenn …?', 'What would you do if …?'),
+    desc: T('Fälle aus dem echten Leben. Nach deiner Antwort siehst du denselben Fall aus drei Blickwinkeln: Ergebnis, Grundsätze und Haltung.', 'Cases from real life. After you answer, you see the same case from three angles: outcome, principles and character.'),
+    groups: [
+      { kind: 'alltag', title: T('Geld, Arbeit & Einkauf', 'Money, work & shopping'), ids: ['a-wechselgeld', 'a-stempeluhr', 'a-butter'] },
+      { kind: 'alltag', title: T('Nachbarn & unterwegs', 'Neighbours & out and about'), ids: ['a-kratzer', 'a-wlan', 'a-sitzplatz'] },
+      { kind: 'alltag', title: T('Schule & Internet', 'School & online'), ids: ['a-pruefung', 'a-hausarbeit', 'a-foto', 'a-sterne'] },
+      { kind: 'alltag', title: T('Freundschaft & Familie', 'Friends & family'), ids: ['a-geschenk', 'a-konzert', 'a-erbe', 'a-gesehen', 'a-diagnose'] },
+    ] },
+  { id: 'philo', sym: 'pillar', fresh: true, title: T('Philosophen fragen', 'Ask the philosophers'), sub: T('Eine Frage, vier große Denker', 'One question, four great thinkers'),
+    desc: T('Kant, Mill, Aristoteles und Nietzsche antworten, oft mit einem Gast. Sinngemäß zusammengefasst, mit Fundstelle zum Nachlesen.', 'Kant, Mill, Aristotle and Nietzsche answer, often joined by a guest. Summarised in plain words, with a reference to look it up.'),
+    groups: [
+      { kind: 'philo', title: T('Richtig handeln', 'Doing right'), ids: ['p-absicht', 'p-versprechen', 'p-strafe', 'p-gefuehl'] },
+      { kind: 'philo', title: T('Ich und die anderen', 'Me and others'), ids: ['p-familie', 'p-mitleid', 'p-neid', 'p-tiere'] },
+      { kind: 'philo', title: T('Mein Leben', 'My life'), ids: ['p-selbstschaden', 'p-selbstliebe', 'p-gutesleben', 'p-freierwille'] },
     ] },
   { id: 'klassik', sym: 'book', title: T('Klassische Gedankenexperimente', 'Classic thought experiments'), sub: T('Die berühmten Fälle der Philosophie', 'The famous cases of philosophy'),
     desc: T('Moral, Bewusstsein, das Ich und das Wissen – die Fälle, über die Philosophinnen und Philosophen bis heute streiten.', 'Morality, consciousness, the self and knowledge – the cases philosophers still argue about.'),
@@ -1471,27 +1513,34 @@ const COLLECTIONS = [
       { kind: 'klassik', title: T('Physik zum Staunen', 'Physics to marvel at'), ids: ['katze', 'laplace'] },
     ] },
 ];
-const thinkById = id => THOUGHTS.find(t => t.id === id);
+const THINK_BY_ID = new Map(THINK_ALL.map(t => [t.id, t]));
+const thinkById = id => THINK_BY_ID.get(id);
 const THINK_META = {}; // id -> { coll, group }
 for (const c of COLLECTIONS) for (const g of c.groups) {
   g.ids = g.ids.filter(id => thinkById(id));
   for (const id of g.ids) THINK_META[id] = { coll: c, group: g };
 }
-// Sicherheitsnetz: Eine Frage ohne Platz in einer Sammlung landet bei den Klassikern, damit nichts verschwindet.
-for (const t of THOUGHTS) if (!THINK_META[t.id]) { const g = COLLECTIONS[1].groups[COLLECTIONS[1].groups.length - 1]; g.ids.push(t.id); THINK_META[t.id] = { coll: COLLECTIONS[1], group: g }; }
 const collById = id => COLLECTIONS.find(c => c.id === id);
+// Sicherheitsnetz: Eine Frage ohne Platz in einer Sammlung landet bei den Klassikern, damit nichts verschwindet.
+{ const kc = collById('klassik'), g = kc.groups[kc.groups.length - 1];
+  for (const t of THINK_ALL) if (!THINK_META[t.id]) { g.ids.push(t.id); THINK_META[t.id] = { coll: kc, group: g }; } }
 const collCards = c => c.groups.flatMap(g => g.ids).map(thinkById);
-const optLabel = o => Array.isArray(o) ? o[0] : o;
+// Antworten: Text, [Text, Neigung] (für „Deine Standpunkte“) oder seit 2.6 { t: Text, l: Blickwinkel }
+const optLabel = o => Array.isArray(o) ? o[0] : (o && typeof o === 'object' ? o.t : o);
 const optLean = o => Array.isArray(o) ? o[1] : null;
 const saveThink = () => store.set('think', state.think);
+// Paare verwandter Fälle für den späteren Widerspruchs-Finder (Konzept 6, Version 2.7). Noch ohne Anzeige.
+const THINK_PAIRS = [...new Set(THINK_ALL.flatMap(t => (t.pair || []).map(b => [t.id, b].sort().join(' '))))].map(k => k.split(' '));
 
-// Jeden Tag eine andere Frage, in fester Reihenfolge – auf jedem Gerät dieselbe.
+// Jeden Tag eine andere Frage, in fester Reihenfolge – auf jedem Gerät dieselbe. Fragen mit heiklem Thema (care)
+// kommen nie als Frage des Tages: Sie sollen niemanden ungefragt auf der Übersicht erwarten.
+const DAILY_POOL = THINK_ALL.filter(t => !t.care);
 function dailyThought(day = today()) {
   const [y, m, d] = day.split('-').map(Number);
-  const n = THOUGHTS.length;
+  const n = DAILY_POOL.length;
   const gcd = (a, b) => b ? gcd(b, a % b) : a;
   const step = [7, 11, 13, 17, 19, 23].find(x => gcd(x, n) === 1) || 1;
-  return THOUGHTS[(Math.floor(Date.UTC(y, m - 1, d) / 864e5) * step) % n];
+  return DAILY_POOL[(Math.floor(Date.UTC(y, m - 1, d) / 864e5) * step) % n];
 }
 // Antwort speichern. Rätsel mit Lösung bleiben nach der ersten Antwort fest, alles andere lässt sich ändern.
 // Bestehende Einträge werden nur ergänzt, nie neu angelegt – so bleiben auch unbekannte Felder erhalten.
@@ -1505,7 +1554,7 @@ function answerThink(t, i) {
 }
 // Roter Punkt am Tab „Denken“: nur, solange die Frage des Tages neu ist. Er verschwindet, sobald der Tab offen war.
 function updateThinkDot() {
-  const d = THOUGHTS.length ? dailyThought() : null;
+  const d = DAILY_POOL.length ? dailyThought() : null;
   const on = !!d && !state.think[d.id] && store.get('thinkDot', '') !== today();
   document.querySelector('.tabbar button[data-view="think"]')?.classList.toggle('dot', on);
 }
@@ -1630,12 +1679,15 @@ function renderCollection(c) {
     b.append(box);
   }
 }
+const careLabel = t => t.care ? T('Thema: ', 'Topic: ') + t.care : (t.hint || '');
 function cardRow(t) {
   const rec = state.think[t.id];
   const r = el('button', 'th-row');
   r.type = 'button';
   const rt = el('span', 'th-rt');
   rt.append(el('b', null, t.title), el('span', 'th-q', t.q));
+  const topic = careLabel(t);
+  if (topic) rt.append(el('span', 'th-care', topic));
   let st;
   if (!rec) st = chevEl();
   else {
@@ -1687,16 +1739,34 @@ function thinkToColl(c) {
 }
 
 // Ebene 3: die Frage. Aufbau: Kopf · Lage · Frage · Antworten · Auflösung · Und wenn …? · Hintergrund · Weiter
+// Alltag: nach der Antwort „Was gibt den Ausschlag?“, danach drei Blickwinkel. Philosophen: die Stimmen und „Wem stimmst du zu?“.
 function renderCard(t, fresh = false) {
   const rec = state.think[t.id];
   const meta = THINK_META[t.id], kind = KINDS[meta.group.kind];
+  const entry = thinkL.top();
   $('think-title').textContent = t.title;
   const b = thinkBody;
   b.innerHTML = '';
   const k = el('span', 'th-kind');
   k.style.setProperty('--kc', kind.c);
   k.append(symEl(t.icon, 'in'), el('span', null, (dailyThought().id === t.id ? T('Frage des Tages · ', 'Question of the day · ') : '') + kind.label));
-  b.append(k, el('h1', null, t.title), el('p', 'think-text', t.text), el('h2', 'think-q', t.q));
+  b.append(k, el('h1', null, t.title));
+  // Heikles Thema: zuerst nur der Hinweis. Die Frage erscheint erst auf Wunsch, Überspringen zählt nirgends.
+  if (t.care && !rec && !(entry && entry.careOk)) {
+    const box = el('section', 'think-care');
+    const show = el('button', 'btn', T('Frage zeigen', 'Show the question'));
+    show.type = 'button';
+    show.onclick = () => { if (entry) entry.careOk = true; renderCard(t); };
+    box.append(icBox('info'), el('h2', null, careLabel(t)),
+      el('p', null, T('Diese Frage berührt ein persönliches Thema. Lies nur weiter, wenn es für dich gerade passt. Wer überspringt, verpasst nichts, und nichts zählt dagegen.',
+        'This question touches on a personal topic. Only read on if it feels right for you just now. Skipping it costs you nothing, and nothing counts against you.')),
+      show, skipButton(t, meta));
+    b.append(box);
+    return;
+  }
+  if (t.hint) { const h = el('p', 'think-hint'); h.append(symEl('info', 'in'), el('span', null, t.hint)); b.append(h); }
+  b.append(el('p', 'think-text', t.text), el('h2', 'think-q', t.q));
+  const redraw = () => { const y = thinkScroll.scrollTop; renderCard(t); thinkScroll.scrollTop = y; };
   b.append(optButtons(t.opts, rec ? rec.a : null, t.correct, i => {
     const first = !state.think[t.id];
     if (!answerThink(t, i)) return;
@@ -1705,39 +1775,252 @@ function renderCard(t, fresh = false) {
     thinkScroll.scrollTop = y;
     if (first) b.querySelector('.think-res > :first-child')?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
   }));
-  if (!rec) { b.append(el('p', 'think-note', T('Erst entscheiden – dann kommt die Auflösung.', 'Decide first – then the resolution follows.'))); return; }
+  if (!rec) {
+    b.append(el('p', 'think-note', T('Erst entscheiden – dann kommt die Auflösung.', 'Decide first – then the resolution follows.')));
+    if (t.care) b.append(skipButton(t, meta, 'link'));
+    return;
+  }
 
   const res = el('div', 'think-res' + (fresh ? ' fresh' : ''));
+  b.append(res);
   if (t.correct != null) {
     const ok = rec.a === t.correct;
     const v = el('p', 'think-verdict ' + (ok ? 'ok' : 'no'));
     v.append(symEl(ok ? 'checkc' : 'crossc', 'in'), el('span', null, ok ? T('Richtig!', 'Correct!') : T('Nicht ganz – richtig ist: ', 'Not quite – the answer is: ') + optLabel(t.opts[t.correct])));
     res.append(v);
+  } else if (t.calm) {
+    res.append(el('p', 'think-note', T('Du kannst deine Wahl jederzeit ändern.', 'You can change your choice at any time.'))); // „keine falsche Antwort“ sagt calm
   } else {
     res.append(el('p', 'think-note', T('Hier gibt es keine „richtige“ Antwort. Du kannst deine Wahl jederzeit ändern.', 'There is no “right” answer here. You can change your choice at any time.')));
   }
-  res.append(el('h3', null, T('Auflösung', 'Resolution')));
-  for (const [head, txt] of t.args) res.append(el('h4', null, head), el('p', null, txt));
+  if (t.kind === 'alltag') { if (!renderAlltagRes(t, rec, res, redraw)) return; }
+  else if (t.kind === 'philo') renderPhiloRes(t, rec, res, redraw);
+  else {
+    res.append(el('h3', null, T('Auflösung', 'Resolution')));
+    for (const [head, txt] of t.args) res.append(el('h4', null, head), el('p', null, txt));
+  }
   if (t.twist) {
     res.append(el('h3', null, T('Und wenn …?', 'And what if …?')), el('p', null, t.twist.text), el('p', 'think-q2', t.twist.q));
-    res.append(optButtons(t.twist.opts, rec.t, null, i => {
-      rec.t = i; saveThink();
-      const y = thinkScroll.scrollTop;
-      renderCard(t);
-      thinkScroll.scrollTop = y;
-    }));
+    res.append(optButtons(t.twist.opts, rec.t, null, i => { rec.t = i; saveThink(); redraw(); }));
     if (rec.t != null) res.append(el('p', 'think-twistnote', t.twist.note));
   }
-  res.append(el('h3', null, T('Hintergrund', 'Background')), el('p', null, t.info));
-  const wiki = el('button', 'btn ghost2', T('Ganzen Artikel auf Wikipedia lesen', 'Read the full Wikipedia article'));
-  wiki.type = 'button';
-  wiki.onclick = () => openReader(t.wiki);
+  if (t.info) res.append(el('h3', null, T('Hintergrund', 'Background')), el('p', null, t.info));
+  if (t.wiki) {
+    const wiki = el('button', 'btn ghost2', t.info ? T('Ganzen Artikel auf Wikipedia lesen', 'Read the full Wikipedia article') : T('Mehr dazu auf Wikipedia', 'More on Wikipedia'));
+    wiki.type = 'button';
+    wiki.onclick = () => openReader(t.wiki);
+    res.append(wiki);
+  }
+  if (canShareFiles()) {
+    const sh = el('button', 'btn ghost2 think-share');
+    sh.type = 'button';
+    sh.append(symEl('share', 'in'), el('span', null, T('Frage als Bild teilen', 'Share the question as an image')));
+    sh.onclick = () => shareCardImage(t, kind);
+    res.append(sh);
+  }
   const nid = nextThinkId(t);
   const next = el('button', 'btn', nid ? T('Nächste Frage →', 'Next question →') : T('Alle beantwortet – zur Sammlung', 'All answered – to the collection'));
   next.type = 'button';
   next.onclick = () => nid ? thinkGoto(nid) : thinkToColl(meta.coll);
-  res.append(wiki, next);
-  b.append(res);
+  res.append(next);
+}
+// „Überspringen“: zur nächsten offenen Frage der Sammlung, ohne etwas zu speichern
+function skipButton(t, meta, style) {
+  const s = el('button', style === 'link' ? 'think-skip' : 'btn ghost2', T('Überspringen', 'Skip'));
+  s.type = 'button';
+  s.onclick = () => { const nid = nextThinkId(t); if (nid) thinkGoto(nid); else thinkToColl(meta.coll); };
+  return s;
+}
+
+// Die drei Blickwinkel (Konzept 5.1). Die Namen sind dieselben wie später im Denkprofil.
+const LENSES = {
+  F: { name: T('Ergebnis', 'Outcome'), sub: T('was am Ende herauskommt', 'what comes out in the end'), c: 'var(--l-f)' },
+  R: { name: T('Grundsätze', 'Principles'), sub: T('feste Regeln und Rechte', 'firm rules and rights'), c: 'var(--l-r)' },
+  C: { name: T('Haltung', 'Character'), sub: T('was für ein Mensch du sein willst', 'what kind of person you want to be'), c: 'var(--l-c)' },
+};
+// Gründe in wechselnder, aber für jede Frage fester Reihenfolge (sonst springen die Knöpfe beim Neuzeichnen)
+function reasonOrder(id) {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return [['F', 'R', 'C'], ['R', 'C', 'F'], ['C', 'F', 'R'], ['F', 'C', 'R'], ['R', 'F', 'C'], ['C', 'R', 'F']][h % 6];
+}
+// Alltag: Schritt „Was gibt den Ausschlag?“ (gespeichert als w: 'F' | 'R' | 'C', '' = übersprungen), danach die Auflösung.
+// Gibt false zurück, solange der Grund noch offen ist: Dann folgt darunter noch nichts.
+function renderAlltagRes(t, rec, res, redraw) {
+  const order = reasonOrder(t.id);
+  res.append(el('h3', null, T('Was gibt für dich den Ausschlag?', 'What tips the balance for you?')));
+  res.append(el('p', 'think-lead', T('Wähle den Grund, der für dich am meisten zählt.', 'Pick the reason that matters most to you.')));
+  const picked = rec.w ? order.indexOf(rec.w) : null;
+  res.append(optButtons(order.map(key => t.why[key]), picked, null, i => { rec.w = order[i]; saveThink(); redraw(); }));
+  if (rec.w == null) {
+    const skip = el('button', 'think-skip', T('Überspringen', 'Skip'));
+    skip.type = 'button';
+    skip.onclick = () => { rec.w = ''; saveThink(); redraw(); };
+    res.append(skip);
+    return false;
+  }
+  res.append(el('h3', null, T('Drei Blickwinkel', 'Three angles')));
+  if (t.calm) res.append(el('p', 'think-calm', t.calm));
+  res.append(el('p', 'think-lead', T('Dieselbe Antwort kann man aus ganz verschiedenen Gründen geben. So sieht der Fall aus jedem Blickwinkel aus.',
+    'You can give the same answer for quite different reasons. This is how the case looks from each angle.')));
+  const near = (t.opts[rec.a] || {}).l;
+  const wrap = el('div', 'lenses');
+  for (const key of ['F', 'R', 'C']) {
+    const L = LENSES[key];
+    const box = el('section', 'lens' + (rec.w === key ? ' mine' : ''));
+    box.style.setProperty('--lc', L.c);
+    const head = el('div', 'lens-head');
+    head.append(el('b', null, L.name), el('small', null, L.sub));
+    box.append(head);
+    const tags = el('div', 'lens-tags');
+    if (near === key) tags.append(el('span', 'lens-tag', T('Nahe an deiner Antwort', 'Close to your answer')));
+    if (rec.w === key) tags.append(el('span', 'lens-tag strong', T('Dein Grund', 'Your reason')));
+    if (tags.childNodes.length) box.append(tags);
+    box.append(el('p', null, t.lenses[key]));
+    wrap.append(box);
+  }
+  res.append(wrap);
+  if (rec.w && near && rec.w !== near) res.append(el('p', 'think-note', T(
+    `Deine Antwort liegt nahe am Blickwinkel „${LENSES[near].name}“, dein Grund beim Blickwinkel „${LENSES[rec.w].name}“. Das ist kein Widerspruch: Was man tut und warum man es tut, gehört nicht immer zur selben Denkweise.`,
+    `Your answer is close to the “${LENSES[near].name}” angle, your reason to “${LENSES[rec.w].name}”. That is no contradiction: what you do and why you do it don’t always belong to the same way of thinking.`)));
+  if (t.fact) res.append(el('h3', null, T('Gut zu wissen', 'Good to know')), el('p', null, t.fact));
+  if (t.help) { const h = el('p', 'think-help'); h.append(symEl('info', 'in'), el('span', null, t.help)); res.append(h); }
+  return true;
+}
+
+// Philosophen: Steckbriefe aus denken.js. Kurzname = letztes Wort des Namens (Kant, Mill, Beauvoir …).
+const person = who => DENKEN.people[who] || { name: who, years: '', looks: '', idea: '' };
+const personShort = who => person(who).name.split(' ').pop();
+const FOUR = ['kant', 'mill', 'aristoteles', 'nietzsche'];
+const SHE = new Set(['arendt', 'beauvoir']);
+const quoteOpt = o => T('„', '“') + optLabel(o) + T('“', '”');
+function renderPhiloRes(t, rec, res, redraw) {
+  const near = t.voices.filter(v => v.fit.includes(rec.a)).map(v => personShort(v.who));
+  res.append(el('h3', null, T('Was die Philosophen wohl sagen würden', 'What the philosophers would probably say')));
+  res.append(el('p', 'think-lead', T('Sinngemäß zusammengefasst, keine wörtlichen Zitate. Viele dieser Fragen haben sich die Denker so nie gestellt: Hier werden ihre Grundgedanken übertragen.',
+    'Summarised in plain words, not quoted. Many of these questions were never put to the thinkers in this form: their basic ideas are applied here.')));
+  const sum = el('p', 'think-lead');
+  if (near.length) sum.append(T('Deiner Antwort am nächsten: ', 'Closest to your answer: '), el('b', null, near.join(', ')));
+  else sum.textContent = T('Keine der Stimmen wählt genau deine Antwort. Auch das kommt vor.', 'None of the voices picks exactly your answer. That happens too.');
+  res.append(sum);
+  const list = el('div', 'voices');
+  for (const v of t.voices) {
+    const p = person(v.who), fits = v.fit.includes(rec.a), guest = !FOUR.includes(v.who), she = SHE.has(v.who);
+    const box = el('section', 'voice' + (fits ? ' near' : ''));
+    if (rec.p === v.who) box.append(el('span', 'badge', T('Deine Wahl', 'Your pick')));
+    const vh = el('button', 'voice-head');
+    vh.type = 'button';
+    vh.setAttribute('aria-label', T(`${p.name}: mehr auf Wikipedia`, `${p.name}: more on Wikipedia`));
+    vh.onclick = () => openReader(p.wiki);
+    const mono = el('span', 'mono', personShort(v.who)[0]);
+    mono.setAttribute('aria-hidden', 'true');
+    const nm = el('span', 'vh-name');
+    nm.append(el('b', null, p.name), el('small', null, [p.years, p.looks, guest ? T('Gast', 'guest') : ''].filter(Boolean).join(' · ')));
+    vh.append(mono, nm, chevEl());
+    const idea = el('p', 'idea');
+    idea.append(el('em', null, T('Leitidee: ', 'Key idea: ')), p.idea);
+    const say = el('p', 'say');
+    say.append(el('b', null, she ? T('So sähe sie es wohl: ', 'How she would probably see it: ') : T('So sähe er es wohl: ', 'How he would probably see it: ')), v.says);
+    box.append(vh, idea, say);
+    if (v.dispute) { const d = el('p', 'dispute'); d.append(el('b', null, T('Zur Einordnung: ', 'For context: ')), v.dispute); box.append(d); }
+    box.append(el('p', 'src', T('Nachlesen: ', 'Read more: ') + v.read));
+    const fit = el('div', 'fit' + (fits ? ' yes' : ''));
+    if (fits) fit.append(symEl('checkc', 'in'), el('span', null, T('Passt zu deiner Antwort', 'Fits your answer')));
+    else if (!v.fit.length) fit.append(symEl('own', 'in'), el('span', null, T('Geht einen eigenen Weg', she ? 'Goes her own way' : 'Goes his own way')));
+    else fit.append(symEl('dash', 'in'), el('span', null, T('Würde eher wählen: ', 'Would rather pick: ') + v.fit.map(i => quoteOpt(t.opts[i])).join(T(' oder ', ' or '))));
+    box.append(fit);
+    list.append(box);
+  }
+  res.append(list);
+  res.append(el('h3', null, T('Wem stimmst du am ehesten zu?', 'Who do you agree with most?')));
+  const who = el('div', 'who');
+  for (const v of t.voices) {
+    const c = el('button', 'tchip' + (rec.p === v.who ? ' on' : ''), personShort(v.who));
+    c.type = 'button';
+    c.setAttribute('aria-pressed', rec.p === v.who ? 'true' : 'false');
+    c.onclick = () => { rec.p = v.who; saveThink(); redraw(); };
+    who.append(c);
+  }
+  res.append(who);
+  // Philosophen-Barometer: wie oft du bisher wem zugestimmt hast (nur Philosophen-Karten)
+  const count = {};
+  for (const id of collById('philo').groups.flatMap(g => g.ids)) { const r = state.think[id]; if (r && r.p) count[r.p] = (count[r.p] || 0) + 1; }
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1]);
+  if (top.length) {
+    const baro = el('p', 'baro');
+    baro.append(T('Dein Philosophen-Barometer bisher: ', 'Your philosopher barometer so far: '), el('b', null, top.map(([w, n]) => personShort(w) + ' ' + n).join(' · ')));
+    res.append(baro);
+  }
+  if (t.stats) res.append(el('h3', null, T('So sehen es Fachleute', 'What experts think')), el('p', null, t.stats.txt), el('p', 'src', T('Quelle: ', 'Source: ') + t.stats.src));
+}
+
+// ---------- Frage als Bild teilen ----------
+// Die Zeichenfläche entsteht erst beim Tippen und wird gleich nach dem Umwandeln wieder freigegeben (Breite/Höhe 0).
+// Aufs Bild kommen nur Art, Titel, Lage und Frage, nie die eigene Antwort. Ohne Teilen von Dateien gibt es den Knopf nicht.
+let shareFilesOk = null;
+function canShareFiles() {
+  if (shareFilesOk == null) {
+    try { shareFilesOk = !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'])], 'x.png', { type: 'image/png' })] })); }
+    catch { shareFilesOk = false; }
+  }
+  return shareFilesOk;
+}
+function cssColor(value) {
+  const probe = el('span');
+  probe.style.color = value;
+  thinkBody.append(probe);
+  const c = getComputedStyle(probe).color;
+  probe.remove();
+  return c;
+}
+function wrapLines(g, text, width, max) {
+  const words = String(text).split(/\s+/), lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (g.measureText(test).width > width && line) { lines.push(line); line = w; } else line = test;
+  }
+  if (line) lines.push(line);
+  if (lines.length > max) { lines.length = max; lines[max - 1] = lines[max - 1].replace(/\s*\S*$/, '') + ' …'; }
+  return lines;
+}
+async function shareCardImage(t, kind) {
+  const W = 1080, H = 1350, P = 96, CW = W - 2 * P;
+  const col = { bg: cssColor('var(--bg)'), text: cssColor('var(--text)'), muted: cssColor('var(--muted)'), kind: cssColor(kind.c), accent: cssColor('var(--accent)') };
+  const serif = getComputedStyle(document.documentElement).getPropertyValue('--serif').trim() || 'Georgia, serif';
+  const sans = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  let cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.fillStyle = col.bg; g.fillRect(0, 0, W, H);
+  g.globalAlpha = .16; g.fillStyle = col.kind;
+  g.beginPath(); g.arc(W - 60, 80, 420, 0, Math.PI * 2); g.fill();
+  g.globalAlpha = 1; g.textBaseline = 'top';
+  // Erst umbrechen und messen, dann den Block senkrecht mittig setzen
+  const fTitle = `800 84px ${serif}`, fText = `400 40px ${sans}`, fQ = `700 50px ${sans}`;
+  g.font = fTitle; const lt = wrapLines(g, t.title, CW, 3);
+  g.font = fText; const lx = wrapLines(g, t.text, CW, 7);
+  g.font = fQ; const lq = wrapLines(g, t.q, CW, 3);
+  const total = 80 + lt.length * 96 + 30 + lx.length * 58 + 40 + lq.length * 66;
+  let y = Math.max(P + 20, Math.round((H - total) / 2) - 40);
+  g.font = `700 34px ${sans}`; g.fillStyle = col.kind;
+  g.fillText(kind.label.toUpperCase(), P, y); y += 80;
+  g.font = fTitle; g.fillStyle = col.text;
+  for (const l of lt) { g.fillText(l, P, y); y += 96; }
+  y += 30;
+  g.font = fText; g.fillStyle = col.muted;
+  for (const l of lx) { g.fillText(l, P, y); y += 58; }
+  y += 40;
+  g.font = fQ; g.fillStyle = col.text;
+  for (const l of lq) { g.fillText(l, P, y); y += 66; }
+  g.font = `600 32px ${sans}`; g.fillStyle = col.accent;
+  g.fillText(T('WikiFeed · Was meinst du?', 'WikiFeed · What do you think?'), P, H - P - 32);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  cv.width = cv.height = 0; cv = null; // Speicher sofort freigeben
+  if (!blob) { toast(T('Das Bild ließ sich nicht erzeugen', 'The image could not be created')); return; }
+  const file = new File([blob], `wikifeed-${t.id}.png`, { type: 'image/png' });
+  try { await navigator.share({ files: [file], title: t.title }); }
+  catch (e) { if (e && e.name !== 'AbortError') toast(T('Teilen hat nicht geklappt', 'Sharing did not work')); }
 }
 
 // „Deine Standpunkte“ (vorläufig, bis das Denkprofil kommt): die bisherigen Achsen, verständlich benannt und mit Anzahl.
@@ -1824,7 +2107,7 @@ document.querySelectorAll('#think-seg button').forEach(b => {
 const dk = { built: false };
 function renderDenken() {
   if (thinkPart === 'wonder') return renderStaunen();
-  if (!THOUGHTS.length) return;
+  if (!THINK_ALL.length) return;
   if (!dk.built) buildDenken();
   updateDenken();
 }
@@ -1837,16 +2120,19 @@ function buildDenken() {
   const g = el('div', 'th-group');
   dk.rows = [];
   for (const c of COLLECTIONS) {
+    if (!collCards(c).length) continue; // Inhaltsdatei fehlt: Sammlung nicht zeigen
     const r = el('button', 'th-row');
     r.type = 'button';
     const rt = el('span', 'th-rt'), meta = el('span', 'th-meta'), mini = el('span', 'th-mini'), fill = el('i'), txt = el('span');
+    const nw = el('span', 'th-new', T('Neu', 'New'));
     mini.append(fill);
     meta.append(mini, txt);
+    if (c.fresh) meta.append(nw);
     rt.append(el('b', null, c.title), el('span', 'th-q', c.sub), meta);
     r.append(icBox(c.sym), rt, chevEl());
     r.onclick = () => thinkL.open({ t: 'coll', id: c.id });
     g.append(r);
-    dk.rows.push({ c, mini, fill, txt });
+    dk.rows.push({ c, mini, fill, txt, nw });
   }
   box.append(g);
   if (typeof openTrolley === 'function') {
@@ -1890,6 +2176,7 @@ function updateDenken() {
   for (const r of dk.rows) {
     const p = collProgress(r.c);
     r.mini.hidden = !p.done;
+    r.nw.hidden = !!p.done; // „Neu“, bis die erste Frage der Sammlung beantwortet ist
     r.fill.style.width = (p.done / p.n * 100) + '%';
     r.txt.textContent = p.done ? T(`${p.done} von ${p.n} beantwortet`, `${p.done} of ${p.n} answered`) : T(`${p.n} Fragen`, `${p.n} questions`);
   }

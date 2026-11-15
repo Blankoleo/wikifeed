@@ -915,3 +915,66 @@ button.th-row:active { background: color-mix(in srgb, var(--accent) 9%, transpar
   background: none; color: var(--accent); font-size: 15px; font-weight: 600; }
 .rt-share .sym { width: 20px; height: 20px; }
 .rt-share:active { transform: scale(.96); }
+
+/* ================= Version 2.6: Alltag & Philosophen ================= */
+/* Neue Arten (Grün, Gold) und die drei Blickwinkel. Hell: mit der Schriftfarbe gemischt, damit sie als Text lesbar bleiben. */
+:root, [data-theme="nacht"] { --k-green: #7fdca0; --k-gold: var(--gold); --l-f: #8fb3ff; --l-r: #c9a6ff; --l-c: #7fdca0; }
+[data-theme="sand"], [data-theme="salbei"], [data-theme="himmel"], [data-theme="rose"] {
+  --k-green: color-mix(in srgb, #2b8048 80%, var(--ink)); --k-gold: var(--gold);
+  --l-f: color-mix(in srgb, #2f63c4 74%, var(--ink)); --l-r: color-mix(in srgb, #8a3fb8 74%, var(--ink)); --l-c: color-mix(in srgb, #2b8048 80%, var(--ink)); }
+/* Übersicht und Liste */
+.th-new { font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, transparent); padding: 1px 8px; border-radius: 99px; }
+.th-new[hidden] { display: none; }
+.th-care { display: block; margin-top: 3px; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--muted); }
+/* Themenhinweis vor heiklen Fragen */
+.think-care { margin: 18px 0 0; padding: 18px; border-radius: 20px; border: 1px solid var(--glass-border);
+  background: linear-gradient(160deg, var(--glass-a), var(--glass-b)); box-shadow: 0 16px 32px -24px var(--shadow), inset 0 1px 0 var(--glass-hi); }
+.think-body .think-care h2 { font-size: 20px; font-weight: 700; line-height: 1.3; margin: 12px 0 6px; color: var(--text); }
+.think-body .think-care p { font-size: 16px; line-height: 1.5; margin: 0; }
+.think-body .think-care .btn { width: 100%; }
+.think-body .think-hint, .think-body .think-help { display: flex; align-items: flex-start; gap: 8px; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.think-body .think-hint { margin: 0 0 8px; font-weight: 600; }
+.think-hint .sym, .think-help .sym { flex: none; margin-top: 1px; }
+.think-body .think-help { margin-top: 14px; padding: 12px 14px; background: var(--field); border: 1px solid var(--line); border-radius: 14px; color: var(--text2); }
+.think-skip { display: block; min-height: 44px; margin: 6px 0 0 auto; padding: 0 6px; border: 0; background: none; color: var(--muted); font-size: 15px; font-weight: 600; }
+.think-body .think-lead { font-size: 15px; line-height: 1.45; color: var(--muted); margin: 0 0 12px; }
+.think-body .think-lead b { color: var(--text); font-weight: 650; }
+.think-body .think-calm { font-size: 17px; font-weight: 600; color: var(--text); }
+/* Drei Blickwinkel */
+.lenses { display: grid; gap: 12px; }
+.lens { padding: 14px 16px; border-radius: 18px; border: 1px solid var(--glass-border); border-left: 4px solid var(--lc);
+  background: linear-gradient(160deg, var(--glass-a), var(--glass-b)); }
+.lens.mine { border-color: var(--lc); border-left-width: 4px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc) 14%, transparent); }
+.lens-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+.lens-head b { font-size: 17px; font-weight: 700; color: var(--lc); }
+.lens-head small { font-size: 13px; color: var(--muted); }
+.lens-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.lens-tag { font-size: 13px; font-weight: 700; line-height: 1.3; padding: 2px 9px; border-radius: 99px; color: var(--lc); background: color-mix(in srgb, var(--lc) 13%, transparent); }
+.lens-tag.strong { color: #fff; background: var(--lc); }
+[data-theme="nacht"] .lens-tag.strong { color: #10121a; }
+.think-body .lens p { margin: 8px 0 0; font-size: 16px; line-height: 1.5; }
+/* Philosophen-Stimmen (Muster: mockups/denken.html, Bildschirm 2) */
+.voices { display: grid; gap: 14px; }
+.voice { position: relative; padding: 16px; border-radius: 20px; border: 1px solid var(--glass-border);
+  background: linear-gradient(160deg, var(--glass-a), var(--glass-b)); box-shadow: 0 16px 32px -24px var(--shadow), inset 0 1px 0 var(--glass-hi); }
+.voice.near { border: 2px solid var(--accent); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 10%, var(--glass-a)), var(--glass-b)); }
+.voice-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.voice-head .vh-name { flex: 1; min-width: 0; }
+.voice-head b { display: block; font-size: 17px; font-weight: 650; line-height: 1.25; }
+.voice-head small { display: block; font-size: 13px; color: var(--muted); line-height: 1.3; margin-top: 1px; }
+.mono { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 600 20px/1 var(--serif); padding-top: 1px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.think-body .voice .idea { margin: 10px 0 8px; font-size: 15px; line-height: 1.4; color: var(--muted); }
+.voice .idea em { font-style: normal; font-weight: 600; color: var(--text2); }
+.think-body .voice .say { margin: 0; font-size: 17px; line-height: 1.5; color: var(--text); }
+.think-body .voice .dispute { margin: 8px 0 0; font-size: 15px; line-height: 1.45; color: var(--text2); }
+.think-body .src { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.voice .fit { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--muted); }
+.voice .fit.yes { color: var(--ok); }
+.voice .badge { position: absolute; top: -11px; right: 14px; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); padding: 2px 10px; border-radius: 99px; }
+.who { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.who .tchip { min-height: 44px; font-size: 16px; font-weight: 600; color: var(--text); }
+.who .tchip.on { color: var(--sel-text); }
+.think-body .baro { margin: 14px 0 0; font-size: 15px; color: var(--muted); }
+.baro b { color: var(--text); font-weight: 650; }
+.think-body .think-share { display: flex; align-items: center; justify-content: center; gap: 8px; }

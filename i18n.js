@@ -40,5 +40,5 @@ const WIKI = LANG === 'en' ? {
 // selben Skript, damit die Dateien wie gewohnt vor app.js der Reihe nach geladen werden. Offline hält der
 // Service Worker beide Sprachen bereit.
 document.write(LANG === 'en'
-  ? '<script src="thoughts.en.js"><\/script><script src="trolley-data.en.js"><\/script><script src="fundstuecke.en.js"><\/script>'
-  : '<script src="thoughts.js"><\/script><script src="trolley-data.js"><\/script><script src="fundstuecke.de.js"><\/script>');
+  ? '<script src="thoughts.en.js"><\/script><script src="denken.en.js"><\/script><script src="trolley-data.en.js"><\/script><script src="fundstuecke.en.js"><\/script>'
+  : '<script src="thoughts.js"><\/script><script src="denken.js"><\/script><script src="trolley-data.js"><\/script><script src="fundstuecke.de.js"><\/script>');
