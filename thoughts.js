@@ -15,7 +15,7 @@ const THINK_FIELDS_DE = {
 
 const THOUGHTS_DE = [
   // ---------------- Ethik & Moral ----------------
-  { id: 'trolley', icon: '🚋', field: 'ethik', title: 'Das Trolley-Problem', wiki: 'Trolley-Problem',
+  { id: 'trolley', icon: 'scale', field: 'ethik', title: 'Das Trolley-Problem', wiki: 'Trolley-Problem',
     text: 'Eine führerlose Straßenbahn rast auf fünf Gleisarbeiter zu. Du stehst an einer Weiche. Legst du den Hebel um, fährt die Bahn auf ein Nebengleis – dort steht aber ein einzelner Arbeiter, der dann stirbt.',
     q: 'Legst du den Hebel um?',
     opts: [['Ja, ich lege ihn um', -1], ['Nein, ich greife nicht ein', 1]],
@@ -26,7 +26,7 @@ const THOUGHTS_DE = [
       note: 'Die Rechnung ist dieselbe: einer gegen fünf. Trotzdem zögern die meisten hier viel stärker. Genau diese Lücke zwischen Rechnen und Gefühl macht das Problem so berühmt.' },
     info: 'Die Weichen-Version stammt von der britischen Philosophin Philippa Foot (1967), die Brücken-Variante von Judith Jarvis Thomson. Heute taucht die Frage wieder auf, wenn es darum geht, wie selbstfahrende Autos bei einem unvermeidbaren Unfall entscheiden sollen.' },
 
-  { id: 'teich', icon: '🌊', field: 'ethik', title: 'Das Kind im Teich', wiki: 'Peter Singer',
+  { id: 'teich', icon: 'scale', field: 'ethik', title: 'Das Kind im Teich', wiki: 'Peter Singer',
     text: 'Auf dem Weg zur Arbeit siehst du ein kleines Kind, das in einem flachen Teich zu ertrinken droht. Du könntest es leicht retten, aber deine neuen, teuren Schuhe wären danach ruiniert. Niemand sonst ist in der Nähe.',
     q: 'Musst du hineinwaten?',
     opts: ['Ja, natürlich', 'Nein, das ist freiwillig'],
@@ -37,7 +37,7 @@ const THOUGHTS_DE = [
       note: 'Singer sagt: Entfernung ist moralisch egal. Wer das ablehnt, muss erklären, warum Kilometer ein Leben weniger wert machen.' },
     info: 'Das Beispiel stammt aus Peter Singers Aufsatz „Famine, Affluence, and Morality“ von 1972. Es ist einer der einflussreichsten Texte der modernen Ethik und ein Ausgangspunkt der Bewegung des „effektiven Altruismus“.' },
 
-  { id: 'schleier', icon: '🎭', field: 'ethik', title: 'Der Schleier des Nichtwissens', wiki: 'Schleier des Nichtwissens',
+  { id: 'schleier', icon: 'scale', field: 'ethik', title: 'Der Schleier des Nichtwissens', wiki: 'Schleier des Nichtwissens',
     text: 'Du darfst die Regeln einer neuen Gesellschaft festlegen: Steuern, Löhne, Rechte. Der Haken: Du weißt nicht, wer du darin sein wirst. Reich oder arm, gesund oder krank, begabt oder nicht – das wird erst danach ausgelost.',
     q: 'Welche Gesellschaft wählst du?',
     opts: ['Eine, in der es den Ärmsten möglichst gut geht', 'Eine mit dem höchsten Durchschnitt, auch wenn manche wenig haben', 'Eine mit großen Gewinnchancen und großem Risiko'],
@@ -45,7 +45,7 @@ const THOUGHTS_DE = [
       ['Der Einwand', 'Das unterstellt, dass alle extrem vorsichtig sind. Wer etwas Risiko mag, würde den höchsten Durchschnitt wählen – und landet beim Utilitarismus.']],
     info: 'Der amerikanische Philosoph John Rawls stellte das Gedankenspiel 1971 in „Eine Theorie der Gerechtigkeit“ vor. Die Idee dahinter: Faire Regeln sind die, auf die man sich einigen würde, bevor man seinen eigenen Vorteil kennt.' },
 
-  { id: 'gyges', icon: '💍', field: 'ethik', title: 'Der Ring des Gyges', wiki: 'Politeia',
+  { id: 'gyges', icon: 'scale', field: 'ethik', title: 'Der Ring des Gyges', wiki: 'Politeia',
     text: 'Ein Hirte findet einen Ring, der ihn unsichtbar macht, sobald er ihn dreht. Niemand kann ihn je erwischen. Er verführt die Königin, tötet den König und nimmt sich die Macht.',
     q: 'Wärst du mit so einem Ring noch gerecht?',
     opts: ['Ja, ich bliebe anständig', 'Nein, irgendwann nicht mehr', 'Am Anfang ja, auf Dauer weiß ich es nicht'],
@@ -53,7 +53,7 @@ const THOUGHTS_DE = [
       ['Platons Antwort', 'Wer Unrecht tut, schadet sich selbst: Seine Seele gerät in Unordnung, er wird Sklave seiner Begierden. Gerechtigkeit lohnt sich auch dann, wenn niemand zusieht.']],
     info: 'Die Geschichte erzählt Glaukon im zweiten Buch von Platons „Politeia“ (um 375 v. Chr.). Sie stellt die Frage, ob Moral mehr ist als die Angst, erwischt zu werden – und passt gut auf alles, was Menschen anonym im Internet tun.' },
 
-  { id: 'karneades', icon: '🪵', field: 'ethik', title: 'Das Brett des Karneades', wiki: 'Brett des Karneades',
+  { id: 'karneades', icon: 'scale', field: 'ethik', title: 'Das Brett des Karneades', wiki: 'Brett des Karneades',
     text: 'Zwei Schiffbrüchige treiben im Meer. Es gibt nur eine Planke, und sie trägt nur einen Menschen. Der eine erreicht sie zuerst. Der andere stößt ihn hinunter, rettet sich selbst, und der erste ertrinkt.',
     q: 'Hat der Zweite Unrecht getan?',
     opts: ['Ja, das war Tötung', 'Nein, in Lebensgefahr gilt das nicht', 'Unrecht ja, aber nicht strafbar'],
@@ -61,7 +61,7 @@ const THOUGHTS_DE = [
       ['Niemand kann mehr verlangen', 'Kein Gesetz kann fordern, dass man freiwillig stirbt. Wer um sein Leben kämpft, handelt nicht frei, sondern aus nackter Not.']],
     info: 'Das Beispiel wird dem griechischen Philosophen Karneades (2. Jh. v. Chr.) zugeschrieben. Das deutsche Strafrecht folgt der dritten Antwort: Die Tat ist rechtswidrig, kann aber als „entschuldigender Notstand“ straffrei bleiben.' },
 
-  { id: 'omelas', icon: '🏙️', field: 'ethik', title: 'Die Stadt Omelas', wiki: 'Die Omelas den Rücken kehren',
+  { id: 'omelas', icon: 'scale', field: 'ethik', title: 'Die Stadt Omelas', wiki: 'Die Omelas den Rücken kehren',
     text: 'Omelas ist eine vollkommen glückliche Stadt: kein Krieg, keine Armut, alle sind gesund und froh. Doch dieses Glück hängt an einer Bedingung. In einem Keller muss ein einzelnes Kind im Elend leben. Wird es befreit, endet das Glück aller.',
     q: 'Was tust du, wenn du davon erfährst?',
     opts: [['Ich bleibe – das Glück so vieler wiegt schwerer', -1], ['Ich gehe fort', 1], ['Ich befreie das Kind', 1]],
@@ -69,7 +69,7 @@ const THOUGHTS_DE = [
       ['Dagegen', 'Ein Glück, das auf der Qual eines Unschuldigen aufbaut, ist nichts wert. Manche Dinge darf man nicht tun, egal wie viel dabei herauskommt.']],
     info: 'Die Kurzgeschichte „Die Omelas den Rücken kehren“ schrieb Ursula K. Le Guin 1973. Sie gilt als eine der schärfsten Anfragen an den Utilitarismus, der Handlungen nur nach der Summe des Glücks beurteilt.' },
 
-  { id: 'luege', icon: '🚪', field: 'ethik', title: 'Der Mörder an der Tür', wiki: 'Über ein vermeintes Recht aus Menschenliebe zu lügen',
+  { id: 'luege', icon: 'scale', field: 'ethik', title: 'Der Mörder an der Tür', wiki: 'Über ein vermeintes Recht aus Menschenliebe zu lügen',
     text: 'Dein Freund flüchtet vor einem Mörder und versteckt sich in deinem Haus. Kurz darauf klopft der Mörder und fragt dich, ob dein Freund bei dir ist. Schweigen ist nicht möglich – du musst antworten.',
     q: 'Darfst du lügen?',
     opts: [['Ja, selbstverständlich', -1], ['Nein, Lügen ist immer falsch', 1]],
@@ -78,7 +78,7 @@ const THOUGHTS_DE = [
     info: 'Immanuel Kant verteidigte 1797 tatsächlich das strenge Lügenverbot, als Antwort auf den Franzosen Benjamin Constant. Kaum eine seiner Thesen wird bis heute so heftig kritisiert, auch von Kantianern.' },
 
   // ---------------- Bewusstsein & Geist ----------------
-  { id: 'mary', icon: '🎨', field: 'geist', title: 'Marys Zimmer', wiki: 'Mary (Gedankenexperiment)',
+  { id: 'mary', icon: 'eye', field: 'geist', title: 'Marys Zimmer', wiki: 'Mary (Gedankenexperiment)',
     text: 'Mary ist die beste Farbforscherin der Welt. Sie weiß alles, was die Physik und die Hirnforschung über Farben sagen können. Aber sie hat ihr ganzes Leben in einem schwarz-weißen Zimmer verbracht und nie eine Farbe gesehen. Eines Tages geht sie hinaus und sieht eine rote Tomate.',
     q: 'Lernt Mary in diesem Moment etwas Neues?',
     opts: [['Ja – wie Rot aussieht', 1], ['Nein, sie wusste schon alles', -1]],
@@ -86,7 +86,7 @@ const THOUGHTS_DE = [
       ['Nein', 'Mary bekommt kein neues Wissen, sondern eine neue Fähigkeit: Rot wiedererkennen und sich vorstellen. Oder sie lernt eine alte Tatsache nur auf neue Weise kennen.']],
     info: 'Der australische Philosoph Frank Jackson veröffentlichte das Gedankenspiel 1982 als Argument gegen den Physikalismus. Später wechselte er selbst die Seite und hält sein eigenes Argument heute für falsch.' },
 
-  { id: 'china', icon: '🀄', field: 'geist', title: 'Das chinesische Zimmer', wiki: 'Chinesisches Zimmer',
+  { id: 'china', icon: 'eye', field: 'geist', title: 'Das chinesische Zimmer', wiki: 'Chinesisches Zimmer',
     text: 'Du sitzt in einem geschlossenen Raum und sprichst kein Wort Chinesisch. Durch einen Schlitz kommen Zettel mit chinesischen Zeichen. Mit einem dicken Regelbuch („auf diese Zeichen antworte mit jenen“) schreibst du Antworten. Draußen ist man überzeugt, mit einem Chinesen zu sprechen.',
     q: 'Versteht hier jemand Chinesisch?',
     opts: [['Nein, niemand', 1], ['Ja – das ganze System aus Raum, Buch und Mensch', -1]],
@@ -94,7 +94,7 @@ const THOUGHTS_DE = [
       ['Die Systemantwort', 'Du bist nur ein Bauteil, so wie eine einzelne Nervenzelle auch kein Deutsch versteht. Das Verstehen liegt im Gesamtsystem, nicht in dir.']],
     info: 'John Searle stellte das Argument 1980 gegen die Idee auf, ein richtig programmierter Computer habe einen Geist. Seit es Sprachmodelle gibt, die flüssig antworten, wird es wieder so heftig diskutiert wie am ersten Tag.' },
 
-  { id: 'zombie', icon: '🧟', field: 'geist', title: 'Der philosophische Zombie', wiki: 'Philosophischer Zombie',
+  { id: 'zombie', icon: 'eye', field: 'geist', title: 'Der philosophische Zombie', wiki: 'Philosophischer Zombie',
     text: 'Stell dir ein Wesen vor, das dir Atom für Atom gleicht. Es redet, lacht und schreit „Au!“, wenn es sich stößt. Aber innen ist alles dunkel: Es erlebt nichts, fühlt nichts, da ist niemand zu Hause.',
     q: 'Ist so ein Wesen überhaupt denkbar?',
     opts: [['Ja, das ist vorstellbar', 1], ['Nein, das ist ein Widerspruch', -1]],
@@ -102,7 +102,7 @@ const THOUGHTS_DE = [
       ['Nein', 'Wir glauben nur, es uns vorstellen zu können. Ein Wesen mit genau deinem Gehirn würde auch behaupten, Bewusstsein zu haben – aus denselben Gründen wie du.']],
     info: 'Bekannt machte die Idee der australische Philosoph David Chalmers in den 1990er-Jahren. Sie gehört zu seinem „schwierigen Problem des Bewusstseins“: Warum fühlt sich Informationsverarbeitung überhaupt nach etwas an?' },
 
-  { id: 'fledermaus', icon: '🦇', field: 'geist', title: 'Wie ist es, eine Fledermaus zu sein?', wiki: 'Thomas Nagel',
+  { id: 'fledermaus', icon: 'eye', field: 'geist', title: 'Wie ist es, eine Fledermaus zu sein?', wiki: 'Thomas Nagel',
     text: 'Fledermäuse finden sich mit Echoortung zurecht: Sie schreien und „sehen“ mit dem Echo. Angenommen, die Forschung weiß eines Tages alles über ihr Gehirn, jede Zelle und jeden Schaltkreis.',
     q: 'Wüssten wir dann, wie es sich anfühlt, eine Fledermaus zu sein?',
     opts: [['Nein, das bleibt uns verschlossen', 1], ['Ja, im Prinzip schon', -1]],
@@ -110,7 +110,7 @@ const THOUGHTS_DE = [
       ['Ja', 'Auch Farben oder Wärme galten einst als unerklärlich. Mit genug Wissen ließe sich das Erleben vielleicht nachbauen oder in unser eigenes übersetzen.']],
     info: 'Der Aufsatz „What Is It Like to Be a Bat?“ von Thomas Nagel (1974) ist einer der meistzitierten Texte der Philosophie des Geistes. Nagel wählte Fledermäuse, weil sie uns nah genug sind, um Erleben zu haben, und fremd genug, um es nicht zu kennen.' },
 
-  { id: 'spektrum', icon: '🌈', field: 'geist', title: 'Das vertauschte Farbspektrum', wiki: 'Qualia',
+  { id: 'spektrum', icon: 'eye', field: 'geist', title: 'Das vertauschte Farbspektrum', wiki: 'Qualia',
     text: 'Vielleicht siehst du innerlich Rot, wo ich Grün sehe. Wir hätten beide gelernt, Tomaten „rot“ und Gras „grün“ zu nennen, und würden uns in jedem Test gleich verhalten. Der Unterschied läge nur im Erleben.',
     q: 'Könnte man das jemals herausfinden?',
     opts: ['Nein, niemals', 'Ja, über das Gehirn', 'Die Frage ergibt keinen Sinn'],
@@ -118,7 +118,7 @@ const THOUGHTS_DE = [
       ['Doch', 'Farben hängen zusammen: Rot wirkt warm, Gelb ist hell, es gibt mehr unterscheidbare Rot- als Gelbtöne. Eine Vertauschung würde sich in diesen Beziehungen verraten.']],
     info: 'Die Idee findet sich schon 1690 bei John Locke. Sie ist bis heute ein Prüfstein für jede Theorie, die Bewusstsein allein über Funktion und Verhalten erklären will.' },
 
-  { id: 'turing', icon: '🤖', field: 'geist', title: 'Der Turing-Test', wiki: 'Turing-Test',
+  { id: 'turing', icon: 'eye', field: 'geist', title: 'Der Turing-Test', wiki: 'Turing-Test',
     text: 'Du chattest fünf Minuten lang mit zwei Unbekannten. Einer ist ein Mensch, der andere eine Maschine. Am Ende kannst du beim besten Willen nicht sagen, wer wer ist.',
     q: 'Kann diese Maschine denken?',
     opts: [['Ja, dann denkt sie', -1], ['Nein, sie tut nur so', 1]],
@@ -127,7 +127,7 @@ const THOUGHTS_DE = [
     info: 'Alan Turing schlug das „Imitationsspiel“ 1950 vor, um die unscharfe Frage „Können Maschinen denken?“ durch einen Test zu ersetzen. Heutige Sprachmodelle bestehen solche Tests oft – und die Debatte, was das bedeutet, ist offen.' },
 
   // ---------------- Identität & Ich ----------------
-  { id: 'theseus', icon: '⛵', field: 'ich', title: 'Das Schiff des Theseus', wiki: 'Schiff des Theseus',
+  { id: 'theseus', icon: 'loop', field: 'ich', title: 'Das Schiff des Theseus', wiki: 'Schiff des Theseus',
     text: 'Die Athener bewahren das Schiff des Helden Theseus im Hafen auf. Jedes Jahr ersetzen sie eine morsche Planke durch eine neue. Nach vielen Jahren ist kein einziges Teil mehr vom ursprünglichen Schiff übrig.',
     q: 'Ist es noch das Schiff des Theseus?',
     opts: [['Ja, es ist dasselbe Schiff', 1], ['Nein, es ist ein Nachbau', -1], 'Ab irgendeiner Planke nicht mehr'],
@@ -138,7 +138,7 @@ const THOUGHTS_DE = [
       note: 'Diese Verschärfung stammt von Thomas Hobbes. Sie zeigt, dass „dasselbe“ zwei Dinge meinen kann: derselbe Stoff oder dieselbe fortlaufende Geschichte.' },
     info: 'Überliefert hat das Rätsel der griechische Schriftsteller Plutarch. Es betrifft auch dich: Die meisten Zellen deines Körpers werden im Lauf der Jahre ersetzt. Bist du noch derselbe Mensch wie als Kind?' },
 
-  { id: 'teleporter', icon: '🛸', field: 'ich', title: 'Der Teleporter', wiki: 'Derek Parfit',
+  { id: 'teleporter', icon: 'self', field: 'ich', title: 'Der Teleporter', wiki: 'Derek Parfit',
     text: 'Eine Maschine scannt deinen Körper bis zum letzten Atom und zerstört ihn dabei. Die Daten gehen zum Mars, wo aus neuem Material eine exakte Kopie gebaut wird. Sie hat alle deine Erinnerungen und fühlt sich an wie du.',
     q: 'Steigst du ein?',
     opts: [['Ja, das bin dann ich auf dem Mars', 1], ['Nein, ich sterbe, und ein anderer lebt weiter', -1]],
@@ -149,7 +149,7 @@ const THOUGHTS_DE = [
       note: 'Derek Parfit zog daraus einen radikalen Schluss: Die Frage „Bin das noch ich?“ ist weniger wichtig, als wir glauben. Was zählt, ist, dass jemand mit meinen Erinnerungen und Zielen weiterlebt.' },
     info: 'Das Gedankenspiel steht in Derek Parfits Buch „Reasons and Persons“ (1984). Parfit schrieb, die Einsicht habe ihm viel von der Angst vor dem Tod genommen.' },
 
-  { id: 'sumpfmann', icon: '⚡', field: 'ich', title: 'Der Sumpfmann', wiki: 'Sumpfmann',
+  { id: 'sumpfmann', icon: 'self', field: 'ich', title: 'Der Sumpfmann', wiki: 'Sumpfmann',
     text: 'Ein Mann wandert durch einen Sumpf und wird vom Blitz getötet. Im selben Augenblick formt ein zweiter Blitz durch puren Zufall aus Sumpfmaterie eine exakte Kopie von ihm. Sie geht nach Hause, begrüßt seine Familie und schreibt an seinem Buch weiter.',
     q: 'Ist der Sumpfmann dieselbe Person?',
     opts: [['Ja, er ist in allem gleich', 1], ['Nein, ihm fehlt die Vergangenheit', -1]],
@@ -158,7 +158,7 @@ const THOUGHTS_DE = [
     info: 'Der amerikanische Philosoph Donald Davidson erfand den Sumpfmann 1987. Er wollte zeigen, dass die Bedeutung unserer Gedanken davon abhängt, wie wir sie im Lauf des Lebens erworben haben.' },
 
   // ---------------- Physik ----------------
-  { id: 'maxwell', icon: '😈', field: 'physik', title: 'Der Maxwellsche Dämon', wiki: 'Maxwellscher Dämon',
+  { id: 'maxwell', icon: 'key', field: 'physik', title: 'Der Maxwellsche Dämon', wiki: 'Maxwellscher Dämon',
     text: 'Ein Kasten voll Gas ist durch eine Wand geteilt. In der Wand sitzt eine winzige Klappe, bewacht von einem Dämon. Er lässt schnelle Teilchen nur nach rechts und langsame nur nach links. Bald ist es rechts heiß und links kalt, ganz ohne Arbeit.',
     q: 'Kann der Dämon so die Naturgesetze austricksen?',
     opts: ['Ja, im Prinzip schon', 'Nein, irgendwo zahlt er dafür'],
@@ -167,7 +167,7 @@ const THOUGHTS_DE = [
       ['Die Lösung', 'Der Dämon muss sich merken, welches Teilchen wie schnell ist. Irgendwann ist sein Gedächtnis voll, und er muss es löschen. Das Löschen von Information erzeugt zwangsläufig Wärme – mindestens so viel, wie er vorher gespart hat.']],
     info: 'James Clerk Maxwell erfand den Dämon 1867. Die Auflösung dauerte über hundert Jahre (Szilárd 1929, Landauer 1961, Bennett 1982) und zeigte etwas Tiefes: Information ist etwas Physikalisches.' },
 
-  { id: 'katze', icon: '🐱', field: 'physik', title: 'Schrödingers Katze', wiki: 'Schrödingers Katze',
+  { id: 'katze', icon: 'atom', field: 'physik', title: 'Schrödingers Katze', wiki: 'Schrödingers Katze',
     text: 'Eine Katze sitzt in einer verschlossenen Kiste. Darin liegt ein einzelnes radioaktives Atom. Zerfällt es, löst es einen Mechanismus aus, der Gift freisetzt. Nach den Regeln der Quantenphysik ist das Atom nach einer Stunde in einer Überlagerung: zerfallen und nicht zerfallen zugleich.',
     q: 'Was ist mit der Katze, bevor jemand nachsieht?',
     opts: ['Tot und lebendig zugleich', 'Entweder tot oder lebendig, wir wissen es nur nicht', 'Beides – in getrennten Welten'],
@@ -178,7 +178,7 @@ const THOUGHTS_DE = [
       note: 'Das ist „Wigners Freund“ (1961). Es stellt die unbequeme Frage, was eine Messung eigentlich ist und ob es dafür ein Bewusstsein braucht. Einig ist man sich bis heute nicht.' },
     info: 'Erwin Schrödinger beschrieb das Gedankenspiel 1935. Welche Deutung der Quantenphysik stimmt – Kopenhagener Deutung, Viele-Welten oder eine andere – ist weiterhin offen. Die Rechnungen sind bei allen gleich.' },
 
-  { id: 'zwillinge', icon: '👯', field: 'physik', title: 'Das Zwillingsparadoxon', wiki: 'Zwillingsparadoxon',
+  { id: 'zwillinge', icon: 'key', field: 'physik', title: 'Das Zwillingsparadoxon', wiki: 'Zwillingsparadoxon',
     text: 'Anna und Ben sind Zwillinge. Anna fliegt mit fast Lichtgeschwindigkeit zu einem fernen Stern und kehrt wieder zurück. Ben bleibt auf der Erde. Nach der Relativitätstheorie vergeht Zeit für bewegte Uhren langsamer. Aber aus Annas Sicht hat sich doch Ben bewegt.',
     q: 'Wer ist beim Wiedersehen jünger?',
     opts: ['Anna, die Reisende', 'Ben, der Daheimgebliebene', 'Beide sind gleich alt'],
@@ -187,7 +187,7 @@ const THOUGHTS_DE = [
       ['Ist das gemessen?', 'Ja. Atomuhren in Flugzeugen gehen nach der Landung messbar anders als Uhren am Boden. Auch GPS würde ohne diese Korrekturen nach kurzer Zeit kilometerweit danebenliegen.']],
     info: 'Das Rätsel geht auf Einsteins spezielle Relativitätstheorie von 1905 zurück, die Zwillinge führte Paul Langevin 1911 ein. Ein echter Widerspruch ist es nicht, nur eine Folgerung, die dem Alltagsgefühl widerspricht.' },
 
-  { id: 'laplace', icon: '🔮', field: 'physik', title: 'Der Laplacesche Dämon', wiki: 'Laplacescher Dämon',
+  { id: 'laplace', icon: 'atom', field: 'physik', title: 'Der Laplacesche Dämon', wiki: 'Laplacescher Dämon',
     text: 'Stell dir einen Geist vor, der in einem Augenblick den Ort und die Geschwindigkeit jedes Teilchens im Universum kennt und alle Naturgesetze dazu. Für ihn wäre nichts ungewiss. Er könnte die gesamte Zukunft und Vergangenheit ausrechnen.',
     q: 'Ist die Zukunft also schon festgelegt?',
     opts: ['Ja, alles steht fest', 'Nein, es gibt echten Zufall', 'Festgelegt vielleicht, aber nie berechenbar'],
@@ -195,7 +195,7 @@ const THOUGHTS_DE = [
       ['Dagegen', 'Die Quantenphysik kennt echten Zufall: Wann ein Atom zerfällt, ist grundsätzlich nicht vorhersagbar. Und schon winzigste Messfehler wachsen in vielen Systemen lawinenartig an (Chaos).']],
     info: 'Pierre-Simon Laplace beschrieb diese Vorstellung 1814. Sie fasst das Weltbild der klassischen Physik zusammen und steht im Zentrum der Frage, ob es einen freien Willen geben kann.' },
 
-  { id: 'galilei', icon: '🪨', field: 'physik', title: 'Galileis fallende Steine', wiki: 'Freier Fall',
+  { id: 'galilei', icon: 'key', field: 'physik', title: 'Galileis fallende Steine', wiki: 'Freier Fall',
     text: 'Fast 2000 Jahre lang galt die Lehre des Aristoteles: Schwere Dinge fallen schneller als leichte. Galilei überlegte: Was passiert, wenn man einen schweren und einen leichten Stein mit einer Schnur zusammenbindet und fallen lässt? (Ohne Luftwiderstand.)',
     q: 'Wie fällt das Paar im Vergleich zum schweren Stein allein?',
     opts: ['Schneller, es ist ja schwerer', 'Langsamer, der leichte bremst', 'Genau gleich schnell'],
@@ -204,7 +204,7 @@ const THOUGHTS_DE = [
       ['Die Lösung', 'Der Widerspruch verschwindet nur, wenn alle Körper gleich schnell fallen. Galilei kam darauf durch reines Nachdenken, ganz ohne Experiment.']],
     info: 'Das Argument steht in Galileis „Discorsi“ von 1638. Den schönsten Beweis lieferte 1971 der Astronaut David Scott auf dem Mond: Hammer und Feder landeten im selben Augenblick.' },
 
-  { id: 'aufzug', icon: '🛗', field: 'physik', title: 'Einsteins Aufzug', wiki: 'Äquivalenzprinzip (Physik)',
+  { id: 'aufzug', icon: 'key', field: 'physik', title: 'Einsteins Aufzug', wiki: 'Äquivalenzprinzip (Physik)',
     text: 'Du wachst in einer fensterlosen Kabine auf. Du spürst dein normales Gewicht, ein losgelassener Ball fällt zu Boden. Es gibt zwei Möglichkeiten: Die Kabine steht auf der Erde. Oder sie wird im leeren Weltraum von einer Rakete gleichmäßig nach oben beschleunigt.',
     q: 'Kannst du von innen herausfinden, was stimmt?',
     opts: ['Ja, mit einem geschickten Versuch', 'Nein, es ist nicht zu unterscheiden'],
@@ -213,7 +213,7 @@ const THOUGHTS_DE = [
       ['Die Folge', 'In der beschleunigten Kabine würde ein Lichtstrahl leicht gekrümmt verlaufen. Also muss auch Schwerkraft Licht ablenken. 1919 wurde das bei einer Sonnenfinsternis bestätigt.']],
     info: 'Einstein nannte den Einfall von 1907 den „glücklichsten Gedanken meines Lebens“. Aus ihm entwickelte er in acht Jahren die allgemeine Relativitätstheorie, nach der Schwerkraft gekrümmte Raumzeit ist.' },
 
-  { id: 'olbers', icon: '🌌', field: 'physik', title: 'Warum ist die Nacht dunkel?', wiki: 'Olberssches Paradoxon',
+  { id: 'olbers', icon: 'key', field: 'physik', title: 'Warum ist die Nacht dunkel?', wiki: 'Olberssches Paradoxon',
     text: 'Angenommen, das Universum ist unendlich groß, unendlich alt und überall gleichmäßig mit Sternen gefüllt. Dann müsste dein Blick in jeder Richtung irgendwann auf einen Stern treffen. Der ganze Himmel müsste so hell leuchten wie die Sonnenoberfläche.',
     q: 'Warum ist es nachts trotzdem dunkel?',
     opts: ['Staub verschluckt das Licht', 'Das Universum hat einen Anfang', 'Die Sterne sind einfach zu weit weg'],
@@ -222,7 +222,7 @@ const THOUGHTS_DE = [
       ['Warum Staub nicht hilft', 'Staub, der ewig Licht schluckt, würde sich aufheizen und irgendwann selbst so hell glühen wie die Sterne.']],
     info: 'Benannt ist das Rätsel nach dem Bremer Arzt und Astronomen Heinrich Wilhelm Olbers (1823). Die simple Beobachtung, dass es nachts dunkel wird, ist damit ein Hinweis auf den Urknall.' },
 
-  { id: 'fermi', icon: '👽', field: 'physik', title: 'Das Fermi-Paradoxon', wiki: 'Fermi-Paradoxon',
+  { id: 'fermi', icon: 'loop', field: 'physik', title: 'Das Fermi-Paradoxon', wiki: 'Fermi-Paradoxon',
     text: 'Allein unsere Galaxie hat hunderte Milliarden Sterne, viele davon mit Planeten und Milliarden Jahre älter als die Sonne. Eine Zivilisation, die sich nur langsam ausbreitet, hätte die ganze Milchstraße längst besiedeln können. Trotzdem sehen und hören wir nichts.',
     q: 'Wo sind sie alle?',
     opts: ['Es gibt sie nicht, wir sind allein', 'Es gibt sie, aber zu weit weg', 'Zivilisationen löschen sich aus, bevor sie reisen', 'Sie sind da und zeigen sich nicht'],
@@ -230,7 +230,7 @@ const THOUGHTS_DE = [
       ['Nüchterne Antworten', 'Der Weltraum ist unvorstellbar groß, Reisen dauern zehntausende Jahre, und wir horchen erst seit wenigen Jahrzehnten. Stille beweist noch wenig.']],
     info: 'Der Physiker Enrico Fermi soll 1950 beim Mittagessen gefragt haben: „Wo sind sie denn alle?“ Eine anerkannte Antwort gibt es bis heute nicht.' },
 
-  { id: 'grossvater', icon: '⏳', field: 'physik', title: 'Das Großvaterparadoxon', wiki: 'Großvaterparadoxon',
+  { id: 'grossvater', icon: 'loop', field: 'physik', title: 'Das Großvaterparadoxon', wiki: 'Großvaterparadoxon',
     text: 'Du reist mit einer Zeitmaschine in die Vergangenheit und verhinderst, dass dein Großvater deine Großmutter kennenlernt. Dann wird dein Vater nie geboren – und du auch nicht. Aber wer ist dann zurückgereist?',
     q: 'Was folgt daraus?',
     opts: ['Zeitreisen in die Vergangenheit sind unmöglich', 'Man kann reisen, aber nichts ändern', 'Es entsteht eine neue, zweite Zeitlinie'],
@@ -239,7 +239,7 @@ const THOUGHTS_DE = [
     info: 'Das Paradoxon stammt aus der Science-Fiction der 1930er- und 1940er-Jahre. Die Physik schließt Zeitreisen in die Vergangenheit nicht eindeutig aus; Stephen Hawking vermutete aber, die Natur verhindere sie grundsätzlich.' },
 
   // ---------------- Logik & Mathematik ----------------
-  { id: 'ziege', icon: '🐐', field: 'logik', title: 'Das Ziegenproblem', wiki: 'Ziegenproblem',
+  { id: 'ziege', icon: 'key', field: 'logik', title: 'Das Ziegenproblem', wiki: 'Ziegenproblem',
     text: 'In einer Spielshow gibt es drei Türen. Hinter einer steht ein Auto, hinter den anderen je eine Ziege. Du wählst Tür 1. Der Moderator, der weiß, wo das Auto steht, öffnet Tür 3: eine Ziege. Dann bietet er dir an, zu Tür 2 zu wechseln.',
     q: 'Solltest du wechseln?',
     opts: ['Ja, wechseln', 'Nein, bei Tür 1 bleiben', 'Egal, es steht 50 zu 50'],
@@ -248,7 +248,7 @@ const THOUGHTS_DE = [
       ['Zum Einleuchten', 'Stell dir 100 Türen vor. Du wählst eine, der Moderator öffnet 98 Ziegentüren und lässt genau eine zu. Würdest du jetzt noch bei deiner bleiben?']],
     info: 'Berühmt wurde das Rätsel 1990 durch die Kolumnistin Marilyn vos Savant. Sie gab die richtige Antwort und bekam rund 10 000 Protestbriefe, viele davon von Mathematikern, die sich irrten.' },
 
-  { id: 'geburtstag', icon: '🎂', field: 'logik', title: 'Das Geburtstagsparadoxon', wiki: 'Geburtstagsparadoxon',
+  { id: 'geburtstag', icon: 'key', field: 'logik', title: 'Das Geburtstagsparadoxon', wiki: 'Geburtstagsparadoxon',
     text: 'Auf einer Party sind zufällig zusammengewürfelte Gäste. Du fragst dich: Wie viele Leute müssen im Raum sein, damit mit mehr als 50 Prozent Wahrscheinlichkeit zwei von ihnen am selben Tag Geburtstag haben?',
     q: 'Wie viele Gäste braucht es?',
     opts: ['23', '57', '183', '366'],
@@ -257,7 +257,7 @@ const THOUGHTS_DE = [
       ['Noch erstaunlicher', 'Bei 57 Gästen liegt die Wahrscheinlichkeit bereits über 99 Prozent. Erst für „jemand hat an meinem Tag Geburtstag“ bräuchte man 253 Leute.']],
     info: 'Das Geburtstagsparadoxon ist kein echter Widerspruch, es zeigt nur, wie schlecht unser Gefühl für Wahrscheinlichkeiten ist. In der Kryptografie nutzt der „Geburtstagsangriff“ genau diesen Effekt.' },
 
-  { id: 'hilbert', icon: '🏨', field: 'logik', title: 'Hilberts Hotel', wiki: 'Hilberts Hotel',
+  { id: 'hilbert', icon: 'key', field: 'logik', title: 'Hilberts Hotel', wiki: 'Hilberts Hotel',
     text: 'Ein Hotel hat unendlich viele Zimmer: Nummer 1, 2, 3 und immer so weiter. Alle Zimmer sind belegt. Spät in der Nacht kommt ein neuer Gast an die Rezeption und bittet um ein Zimmer.',
     q: 'Bekommt er eines?',
     opts: ['Ja', 'Nein, voll ist voll'],
@@ -269,7 +269,7 @@ const THOUGHTS_DE = [
       note: 'Ja. Jeder Gast zieht in das Zimmer mit der doppelten Nummer: von 1 nach 2, von 2 nach 4, von 3 nach 6. Danach sind alle ungeraden Zimmer frei, und das sind unendlich viele.' },
     info: 'David Hilbert erzählte das Beispiel 1924 in einer Vorlesung, um Georg Cantors Lehre vom Unendlichen anschaulich zu machen. Cantor zeigte auch: Es gibt verschieden große Unendlichkeiten.' },
 
-  { id: 'achilles', icon: '🐢', field: 'logik', title: 'Achilles und die Schildkröte', wiki: 'Achilles und die Schildkröte',
+  { id: 'achilles', icon: 'key', field: 'logik', title: 'Achilles und die Schildkröte', wiki: 'Achilles und die Schildkröte',
     text: 'Der schnelle Achilles läuft gegen eine Schildkröte und gibt ihr Vorsprung. Bis er ihren Startpunkt erreicht, ist sie ein Stück weiter. Bis er dort ist, ist sie wieder ein Stückchen weiter. Und so fort, unendlich oft.',
     q: 'Holt Achilles sie jemals ein?',
     opts: ['Ja, natürlich', 'Nein, er kommt nur immer näher'],
@@ -278,7 +278,7 @@ const THOUGHTS_DE = [
       ['Die Lösung', 'Die Teilstücke werden immer kürzer, und ihre Summe ist endlich. Braucht Achilles für das erste Stück 10 Sekunden, für das nächste 1, dann 0,1 – so sind es insgesamt nur gut 11 Sekunden.']],
     info: 'Zenon von Elea ersann das Paradoxon um 450 v. Chr., um zu zeigen, dass Bewegung eine Täuschung sei. Sauber auflösen ließ es sich erst über 2000 Jahre später mit dem Begriff des Grenzwerts.' },
 
-  { id: 'luegner', icon: '🤥', field: 'logik', title: 'Das Lügner-Paradox', wiki: 'Lügner-Paradox',
+  { id: 'luegner', icon: 'loop', field: 'logik', title: 'Das Lügner-Paradox', wiki: 'Lügner-Paradox',
     text: 'Betrachte diesen einen Satz: „Dieser Satz ist falsch.“ Wenn er wahr ist, dann stimmt, was er sagt – also ist er falsch. Wenn er falsch ist, dann stimmt nicht, was er sagt – also ist er wahr.',
     q: 'Was ist der Satz?',
     opts: ['Wahr', 'Falsch', 'Weder wahr noch falsch', 'Beides zugleich'],
@@ -289,7 +289,7 @@ const THOUGHTS_DE = [
       note: 'Rasiert er sich, dürfte er es nicht; rasiert er sich nicht, müsste er es. So einen Barbier kann es schlicht nicht geben. Bertrand Russell zeigte 1901 mit demselben Muster, dass die damalige Mengenlehre widersprüchlich war.' },
     info: 'Das Paradox ist seit der Antike bekannt (Eubulides, 4. Jh. v. Chr.). Kurt Gödel baute 1931 auf einer verwandten Idee seinen Unvollständigkeitssatz: In jedem reichhaltigen Rechensystem gibt es wahre Sätze, die sich dort nicht beweisen lassen.' },
 
-  { id: 'haufen', icon: '🏜️', field: 'logik', title: 'Die Paradoxie des Haufens', wiki: 'Paradoxie des Haufens',
+  { id: 'haufen', icon: 'loop', field: 'logik', title: 'Die Paradoxie des Haufens', wiki: 'Paradoxie des Haufens',
     text: 'Eine Million Sandkörner sind ein Haufen. Nimmt man ein einziges Korn weg, bleibt es ein Haufen – ein Korn macht keinen Unterschied. Das gilt bei jedem Schritt. Also müsste am Ende auch ein einzelnes Korn noch ein Haufen sein.',
     q: 'Wo liegt der Fehler?',
     opts: ['Es gibt eine exakte Grenze, wir kennen sie nur nicht', '„Haufen“ ist unscharf, es gibt keine Grenze', 'Streng genommen gibt es gar keine Haufen'],
@@ -297,7 +297,7 @@ const THOUGHTS_DE = [
       ['Unscharfe Begriffe', 'Wörter wie „Haufen“, „groß“ oder „kahl“ haben Grauzonen. In der Mitte ist die Aussage weder klar wahr noch klar falsch, sondern nur zum Teil.']],
     info: 'Das Rätsel stammt von Eubulides von Milet (4. Jh. v. Chr.) und heißt auch Sorites-Paradoxie. Es steckt in vielen echten Streitfragen: Ab wann ist jemand erwachsen, arm oder krank?' },
 
-  { id: 'affen', icon: '🐒', field: 'logik', title: 'Der Affe an der Schreibmaschine', wiki: 'Infinite-Monkey-Theorem',
+  { id: 'affen', icon: 'key', field: 'logik', title: 'Der Affe an der Schreibmaschine', wiki: 'Infinite-Monkey-Theorem',
     text: 'Ein Affe tippt völlig zufällig auf einer Schreibmaschine herum. Er wird nie müde und hat unendlich viel Zeit.',
     q: 'Tippt er irgendwann den kompletten „Hamlet“?',
     opts: ['Ja, das ist sicher', 'Nein, das passiert nie'],
@@ -306,7 +306,7 @@ const THOUGHTS_DE = [
       ['Die Wirklichkeit', 'Schon für einen einzigen Satz bräuchte der Affe im Schnitt unvorstellbar viel länger, als das Universum alt ist. „Unendlich“ ist eben viel mehr als „sehr lange“.']],
     info: 'Die Idee geht auf den französischen Mathematiker Émile Borel (1913) zurück. 2003 stellte man echten Affen eine Tastatur ins Gehege: Sie tippten fünf Seiten, fast nur den Buchstaben S, und machten die Tastatur kaputt.' },
 
-  { id: 'hinrichtung', icon: '📅', field: 'logik', title: 'Die unerwartete Hinrichtung', wiki: 'Paradoxon der unerwarteten Hinrichtung',
+  { id: 'hinrichtung', icon: 'loop', field: 'logik', title: 'Die unerwartete Hinrichtung', wiki: 'Paradoxon der unerwarteten Hinrichtung',
     text: 'Ein Richter sagt: „Du wirst nächste Woche an einem Werktag mittags hingerichtet, und zwar überraschend.“ Der Gefangene überlegt: Freitag geht nicht, sonst wüsste ich es Donnerstagabend. Dann fällt auch Donnerstag weg, dann Mittwoch – also kann es gar nicht passieren. Am Mittwoch kommt der Henker. Völlig überraschend.',
     q: 'Wo steckt der Fehler in der Überlegung?',
     opts: ['Schon beim Freitag', 'Erst bei den früheren Tagen', 'Die Ankündigung widerspricht sich selbst'],
@@ -314,7 +314,7 @@ const THOUGHTS_DE = [
       ['Wissen über Wissen', 'Das Rätsel dreht sich darum, was man über das eigene künftige Wissen wissen kann. Solche Selbstbezüge sind ähnlich tückisch wie beim Lügner-Satz.']],
     info: 'Das Paradoxon kam in den 1940er-Jahren auf. Bis heute gibt es keine Lösung, auf die sich Logiker geeinigt haben – nur rund hundert Fachaufsätze mit verschiedenen Vorschlägen.' },
 
-  { id: 'dornroeschen', icon: '😴', field: 'logik', title: 'Das Dornröschen-Problem', wiki: 'Dornröschen-Problem',
+  { id: 'dornroeschen', icon: 'loop', field: 'logik', title: 'Das Dornröschen-Problem', wiki: 'Dornröschen-Problem',
     text: 'Dornröschen wird am Sonntag eingeschläfert. Dann wird eine Münze geworfen. Bei Kopf weckt man sie nur am Montag. Bei Zahl weckt man sie am Montag und am Dienstag, löscht ihr aber dazwischen die Erinnerung. Sie wacht auf und weiß nicht, welcher Tag ist.',
     q: 'Wie wahrscheinlich ist aus ihrer Sicht, dass die Münze Kopf zeigt?',
     opts: ['1/2', '1/3'],
@@ -323,7 +323,7 @@ const THOUGHTS_DE = [
     info: 'Das Problem wurde im Jahr 2000 durch den Philosophen Adam Elga bekannt. Fachleute teilen sich bis heute in „Halbierer“ und „Drittler“ – beide mit guten Argumenten.' },
 
   // ---------------- Entscheiden & Spieltheorie ----------------
-  { id: 'gefangene', icon: '⛓️', field: 'wahl', title: 'Das Gefangenendilemma', wiki: 'Gefangenendilemma',
+  { id: 'gefangene', icon: 'dice', field: 'wahl', title: 'Das Gefangenendilemma', wiki: 'Gefangenendilemma',
     text: 'Du und ein Komplize sitzen in getrennten Zellen. Schweigt ihr beide, bekommt jeder 1 Jahr. Verrätst nur du ihn, kommst du frei und er bekommt 10 Jahre – und umgekehrt. Verratet ihr euch gegenseitig, bekommt jeder 5 Jahre. Ihr könnt euch nicht absprechen.',
     q: 'Was tust du?',
     opts: ['Ich schweige', 'Ich verrate ihn'],
@@ -334,7 +334,7 @@ const THOUGHTS_DE = [
       note: 'In Computerturnieren gewann eine sehr einfache Strategie: „Wie du mir, so ich dir“. Erst freundlich sein, dann immer das tun, was der andere zuletzt tat. Wiederholung macht Vertrauen möglich.' },
     info: 'Das Spiel wurde 1950 bei der RAND Corporation entwickelt. Es erklärt Wettrüsten, Preiskämpfe und warum Klimaschutz so schwer ist: Jeder fährt besser, wenn die anderen sich anstrengen.' },
 
-  { id: 'newcomb', icon: '📦', field: 'wahl', title: 'Newcombs Problem', wiki: 'Newcombs Problem',
+  { id: 'newcomb', icon: 'dice', field: 'wahl', title: 'Newcombs Problem', wiki: 'Newcombs Problem',
     text: 'Vor dir stehen zwei Kisten. In der durchsichtigen liegen 1000 Euro. Die zweite ist verschlossen. Ein Wesen, das Entscheidungen fast immer richtig vorhersagt, hat sie gestern befüllt: mit einer Million, wenn es vorhersah, dass du nur die verschlossene Kiste nimmst – und mit nichts, wenn es vorhersah, dass du beide nimmst.',
     q: 'Was nimmst du?',
     opts: ['Nur die verschlossene Kiste', 'Beide Kisten'],
@@ -342,7 +342,7 @@ const THOUGHTS_DE = [
       ['Beide', 'Das Geld liegt schon drin oder eben nicht. Deine Wahl kann die Vergangenheit nicht ändern. Mit beiden Kisten hast du in jedem Fall 1000 Euro mehr.']],
     info: 'Der Physiker William Newcomb erdachte das Problem, der Philosoph Robert Nozick machte es 1969 bekannt. Er schrieb: Fast jeder hält die Antwort für offensichtlich – nur eben jeweils eine andere.' },
 
-  { id: 'buridan', icon: '🫏', field: 'wahl', title: 'Buridans Esel', wiki: 'Buridans Esel',
+  { id: 'buridan', icon: 'dice', field: 'wahl', title: 'Buridans Esel', wiki: 'Buridans Esel',
     text: 'Ein hungriger Esel steht genau in der Mitte zwischen zwei Heuhaufen. Beide sind gleich groß, gleich weit weg und gleich lecker. Es gibt nicht den geringsten Grund, den einen dem anderen vorzuziehen.',
     q: 'Was passiert mit einem vollkommen vernünftigen Esel?',
     opts: ['Er verhungert – ohne Grund keine Wahl', 'Er wählt einfach irgendeinen'],
@@ -350,7 +350,7 @@ const THOUGHTS_DE = [
       ['Er wählt', 'Verhungern ist schlechter als jeder der beiden Haufen. Vernünftig ist also, zufällig zu wählen. Ein guter Entscheider weiß, wann Grübeln teurer ist als die Wahl.']],
     info: 'Das Gleichnis ist nach dem französischen Philosophen Johannes Buridan (14. Jh.) benannt, steht aber gar nicht in seinen Schriften. Die Idee gibt es schon bei Aristoteles. Techniker kennen das Problem bei digitalen Schaltungen, die zwischen 0 und 1 hängen bleiben.' },
 
-  { id: 'pascal', icon: '🎲', field: 'wahl', title: 'Die Pascalsche Wette', wiki: 'Pascalsche Wette',
+  { id: 'pascal', icon: 'dice', field: 'wahl', title: 'Die Pascalsche Wette', wiki: 'Pascalsche Wette',
     text: 'Entweder gibt es Gott oder nicht, beweisen lässt sich keines von beiden. Glaubst du und es gibt ihn, gewinnst du das ewige Glück. Glaubst du und es gibt ihn nicht, verlierst du wenig. Glaubst du nicht und es gibt ihn, verlierst du alles.',
     q: 'Ist es also vernünftig, auf Gott zu setzen?',
     opts: ['Ja, die Rechnung geht auf', 'Nein, so funktioniert Glaube nicht'],
@@ -358,7 +358,7 @@ const THOUGHTS_DE = [
       ['Dagegen', 'Welcher Gott? Es gibt viele Religionen, die einander ausschließen. Außerdem kann man nicht auf Knopfdruck glauben, und ein Gott würde berechnende Frömmigkeit wohl kaum belohnen.']],
     info: 'Blaise Pascal notierte die Wette in seinen „Pensées“, die 1670 nach seinem Tod erschienen. Sie gilt als eine der ersten Anwendungen der Entscheidungstheorie – auf eine Frage, für die sie vielleicht nicht gemacht ist.' },
 
-  { id: 'allmende', icon: '🐄', field: 'wahl', title: 'Die Tragik der Allmende', wiki: 'Tragik der Allmende',
+  { id: 'allmende', icon: 'dice', field: 'wahl', title: 'Die Tragik der Allmende', wiki: 'Tragik der Allmende',
     text: 'Zehn Bauern teilen sich eine Dorfwiese. Jeder überlegt: Stelle ich eine weitere Kuh darauf, gehört der Gewinn mir allein. Der Schaden durch das abgefressene Gras verteilt sich auf alle zehn.',
     q: 'Was passiert auf Dauer mit der Wiese?',
     opts: ['Sie wird kahl gefressen', 'Die Bauern einigen sich rechtzeitig', 'Es braucht Staat oder Zäune'],
@@ -366,7 +366,7 @@ const THOUGHTS_DE = [
       ['Die Gegenbeweise', 'Die Forscherin Elinor Ostrom fand weltweit Dörfer, die Wälder, Fischgründe und Wasser seit Jahrhunderten gemeinsam erhalten – mit eigenen Regeln, Kontrolle und Strafen.']],
     info: 'Der Biologe Garrett Hardin prägte den Begriff 1968. Elinor Ostrom erhielt 2009 als erste Frau den Wirtschaftsnobelpreis für den Nachweis, dass die Tragödie nicht zwangsläufig ist. Das Muster passt auf Überfischung und das Klima.' },
 
-  { id: 'ultimatum', icon: '💶', field: 'wahl', title: 'Das Ultimatumspiel', wiki: 'Ultimatumspiel',
+  { id: 'ultimatum', icon: 'dice', field: 'wahl', title: 'Das Ultimatumspiel', wiki: 'Ultimatumspiel',
     text: 'Ein Fremder bekommt 100 Euro und muss dir einen Teil davon anbieten. Nimmst du an, wird so geteilt. Lehnst du ab, bekommt keiner etwas. Es gibt nur diese eine Runde, ihr seht euch nie wieder. Er bietet dir 10 Euro, 90 behält er.',
     q: 'Nimmst du an?',
     opts: ['Ja, 10 Euro sind besser als nichts', 'Nein, das ist unverschämt'],
@@ -374,7 +374,7 @@ const THOUGHTS_DE = [
       ['Ablehnen', 'Menschen zahlen einen Preis, um Unfairness zu bestrafen. Gerade weil das alle wissen, bieten die meisten von sich aus fast die Hälfte an.']],
     info: 'Das Experiment stammt vom deutschen Ökonomen Werner Güth (1982). Weltweit werden Angebote unter etwa 20 bis 30 Prozent sehr oft abgelehnt. Es wurde zu einem Kronzeugen gegen das Bild vom rein eigennützigen Menschen.' },
 
-  { id: 'petersburg', icon: '🪙', field: 'wahl', title: 'Das Sankt-Petersburg-Spiel', wiki: 'Sankt-Petersburg-Paradoxon',
+  { id: 'petersburg', icon: 'dice', field: 'wahl', title: 'Das Sankt-Petersburg-Spiel', wiki: 'Sankt-Petersburg-Paradoxon',
     text: 'Eine Münze wird geworfen, bis zum ersten Mal Kopf fällt. Passiert das gleich beim ersten Wurf, bekommst du 2 Euro. Beim zweiten 4 Euro, beim dritten 8, und so verdoppelt es sich immer weiter. Rechnerisch ist der durchschnittliche Gewinn unendlich groß.',
     q: 'Wie viel würdest du zahlen, um einmal mitzuspielen?',
     opts: ['Höchstens 20 Euro', 'Ein paar hundert Euro', 'Alles, was ich habe'],
@@ -383,7 +383,7 @@ const THOUGHTS_DE = [
     info: 'Nikolaus Bernoulli stellte das Problem 1713, sein Cousin Daniel löste es 1738 in Sankt Petersburg mit der Idee des Nutzens: Entscheidend ist, was Geld einem wert ist, nicht der Betrag. Darauf baut die heutige Ökonomie auf.' },
 
   // ---------------- Wissen & Wirklichkeit ----------------
-  { id: 'tank', icon: '🧠', field: 'wissen', title: 'Das Gehirn im Tank', wiki: 'Gehirn im Tank',
+  { id: 'tank', icon: 'cube', field: 'wissen', title: 'Das Gehirn im Tank', wiki: 'Gehirn im Tank',
     text: 'Stell dir vor, ein Wissenschaftler hat dein Gehirn entnommen und in eine Nährlösung gelegt. Ein Computer speist über Kabel genau die Signale ein, die sonst von Augen, Ohren und Haut kämen. Alles, was du gerade siehst und fühlst, wäre vorgetäuscht.',
     q: 'Kannst du sicher wissen, dass das nicht so ist?',
     opts: ['Nein, beweisen kann ich es nicht', 'Ja, das lässt sich ausschließen'],
@@ -391,7 +391,7 @@ const THOUGHTS_DE = [
       ['Doch', 'Der Philosoph Hilary Putnam meinte: Ein Tankgehirn hat nie echte Tanks gesehen. Seine Worte „Gehirn“ und „Tank“ beziehen sich nur auf Bilder im Programm. Der Satz „Ich bin ein Gehirn im Tank“ wäre deshalb immer falsch.']],
     info: 'Die moderne Fassung stammt von Hilary Putnam (1981). Sie ist die Neuauflage von René Descartes’ bösem Dämon aus dem Jahr 1641 – und die Vorlage für den Film „Matrix“.' },
 
-  { id: 'hoehle', icon: '🔥', field: 'wissen', title: 'Das Höhlengleichnis', wiki: 'Höhlengleichnis',
+  { id: 'hoehle', icon: 'cube', field: 'wissen', title: 'Das Höhlengleichnis', wiki: 'Höhlengleichnis',
     text: 'Menschen sitzen seit ihrer Geburt gefesselt in einer Höhle und sehen nur die Wand vor sich. Hinter ihnen brennt ein Feuer, und Gegenstände werden vorbeigetragen. Die Schatten an der Wand halten sie für die ganze Wirklichkeit. Einer wird befreit, steigt hinauf und sieht die Sonne.',
     q: 'Er kehrt zurück und erzählt davon. Was geschieht?',
     opts: ['Sie glauben ihm und wollen hinaus', 'Sie lachen ihn aus', 'Sie werden wütend und gehen auf ihn los'],
@@ -399,7 +399,7 @@ const THOUGHTS_DE = [
       ['Was gemeint ist', 'Die Schatten stehen für das, was wir mit den Sinnen wahrnehmen und für selbstverständlich halten. Erkenntnis ist ein mühsamer Aufstieg, und wer anderen davon berichtet, macht sich unbeliebt.']],
     info: 'Das Gleichnis steht im siebten Buch von Platons „Politeia“. Es spielt auf das Schicksal seines Lehrers Sokrates an, den die Athener 399 v. Chr. zum Tod verurteilten.' },
 
-  { id: 'simulation', icon: '💻', field: 'wissen', title: 'Die Simulationshypothese', wiki: 'Simulationshypothese',
+  { id: 'simulation', icon: 'cube', field: 'wissen', title: 'Die Simulationshypothese', wiki: 'Simulationshypothese',
     text: 'Angenommen, eine fortgeschrittene Zivilisation hat genug Rechenleistung, um ganze Welten mit bewussten Bewohnern zu simulieren. Dann würde sie vermutlich sehr viele davon laufen lassen. Es gäbe also weit mehr simulierte Bewusstseine als echte.',
     q: 'Wie wahrscheinlich leben wir in einer Simulation?',
     opts: ['Sehr wahrscheinlich', 'Möglich, aber unwahrscheinlich', 'Ausgeschlossen', 'Es macht für uns keinen Unterschied'],
@@ -407,7 +407,7 @@ const THOUGHTS_DE = [
       ['Einwände', 'Niemand weiß, ob sich Bewusstsein überhaupt simulieren lässt. Und eine These, die sich durch nichts überprüfen lässt, erklärt am Ende auch nichts.']],
     info: 'Der schwedische Philosoph Nick Bostrom veröffentlichte das Argument 2003. Es ist die technische Fassung einer sehr alten Frage, die schon Platons Höhle und Descartes’ Dämon stellten.' },
 
-  { id: 'erlebnis', icon: '🎧', field: 'wissen', title: 'Die Erlebnismaschine', wiki: 'Robert Nozick',
+  { id: 'erlebnis', icon: 'cube', field: 'wissen', title: 'Die Erlebnismaschine', wiki: 'Robert Nozick',
     text: 'Forscher haben eine Maschine gebaut, die dir jedes gewünschte Erlebnis verschafft. Du liegst in einem Tank und erlebst ein vollkommen glückliches Leben mit Erfolg, Liebe und Abenteuern. Es fühlt sich in jeder Hinsicht echt an, und du vergisst, dass du angeschlossen bist.',
     q: 'Lässt du dich für immer anschließen?',
     opts: ['Ja, Glück ist Glück', 'Nein, ich will das echte Leben'],
@@ -415,7 +415,7 @@ const THOUGHTS_DE = [
       ['Nicht anschließen', 'Wir wollen Dinge wirklich tun, nicht nur das Gefühl davon haben. Wir wollen jemand sein und mit echten Menschen leben. Also gibt es mehr, das zählt, als angenehme Zustände.']],
     info: 'Robert Nozick stellte die Frage 1974 in „Anarchie, Staat, Utopia“. Sie richtet sich gegen den Hedonismus, also die Ansicht, dass im Leben nur Lust und Wohlbefinden zählen.' },
 
-  { id: 'molyneux', icon: '👁️', field: 'wissen', title: 'Das Molyneux-Problem', wiki: 'Molyneux-Problem',
+  { id: 'molyneux', icon: 'key', field: 'wissen', title: 'Das Molyneux-Problem', wiki: 'Molyneux-Problem',
     text: 'Ein Mensch ist von Geburt an blind. Er hat gelernt, eine Kugel und einen Würfel durch Tasten zu unterscheiden. Nun wird er operiert und kann plötzlich sehen. Vor ihm liegen eine Kugel und ein Würfel auf dem Tisch.',
     q: 'Erkennt er nur durch Hinsehen, was die Kugel ist?',
     opts: ['Ja, sofort', 'Nein, das muss er erst lernen'],
@@ -424,7 +424,7 @@ const THOUGHTS_DE = [
       ['Der Befund', '2011 wurden in Indien blind geborene Kinder operiert und direkt danach getestet. Sie konnten Gesehenes nicht dem Getasteten zuordnen – lernten es aber innerhalb weniger Tage.']],
     info: 'Der Ire William Molyneux, dessen Frau erblindet war, stellte die Frage 1688 in einem Brief an John Locke. Über 300 Jahre lang konnte man nur spekulieren, bis die Medizin ein Experiment möglich machte.' },
 
-  { id: 'gettier', icon: '🕰️', field: 'wissen', title: 'Die stehengebliebene Uhr', wiki: 'Gettier-Problem',
+  { id: 'gettier', icon: 'cube', field: 'wissen', title: 'Die stehengebliebene Uhr', wiki: 'Gettier-Problem',
     text: 'Du schaust auf die Bahnhofsuhr: genau 12 Uhr. Du glaubst also, es ist 12 Uhr. Und das stimmt auch. Was du nicht weißt: Die Uhr ist gestern um 12 stehen geblieben. Du hast zufällig genau im richtigen Moment hingesehen.',
     q: 'Wusstest du, dass es 12 Uhr ist?',
     opts: ['Ja, ich lag ja richtig', 'Nein, das war nur Glück'],
@@ -432,7 +432,7 @@ const THOUGHTS_DE = [
       ['Nein', 'Zwischen deinem Grund und der Wahrheit bestand kein echter Zusammenhang. Eine Minute später hättest du dich mit derselben Sicherheit geirrt.']],
     info: 'Seit Platon galt Wissen als „wahre, begründete Überzeugung“. 1963 zeigte Edmund Gettier mit Fällen dieser Art auf nur drei Seiten, dass das nicht reicht. Was Wissen genau ist, ist seitdem wieder offen.' },
 
-  { id: 'teekanne', icon: '🫖', field: 'wissen', title: 'Russells Teekanne', wiki: 'Russells Teekanne',
+  { id: 'teekanne', icon: 'cube', field: 'wissen', title: 'Russells Teekanne', wiki: 'Russells Teekanne',
     text: 'Jemand behauptet: Zwischen Erde und Mars kreist eine kleine Teekanne aus Porzellan um die Sonne. Sie ist zu klein für jedes Teleskop. Du kannst nicht beweisen, dass es sie nicht gibt.',
     q: 'Musst du die Teekanne deshalb für möglich halten?',
     opts: ['Nein, wer behauptet, muss belegen', 'Ja, solange sie nicht widerlegt ist'],

@@ -1,57 +1,57 @@
 'use strict';
-// „Weichensteller“ – das Trolley-Spiel im Tab „Denken“.
-// Drei Teile: Klassiker (berühmte Fälle mit echten Umfragezahlen), Endlos (gewürfelte Fälle)
-// und der Dilemma-Stapel (46 Fälle aus der Forschung, siehe trolley-data.js).
-// Nutzt el(), $, store und toast() aus app.js.
+// „Das Trolley-Spiel“ (Untertitel „Weichensteller“) im Tab „Denken“.
+// Drei Teile: Klassiker (berühmte Fälle mit echten Umfragezahlen), Zufallsrunde (gewürfelte Fälle)
+// und der Forschungs-Stapel (46 Fälle aus der Forschung, siehe trolley-data.js / trolley-data.en.js).
+// Ebenen wie im Denken-Blatt: Menü → Modus. Pfeil und Zurück-Geste gehen eine Ebene zurück, Wegziehen schließt.
+// Nutzt el(), $, store, levelSheet(), icBox() und symEl() aus app.js.
 
 const tg = store.get('trolley', { classics: {}, stack: {}, order: null, endless: { n: 0, sw: 0, dims: {} } });
 const saveTg = () => store.set('trolley', tg);
 const gameEl = $('game');
 const gameBody = $('game-body');
 const gameScroll = $('game-scroll');
-let gameMode = null; // null = Menü
 
 // Zahlen: Awad u. a. (2020), PNAS – 70 000 Menschen in 42 Ländern, Durchschnitt über die Länder.
 const STAT_SOURCE = T('Studie mit 70 000 Menschen in 42 Ländern (Awad u. a., PNAS 2020)', 'Study with 70,000 people in 42 countries (Awad et al., PNAS 2020)');
 
 const TROLLEY_CLASSICS = [
-  { id: 'weiche', title: 'Die Weiche', scene: 'switch', main: ['👷', 5], side: ['👷', 1], stat: 81,
+  { id: 'weiche', title: 'Die Weiche', scene: 'switch', main: ['worker', 5], side: ['worker', 1], stat: 81,
     text: 'Eine führerlose Straßenbahn rast auf fünf Gleisarbeiter zu. Du stehst an der Weiche. Legst du sie um, fährt die Bahn aufs Nebengleis und tötet dort einen einzelnen Arbeiter.',
     q: 'Legst du die Weiche um?', yes: 'Weiche umlegen', no: 'Nichts tun',
     note: 'Der Ausgangsfall, 1967 von Philippa Foot erdacht. Die meisten halten das Umlegen für erlaubt: Der Tod des einen ist eine vorhergesehene, aber nicht beabsichtigte Nebenfolge.' },
-  { id: 'bruecke', title: 'Die Brücke', scene: 'bridge', main: ['👷', 5], side: ['🧍', 1], stat: 51,
+  { id: 'bruecke', title: 'Die Brücke', scene: 'bridge', main: ['worker', 5], side: ['man', 1], stat: 51,
     text: 'Diesmal gibt es keine Weiche. Du stehst auf einer Brücke über dem Gleis, neben dir ein sehr schwerer Mann. Stößt du ihn hinunter, stoppt sein Körper die Bahn. Er stirbt, die fünf überleben.',
     q: 'Stößt du den Mann hinunter?', yes: 'Hinunterstoßen', no: 'Nichts tun',
     note: 'Judith Jarvis Thomsons berühmte Variante. Die Rechnung ist dieselbe wie bei der Weiche. Aber hier benutzt du einen Menschen als Mittel und legst selbst Hand an – das macht für viele den Unterschied.' },
-  { id: 'schleife', title: 'Die Schleife', scene: 'loop', main: ['👷', 5], side: ['🧍', 1], stat: 72,
+  { id: 'schleife', title: 'Die Schleife', scene: 'loop', main: ['worker', 5], side: ['man', 1], stat: 72,
     text: 'Wieder eine Weiche. Aber das Nebengleis führt in einer Schleife zurück aufs Hauptgleis. Auf der Schleife steht ein schwerer Mann. Nur weil sein Körper die Bahn aufhält, erreicht sie die fünf nicht mehr.',
     q: 'Legst du die Weiche um?', yes: 'Weiche umlegen', no: 'Nichts tun',
     note: 'Thomsons „Loop“ von 1985. Das Tückische: Wie auf der Brücke brauchst du den Körper des Mannes als Bremsklotz. Trotzdem stimmen viel mehr Menschen zu als beim Stoßen. Es geht also wohl weniger um „Mittel zum Zweck“ als darum, ob man selbst Hand anlegt.' },
-  { id: 'falltuer', title: 'Die Falltür', scene: 'bridge', main: ['👷', 5], side: ['🧍', 1],
+  { id: 'falltuer', title: 'Die Falltür', scene: 'bridge', main: ['worker', 5], side: ['man', 1],
     text: 'Wieder steht ein schwerer Mann auf der Brücke. Diesmal musst du ihn nicht anfassen: Er steht auf einer Falltür, und du hast aus sicherer Entfernung einen Hebel dafür. Öffnest du sie, fällt er aufs Gleis und stoppt die Bahn.',
     q: 'Öffnest du die Falltür?', yes: 'Falltür öffnen', no: 'Nichts tun',
     note: 'In Experimenten des Psychologen Joshua Greene stimmen hier deutlich mehr Menschen zu als beim Stoßen mit den eigenen Händen. Körperliche Nähe und eigene Muskelkraft lassen eine Tat schlimmer wirken, obwohl das Ergebnis gleich ist.' },
-  { id: 'saboteur', title: 'Der Saboteur', scene: 'bridge', main: ['👷', 5], side: ['🦹', 1],
+  { id: 'saboteur', title: 'Der Saboteur', scene: 'bridge', main: ['worker', 5], side: ['robber', 1],
     text: 'Der Mann auf der Brücke ist kein Unbeteiligter: Er hat die Bremsen der Bahn absichtlich zerstört, um die fünf zu töten. Stößt du ihn hinunter, stoppt sein Körper die Bahn.',
     q: 'Stößt du den Saboteur hinunter?', yes: 'Hinunterstoßen', no: 'Nichts tun',
     note: 'In der Fachliteratur heißt der Fall „Fat Villain“. Viele, die beim Unschuldigen zögern, stoßen hier. Schuld verändert, was wir jemandem zumuten dürfen – ähnlich wie bei der Notwehr.' },
-  { id: 'chirurg', title: 'Der Chirurg', scene: 'icon', main: ['🛌', 5], side: ['🧍', 1],
+  { id: 'chirurg', title: 'Der Chirurg', scene: 'icon', main: ['patient', 5], side: ['man', 1],
     text: 'Du bist Chirurgin. Fünf deiner Patienten sterben heute, wenn sie kein Spenderorgan bekommen. Im Wartezimmer sitzt ein kerngesunder Besucher, dessen Organe zu allen fünf passen. Niemand würde je davon erfahren.',
     q: 'Opferst du den Besucher für die fünf?', yes: 'Ja, die fünf retten', no: 'Nein',
     note: 'Wieder fünf gegen einen, und doch sagen hier fast alle Nein. Philippa Foot und Judith Thomson zeigten damit: Es ist etwas anderes, eine vorhandene Gefahr umzulenken, als für einen Unbeteiligten eine neue zu schaffen.' },
-  { id: 'garten', title: 'Der Mann im Garten', scene: 'switch', main: ['👷', 5], side: ['😴', 1],
+  { id: 'garten', title: 'Der Mann im Garten', scene: 'switch', main: ['worker', 5], side: ['sleeper', 1],
     text: 'Du kannst die Bahn nur aufhalten, indem du sie mit der Weiche entgleisen lässt. Sie stürzt dann einen Hang hinunter in einen Garten, in dem ein Mann in seiner Hängematte schläft. Mit dem Gleis hat er nichts zu tun.',
     q: 'Lässt du die Bahn entgleisen?', yes: 'Entgleisen lassen', no: 'Nichts tun',
     note: 'Der Fall stammt vom Philosophen Peter Unger. Ein Gleisarbeiter kennt das Risiko seines Berufs, der Mann im Garten ist bei sich zu Hause. Manche finden: Wer sich nicht in Gefahr begeben hat, hat ein stärkeres Recht, verschont zu werden.' },
-  { id: 'selbst', title: 'Du selbst', scene: 'switch', main: ['👷', 5], side: ['🫵', 1],
+  { id: 'selbst', title: 'Du selbst', scene: 'switch', main: ['worker', 5], side: ['you', 1],
     text: 'Auf dem Nebengleis steht diesmal kein Fremder. Du selbst steckst dort mit dem Fuß fest, den Weichenhebel in Reichweite. Legst du um, trifft die Bahn dich statt der fünf.',
     q: 'Lenkst du die Bahn auf dich selbst?', yes: 'Auf mich lenken', no: 'Nichts tun',
     note: 'Judith Thomson stellte diese Frage 2008 und änderte damit ihre eigene Meinung: Wer nicht bereit wäre, sich selbst zu opfern, darf dieses Opfer auch keinem Fremden aufzwingen. Danach wäre sogar das Umlegen im Ausgangsfall nicht erlaubt.' },
-  { id: 'liebe', title: 'Der geliebte Mensch', scene: 'switch', main: ['❤️', 1], side: ['👷', 5],
+  { id: 'liebe', title: 'Der geliebte Mensch', scene: 'switch', main: ['loved', 1], side: ['worker', 5],
     text: 'Auf dem Hauptgleis steht diesmal nur eine Person: der Mensch, der dir am nächsten steht. Auf dem Nebengleis arbeiten fünf Fremde. Tust du nichts, stirbt dein Mensch. Legst du um, sterben die fünf.',
     q: 'Legst du um, um deinen Menschen zu retten?', yes: 'Umlegen', no: 'Nichts tun',
     note: 'Strenge Utilitaristen sagen: Jedes Leben zählt gleich, also nein. Der Philosoph Bernard Williams hielt dagegen: Wer in so einem Moment erst nachrechnet, ob er den eigenen Partner retten darf, hat „einen Gedanken zu viel“.' },
-  { id: 'auto', title: 'Das selbstfahrende Auto', scene: 'icon', main: ['🚶', 5], side: ['🚗', 1],
+  { id: 'auto', title: 'Das selbstfahrende Auto', scene: 'icon', main: ['walker', 5], side: ['car', 1],
     text: 'Du sitzt allein in einem selbstfahrenden Auto. Plötzlich laufen fünf Menschen auf die Straße, bremsen geht nicht mehr. Das Auto kann geradeaus fahren und die fünf töten oder gegen eine Betonwand ausweichen, was dich tötet. Du legst vorher fest, wie es programmiert wird.',
     q: 'Soll dein Auto ausweichen und dich opfern?', yes: 'Ja, ausweichen', no: 'Nein, mich schützen',
     note: 'Eine Studie in „Science“ (2016) fand genau hier ein Dilemma: Die meisten finden Autos richtig, die möglichst viele Leben retten – würden selbst aber lieber eines kaufen, das die Insassen schützt.' },
@@ -111,12 +111,45 @@ function track(d) {
   g.append(svg('path', { d, class: 'tr-bed' }), svg('path', { d, class: 'tr-ties' }));
   return g;
 }
+// Gezeichnete Figuren statt Emojis. Jede Figur steht mit den Füßen auf (0, 0) und ist rund 22 Einheiten hoch.
+// Erwachsene, Kinder (kleiner), Ältere (mit Stock) und Tiere (auf vier Beinen) sind auf einen Blick zu unterscheiden.
+const HEAD = (x = 0) => `<circle class="fh" cx="${x}" cy="-17.6" r="3.4"/>`;
+const MAN = HEAD() + '<path class="fl" d="M0 -13.6V-5.6M-4.2 -6.8L0 -12 4.2 -6.8M0 -5.6L-3.1 0M0 -5.6L3.1 0"/>';
+const WOMAN = HEAD() + '<path class="fh" d="M0 -13.4L-4.3 -4.2H4.3Z"/><path class="fl" d="M-4.2 -6.8L0 -12 4.2 -6.8M-1.6 -4.2V0M1.6 -4.2V0"/>';
+const FIG = {
+  man: MAN,
+  woman: WOMAN,
+  worker: MAN + '<path d="M-4 -18.4a4 4 0 0 1 8 0z" fill="#f5c96b"/><path d="M-5 -18.4h10" stroke="#f5c96b" stroke-width="1.6" stroke-linecap="round"/>',
+  child: '<circle class="fh" cx="0" cy="-12.2" r="2.8"/><path class="fl" d="M0 -9.2V-4M-3 -4.8L0 -8.4 3 -4.8M0 -4L-2.2 0M0 -4L2.2 0"/>',
+  oldman: HEAD(1.4) + '<path class="fl" d="M.8 -13.4Q0 -9.6 -.4 -5.6M-4 -7L.4 -11.8 4.6 -7.6M-.4 -5.6L-3.4 0M-.4 -5.6L2.6 0M4.6 -7.6L5.8 0M4.6 -7.6q.5 -1.6 2.1 -1"/>',
+  oldwoman: HEAD(1.4) + '<path class="fh" d="M.8 -13.4L-3.6 -4.2H4.6Z"/><path class="fl" d="M-4 -7L.6 -11.8 4.6 -7.6M-1.2 -4.2V0M2 -4.2V0M4.6 -7.6L5.8 0M4.6 -7.6q.5 -1.6 2.1 -1"/>',
+  doctor: WOMAN + '<path d="M-1.5 -7.4h3M0 -8.9v3" stroke="#e5484d" stroke-width="1.5" stroke-linecap="round"/>',
+  robber: MAN + '<rect x="-3.9" y="-19" width="7.8" height="2.3" rx="1.1" fill="#151827"/><path class="fl" d="M4.2 -6.8l1 1.6"/><circle class="fl" cx="6" cy="-3" r="2.3"/>',
+  dog: '<path class="fl" d="M-6.5 -6.5H3.8M-5.8 -6.5V0M-2.8 -6.5V0M.6 -6.5V0M3.2 -6.5V0M-6.5 -6.5l-2.2 -3.6M3.8 -6.5L5.2 -8.2M8.4 -8.8h1.4"/><circle class="fh" cx="6.2" cy="-9.2" r="2.6"/><path class="fh" d="M4.4 -11.4l-1.6 3.4 2.3-.5z"/>',
+  cat: '<path class="fl" d="M-4.6 -5H2.4M-4 -5V0M-1.6 -5V0M.6 -5V0M2 -5V0M-4.6 -5c-2.6 -.6 -3 -3.6 -1.6 -6M2.4 -5l1 -1.2"/><circle class="fh" cx="4.4" cy="-7.4" r="2.2"/><path class="fh" d="M2.7 -8.4l.2 -2.8 1.8 1.4zM4.5 -9.4l1.6 -1.8.5 2.4z"/>',
+  patient: '<path class="fl" d="M-10 0V-9M10 0V-5.5M-10 -4H10"/><circle class="fh" cx="-6.4" cy="-7" r="2.5"/><path class="fh" d="M-3.6 -4.6V-8.4h11.4a1.6 1.6 0 0 1 1.6 1.6v2.2z"/>',
+  sleeper: '<path class="fl" d="M-11 0V-13M11 0V-13M-11 -11.5Q0 -2.5 11 -11.5"/><circle class="fh" cx="-5.6" cy="-9.8" r="2.4"/><path class="fh" d="M-3.4 -7.8Q1.5 -4.6 7 -8.6l.7 1.7Q1.5 -2.4 -3.2 -5.8z"/>',
+  you: MAN + '<path class="fl" d="M-2.6 -27.4L0 -24.8 2.6 -27.4"/>',
+  loved: MAN + '<path d="M0 -22.4s-3.8-2.3-3.8-4.8a2 2 0 0 1 3.8-.9 2 2 0 0 1 3.8.9c0 2.5-3.8 4.8-3.8 4.8z" fill="#ff6b8a"/>',
+  walker: '<circle class="fh" cx=".8" cy="-17.6" r="3.4"/><path class="fl" d="M.4 -13.6L-.3 -5.6M-3.6 -8.4L.2 -11.8 3.4 -7.6M-.3 -5.6L-3.8 0M-.3 -5.6L3 -.4"/>',
+  car: '<path class="fl" d="M-10.5 -3.6V-7.4l2.6-.8 3-4.2h9.4l3 4.2 2.6.8v3.8z"/><circle class="fh" cx="-6" cy="-3" r="2.3"/><circle class="fh" cx="6" cy="-3" r="2.3"/>',
+};
+const TRAM = '<path class="tr-pan" d="M-3.5 -24.5l3.5-4 3.5 4"/><rect class="tr-body" x="-15" y="-24.5" width="30" height="19" rx="4"/>'
+  + '<rect class="tr-win" x="-11.5" y="-21" width="6.5" height="6" rx="1.2"/><rect class="tr-win" x="-3.2" y="-21" width="6.5" height="6" rx="1.2"/><rect class="tr-win" x="5" y="-21" width="6.5" height="6" rx="1.2"/>'
+  + '<circle class="tr-lamp" cx="12.4" cy="-9" r="1.4"/><circle class="tr-wheel" cx="-8.5" cy="-3.6" r="2.6"/><circle class="tr-wheel" cx="8.5" cy="-3.6" r="2.6"/>';
+const FIG_SCALE = 1.15; // etwas größer gezeichnet, damit die Figuren auf dem Handy gut zu erkennen sind
 function figures(list, x0, x1, y) {
   const g = svg('g', { class: 'figs' });
   const n = list.length;
   const step = n > 1 ? Math.min(24, (x1 - x0) / (n - 1)) : 0;
   const start = (x0 + x1) / 2 - step * (n - 1) / 2;
-  list.forEach((e, i) => g.append(svg('text', { x: start + i * step, y, class: 'fig', 'text-anchor': 'middle' }, e)));
+  list.forEach((k, i) => {
+    const pos = svg('g', { transform: `translate(${(start + i * step).toFixed(1)} ${y}) scale(${FIG_SCALE})` });
+    const f = svg('g', { class: 'fig fig-' + k });
+    f.innerHTML = FIG[k] || MAN;
+    pos.append(f);
+    g.append(pos);
+  });
   g.dataset.cx = (x0 + x1) / 2;
   g.dataset.cy = y;
   return g;
@@ -130,14 +163,19 @@ function moveAlong(node, d, ms, host) {
     const tick = now => {
       const k = Math.min(1, (now - t0) / ms);
       const pt = p.getPointAtLength(len * k * k * (3 - 2 * k)); // weich anfahren und bremsen
-      node.setAttribute('x', pt.x);
-      node.setAttribute('y', pt.y - 4);
+      node.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`);
       if (k < 1) requestAnimationFrame(tick); else { p.remove(); res(); }
     };
     requestAnimationFrame(tick);
   });
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
+// gezeichneter Zusammenstoß (Zacken-Stern)
+function boomAt(x, y) {
+  const pts = [];
+  for (let i = 0; i < 16; i++) { const r = i % 2 ? 5.5 : 12.5, a = Math.PI * i / 8 - Math.PI / 2; pts.push((x + Math.cos(a) * r).toFixed(1) + ',' + (y + Math.sin(a) * r).toFixed(1)); }
+  return svg('polygon', { points: pts.join(' '), class: 'boom' });
+}
 
 // Baut die Szene. play(true) = eingreifen, play(false) = nichts tun.
 function makeScene(cfg) {
@@ -147,7 +185,7 @@ function makeScene(cfg) {
   let gMain, gSide, tram;
   const hit = g => {
     g.classList.add('hit');
-    root.append(svg('text', { x: g.dataset.cx, y: Number(g.dataset.cy) - 2, class: 'boom', 'text-anchor': 'middle' }, '💥'));
+    root.append(boomAt(Number(g.dataset.cx), Number(g.dataset.cy) - 11));
   };
 
   if (kind === 'icon') {
@@ -173,15 +211,16 @@ function makeScene(cfg) {
     gSide = figures(side, 185, 185, 72);
   }
   if (kind !== 'bridge') root.append(svg('circle', { cx: kind === 'loop' ? 70 : 105, cy: 150, r: 5, class: 'switch-dot' }));
-  tram = svg('text', { x: 24, y: 146, class: 'tram', 'text-anchor': 'middle' }, '🚋');
+  tram = svg('g', { class: 'tram', transform: 'translate(24 150)' });
+  tram.innerHTML = TRAM;
   root.append(gMain, gSide, tram);
 
   const play = async yes => {
     if (kind === 'bridge') {
       if (yes) {
-        const man = gSide.firstChild;
+        const man = gSide.querySelector('.fig');
         man.style.transition = 'transform .35s ease-in';
-        man.style.transform = 'translateY(74px)';
+        man.style.transform = `translateY(${(74 / FIG_SCALE).toFixed(1)}px)`; // innerhalb der vergrößerten Figur: 74 Einheiten bis aufs Gleis
         gSide.dataset.cy = 146;
         await moveAlong(tram, 'M24,150 L160,150', 900, root);
         hit(gSide);
@@ -203,20 +242,12 @@ function makeScene(cfg) {
 }
 
 // ---------- Rahmen: öffnen, schließen, Menü ----------
-function openTrolley() {
-  if (gameEl.hidden) history.pushState({ trolley: true }, '');
-  gameEl.hidden = false;
-  renderGameMenu();
-}
-function closeTrolley(fromPopstate) {
-  gameEl.hidden = true;
-  gameMode = null;
-  setTimeout(() => { if (gameEl.hidden) gameBody.innerHTML = ''; }, 380); // erst leeren, wenn das Blatt hinausgeglitten ist
-  if (!fromPopstate && history.state?.trolley) history.back();
-  if ($('view-think').classList.contains('active') && typeof renderDenken === 'function') renderDenken();
-}
-$('game-back').onclick = () => { if (gameMode) renderGameMenu(); else closeTrolley(false); };
-window.addEventListener('popstate', e => { if (!gameEl.hidden && !e.state?.trolley) closeTrolley(true); });
+const MODES = { classics: () => startClassics(), endless: () => startEndless(), stack: () => startStack() };
+const gameL = levelSheet(gameEl, gameScroll, 'trolley', e => { if (e.t === 'menu') renderGameMenu(); else MODES[e.t](); });
+function openTrolley() { gameL.open({ t: 'menu' }); }
+function closeTrolley() { gameL.closeAll(); }
+$('game-back').onclick = () => gameL.back();
+const toMenu = () => gameL.back(); // aus einem Modus eine Ebene zurück ins Menü
 
 function gameScreen(title) {
   $('game-title').textContent = title;
@@ -247,28 +278,31 @@ function choiceButtons(yes, no, onPick) {
 }
 
 function renderGameMenu() {
-  gameMode = null;
-  const b = gameScreen(T('Weichensteller', 'Pull the Lever'));
-  b.append(el('div', 'ghero', '🚋'), el('h1', null, T('Weichensteller', 'Pull the Lever')),
+  const b = gameScreen(T('Das Trolley-Spiel', 'The Trolley Game'));
+  const kick = el('span', 'th-kind');
+  kick.append(symEl('tram', 'in'), el('span', null, T('Weichensteller', 'Pull the Lever')));
+  $('game-back').setAttribute('aria-label', T('Spiel schließen', 'Close the game'));
+  b.append(icBox('tram', 'big'), kick, el('h1', null, T('Das Trolley-Spiel', 'The Trolley Game')),
     el('p', 'gintro', T('Eine Bahn rast heran, und du stehst am Hebel. Jede Entscheidung kostet jemanden das Leben – auch die, nichts zu tun.', 'A tram is hurtling closer, and you are at the lever. Every decision costs someone their life – including the decision to do nothing.')));
   const cDone = TROLLEY_CLASSICS.filter(c => tg.classics[c.id] != null).length;
   const sDone = TROLLEY_STACK.filter(d => tg.stack[d.n] != null).length;
   const modes = [
-    ['🚋', T('Klassiker', 'Classics'), T('Zehn berühmte Fälle der Philosophie – mit den Zahlen, wie andere entschieden haben.', 'Ten famous cases from philosophy – with figures on how others decided.'), `${cDone} ${T('von', 'of')} ${TROLLEY_CLASSICS.length}`, startClassics],
-    ['♾️', T('Endlos', 'Endless'), T('Immer neue, gewürfelte Fälle. Nach zehn Runden siehst du dein Muster.', 'Ever new, randomly rolled cases. After ten rounds you see your pattern.'), `${tg.endless.n} ${T('Runden', 'rounds')}`, startEndless],
-    ['📚', T('Dilemma-Stapel', 'Dilemma stack'), T('46 Fälle aus der psychologischen Forschung. Härter, und ganz ohne Gleise.', '46 cases from psychological research. Tougher, and without any tracks.'), `${sDone} ${T('von', 'of')} ${TROLLEY_STACK.length}`, startStack],
+    ['book', T('Klassiker', 'Classics'), T(`${TROLLEY_CLASSICS.length} berühmte Fälle der Philosophie, bei einigen mit Zahlen aus einer Studie mit 70 000 Menschen.`, `${TROLLEY_CLASSICS.length} famous cases from philosophy, some with figures from a study with 70,000 people.`), T(`${cDone} von ${TROLLEY_CLASSICS.length} beantwortet`, `${cDone} of ${TROLLEY_CLASSICS.length} answered`), 'classics'],
+    ['dice', T('Zufallsrunde', 'Random round'), T('10 gewürfelte Fälle – danach siehst du dein Muster.', '10 randomly rolled cases – then you see your pattern.'), T(`${tg.endless.n} Fälle gespielt`, `${tg.endless.n} cases played`), 'endless'],
+    ['stack', T('Forschungs-Stapel', 'Research stack'), T(`${TROLLEY_STACK.length} harte Fälle aus der Psychologie, ganz ohne Gleise.`, `${TROLLEY_STACK.length} hard cases from psychology, no tracks at all.`), T(`${sDone} von ${TROLLEY_STACK.length} beantwortet`, `${sDone} of ${TROLLEY_STACK.length} answered`), 'stack'],
   ];
-  for (const [icon, name, text, prog, fn] of modes) {
+  for (const [sym, name, text, prog, mode] of modes) {
     const c = el('button', 'gmode');
+    c.type = 'button';
     const t = el('div', 'gmode-t');
     t.append(el('b', null, name), el('small', null, text), el('span', 'gmode-p', prog));
-    c.append(el('span', 'gmode-i', icon), t, el('span', 'gmode-go', '›'));
-    c.onclick = fn;
+    c.append(icBox(sym), t, chevEl());
+    c.onclick = () => gameL.push({ t: mode });
     b.append(c);
   }
   const pat = patternBlock();
   if (pat) b.append(el('h3', null, T('Dein Muster', 'Your pattern')), pat);
-  b.append(el('p', 'gsource', T('Zahlen der Klassiker: ', 'Figures for the classics: ') + STAT_SOURCE + T('. Dilemma-Stapel: Christensen u. a. (2014), Frontiers in Psychology 5:607, CC BY.', '. Dilemma stack: Christensen et al. (2014), Frontiers in Psychology 5:607, CC BY.')));
+  b.append(el('p', 'gsource', T('Zahlen der Klassiker: ', 'Figures for the classics: ') + STAT_SOURCE + T('. Forschungs-Stapel: Christensen u. a. (2014), Frontiers in Psychology 5:607, CC BY.', '. Research stack: Christensen et al. (2014), Frontiers in Psychology 5:607, CC BY.')));
 }
 
 // ---------- Auswertung ----------
@@ -283,7 +317,7 @@ function patternBlock() {
   const box = el('div', 'gpattern');
   const e = tg.endless;
   if (e.n >= 5) {
-    box.append(bar(T('Du greifst ein', 'You intervene'), pct(e.sw, e.n), T(`In ${e.sw} von ${e.n} Endlos-Runden hast du die Weiche umgelegt.`, `You pulled the lever in ${e.sw} of ${e.n} endless rounds.`)));
+    box.append(bar(T('Du greifst ein', 'You intervene'), pct(e.sw, e.n), T(`In ${e.sw} von ${e.n} Fällen der Zufallsrunde hast du die Weiche umgelegt.`, `You pulled the lever in ${e.sw} of ${e.n} random-round cases.`)));
     for (const [key, [label, hint]] of Object.entries(DIM_LABEL)) {
       const d = e.dims[key];
       if (d && d[1] >= 3) box.append(bar(label, pct(d[0], d[1]), `${hint} (${d[0]} ${T('von', 'of')} ${d[1]})`));
@@ -298,7 +332,7 @@ function patternBlock() {
     const c = dl.i ? st.i : st.a; c[1]++; c[0] += v;
   }
   if (st.p[1] >= 4 && st.d[1] >= 4) {
-    box.append(el('h4', null, T('Dilemma-Stapel: Wann sagst du Ja?', 'Dilemma stack: when do you say yes?')),
+    box.append(el('h4', null, T('Forschungs-Stapel: Wann sagst du Ja?', 'Research stack: when do you say yes?')),
       bar(T('Eigenhändig töten', 'Killing with your own hands'), pct(st.p[0], st.p[1]), T(`Ja in ${st.p[0]} von ${st.p[1]} Fällen`, `Yes in ${st.p[0]} of ${st.p[1]} cases`)),
       bar(T('Aus der Distanz', 'From a distance'), pct(st.d[0], st.d[1]), T(`Ja in ${st.d[0]} von ${st.d[1]} Fällen`, `Yes in ${st.d[0]} of ${st.d[1]} cases`)));
     if (st.i[1] >= 4 && st.a[1] >= 4) box.append(
@@ -311,7 +345,6 @@ function patternBlock() {
 
 // ---------- Klassiker ----------
 function startClassics() {
-  gameMode = 'classics';
   let i = TROLLEY_CLASSICS.findIndex(c => tg.classics[c.id] == null);
   if (i < 0) i = 0; // alles gespielt: von vorn
   showClassic(i);
@@ -319,6 +352,7 @@ function startClassics() {
 function showClassic(i) {
   const c = TROLLEY_CLASSICS[i];
   const b = gameScreen(T('Klassiker', 'Classics'));
+  $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
   const sc = makeScene(c);
   b.append(el('p', 'gstep', T(`Fall ${i + 1} von ${TROLLEY_CLASSICS.length}`, `Case ${i + 1} of ${TROLLEY_CLASSICS.length}`)), el('h2', null, c.title), sc.el, el('p', null, c.text), el('p', 'gq', c.q));
   b.append(choiceButtons(c.yes, c.no, async yes => {
@@ -330,32 +364,32 @@ function showClassic(i) {
     r.append(el('p', null, c.note));
     const last = i === TROLLEY_CLASSICS.length - 1;
     const next = el('button', 'btn gnext', last ? T('Fertig – zum Menü', 'Done – back to the menu') : T('Nächster Fall →', 'Next case →'));
-    next.onclick = () => last ? renderGameMenu() : showClassic(i + 1);
+    next.onclick = () => last ? toMenu() : showClassic(i + 1);
     r.append(next);
     b.append(r);
     r.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }));
 }
 
-// ---------- Endlos ----------
+// ---------- Zufallsrunde ----------
 const WHO = LANG === 'en' ? {
-  // singular, plural, symbol, article
-  kind: ['child', 'children', '🧒', 'a'], frau: ['woman', 'women', '👩', 'a'], mann: ['man', 'men', '👨', 'a'],
-  opa: ['elderly man', 'elderly men', '👴', 'an'], oma: ['elderly woman', 'elderly women', '👵', 'an'],
-  arzt: ['doctor', 'doctors', '👩‍⚕️', 'a'], dieb: ['bank robber', 'bank robbers', '🦹', 'a'],
-  hund: ['dog', 'dogs', '🐕', 'a'], katze: ['cat', 'cats', '🐈', 'a'],
+  // singular, plural, drawn figure, article
+  kind: ['child', 'children', 'child', 'a'], frau: ['woman', 'women', 'woman', 'a'], mann: ['man', 'men', 'man', 'a'],
+  opa: ['elderly man', 'elderly men', 'oldman', 'an'], oma: ['elderly woman', 'elderly women', 'oldwoman', 'an'],
+  arzt: ['doctor', 'doctors', 'doctor', 'a'], dieb: ['bank robber', 'bank robbers', 'robber', 'a'],
+  hund: ['dog', 'dogs', 'dog', 'a'], katze: ['cat', 'cats', 'cat', 'a'],
 } : {
-  // Einzahl, Mehrzahl, Symbol, Artikel
-  kind: ['Kind', 'Kinder', '🧒', 'ein'], frau: ['Frau', 'Frauen', '👩', 'eine'], mann: ['Mann', 'Männer', '👨', 'ein'],
-  opa: ['Rentner', 'Rentner', '👴', 'ein'], oma: ['Rentnerin', 'Rentnerinnen', '👵', 'eine'],
-  arzt: ['Ärztin', 'Ärztinnen', '👩‍⚕️', 'eine'], dieb: ['Bankräuber', 'Bankräuber', '🦹', 'ein'],
-  hund: ['Hund', 'Hunde', '🐕', 'ein'], katze: ['Katze', 'Katzen', '🐈', 'eine'],
+  // Einzahl, Mehrzahl, gezeichnete Figur, Artikel
+  kind: ['Kind', 'Kinder', 'child', 'ein'], frau: ['Frau', 'Frauen', 'woman', 'eine'], mann: ['Mann', 'Männer', 'man', 'ein'],
+  opa: ['Rentner', 'Rentner', 'oldman', 'ein'], oma: ['Rentnerin', 'Rentnerinnen', 'oldwoman', 'eine'],
+  arzt: ['Ärztin', 'Ärztinnen', 'doctor', 'eine'], dieb: ['Bankräuber', 'Bankräuber', 'robber', 'ein'],
+  hund: ['Hund', 'Hunde', 'dog', 'ein'], katze: ['Katze', 'Katzen', 'cat', 'eine'],
 };
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const grp = (type, n) => ({ type, n });
 const grpText = g => `${g.n === 1 ? WHO[g.type][3] : g.n} ${WHO[g.type][g.n === 1 ? 0 : 1]}`;
-const grpEmoji = g => Array(g.n).fill(WHO[g.type][2]);
+const grpFigs = g => Array(g.n).fill(WHO[g.type][2]);
 
 // Würfelt einen Fall. a und b sind die beiden Gruppen; prefer sagt je Merkmal, welche Seite die „übliche“ Wahl wäre.
 function rollCase() {
@@ -377,13 +411,14 @@ function rollCase() {
   return { main: flip ? b : a, side: flip ? a : b, mainKey: flip ? 'b' : 'a', noteMain: flip && noteB ? note(b) : '', noteSide: !flip && noteB ? note(b) : '', prefer };
 }
 let endlessRun = 0;
-function startEndless() { gameMode = 'endless'; endlessRun = 0; showEndless(); }
+function startEndless() { endlessRun = 0; showEndless(); }
 function showEndless() {
   const cs = rollCase();
-  const b = gameScreen(T('Endlos', 'Endless'));
-  const sc = makeScene({ scene: 'switch', main: grpEmoji(cs.main), side: grpEmoji(cs.side) });
+  const b = gameScreen(T('Zufallsrunde', 'Random round'));
+  $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
+  const sc = makeScene({ scene: 'switch', main: grpFigs(cs.main), side: grpFigs(cs.side) });
   const line = (label, g, note) => { const p = el('p', 'gline'); p.append(el('b', null, label + ': '), grpText(g) + (note ? ` (${note})` : '')); return p; };
-  b.append(el('p', 'gstep', T(`Runde ${endlessRun + 1} von 10`, `Round ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the tram hits the main track.')));
+  b.append(el('p', 'gstep', T(`Fall ${endlessRun + 1} von 10`, `Case ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the tram hits the main track.')));
   b.append(choiceButtons(T('Weiche umlegen', 'Pull the lever'), T('Nichts tun', 'Do nothing'), async yes => {
     const e = tg.endless;
     e.n++; if (yes) e.sw++;
@@ -398,7 +433,7 @@ function showEndless() {
     const r = el('div', 'gresult');
     const dead = yes ? cs.side : cs.main, alive = yes ? cs.main : cs.side;
     r.append(el('p', null, T(`Gerettet: ${grpText(alive)}. Gestorben: ${grpText(dead)}.`, `Saved: ${grpText(alive)}. Died: ${grpText(dead)}.`)));
-    const next = el('button', 'btn gnext', endlessRun >= 10 ? T('Auswertung ansehen →', 'See the results →') : T('Nächste Runde →', 'Next round →'));
+    const next = el('button', 'btn gnext', endlessRun >= 10 ? T('Auswertung ansehen →', 'See the results →') : T('Nächster Fall →', 'Next case →'));
     next.onclick = () => endlessRun >= 10 ? showEndlessSummary() : showEndless();
     r.append(next);
     b.append(r);
@@ -406,18 +441,18 @@ function showEndless() {
   }));
 }
 function showEndlessSummary() {
-  const b = gameScreen(T('Endlos', 'Endless'));
-  b.append(el('div', 'ghero', '📊'), el('h2', null, T('Dein Muster', 'Your pattern')), el('p', 'gintro', T(`Ausgewertet sind alle ${tg.endless.n} Runden, die du bisher gespielt hast.`, `This covers all ${tg.endless.n} rounds you have played so far.`)));
+  const b = gameScreen(T('Zufallsrunde', 'Random round'));
+  b.append(icBox('chart', 'big'), el('h2', null, T('Dein Muster', 'Your pattern')), el('p', 'gintro', T(`Ausgewertet sind alle ${tg.endless.n} Fälle, die du bisher in Zufallsrunden gespielt hast.`, `This covers all ${tg.endless.n} cases you have played in random rounds so far.`)));
   const pat = patternBlock();
   if (pat) b.append(pat);
-  const more = el('button', 'btn gnext', T('Noch zehn Runden →', 'Ten more rounds →'));
+  const more = el('button', 'btn gnext', T('Noch eine Zufallsrunde →', 'Another random round →'));
   more.onclick = startEndless;
   const menu = el('button', 'btn ghost2 gnext', T('Zum Menü', 'Back to the menu'));
-  menu.onclick = renderGameMenu;
+  menu.onclick = toMenu;
   b.append(more, menu);
 }
 
-// ---------- Dilemma-Stapel ----------
+// ---------- Forschungs-Stapel ----------
 function stackOrder() {
   if (!tg.order || tg.order.length !== TROLLEY_STACK.length) {
     // Erst von jedem Szenario eine zufällige Variante, dann die jeweils andere – so liegen die Paare weit auseinander.
@@ -432,11 +467,11 @@ function stackOrder() {
   return tg.order;
 }
 function startStack() {
-  gameMode = 'stack';
+  $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
   const done = TROLLEY_STACK.filter(d => tg.stack[d.n] != null).length;
   if (done > 0 && done < TROLLEY_STACK.length) return showStack();
-  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
-  b.append(el('div', 'ghero', '📚'), el('h2', null, T('Dilemma-Stapel', 'Dilemma stack')),
+  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
+  b.append(icBox('stack', 'big'), el('h2', null, T('Forschungs-Stapel', 'Research stack')),
     el('p', null, T('Diese 46 Fälle stammen aus der psychologischen Forschung. Jedes Szenario kommt zweimal vor, in zwei Varianten, die sich in einem entscheidenden Detail unterscheiden.', 'These 46 cases come from psychological research. Each scenario appears twice, in two variants that differ in one decisive detail.')),
     el('p', null, T('Sie sind bewusst hart: Es geht immer um Leben und Tod, manchmal um Kinder. Du kannst jederzeit aufhören, dein Stand bleibt gespeichert.', 'They are deliberately tough: it is always about life and death, sometimes about children. You can stop at any time; your progress is saved.')));
   if (done === TROLLEY_STACK.length) b.append(el('p', 'gnote', T('Du hast alle 46 Fälle beantwortet. Wenn du neu startest, werden deine Antworten gelöscht.', 'You have answered all 46 cases. If you start again, your answers will be deleted.')));
@@ -449,16 +484,17 @@ function showStack() {
   const n = order.find(x => tg.stack[x] == null);
   if (n == null) return showStackEnd();
   const d = TROLLEY_STACK.find(x => x.n === n);
-  const [icon, title] = TROLLEY_STACK_TITLES[d.s];
+  const tt = TROLLEY_STACK_TITLES[d.s];
+  const title = Array.isArray(tt) ? tt[1] : tt;
   const done = order.filter(x => tg.stack[x] != null).length;
-  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
-  b.append(el('p', 'gstep', T(`Fall ${done + 1} von ${order.length}`, `Case ${done + 1} of ${order.length}`)), el('div', 'ghero small', icon), el('h2', null, title), el('p', null, d.text), el('p', null, d.act), el('p', 'gq', d.q));
+  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
+  b.append(el('p', 'gstep', T(`Fall ${done + 1} von ${order.length}`, `Case ${done + 1} of ${order.length}`)), el('h2', null, title), el('p', null, d.text), el('p', null, d.act), el('p', 'gq', d.q));
   b.append(choiceButtons(T('Ja', 'Yes'), T('Nein', 'No'), yes => {
     tg.stack[d.n] = yes ? 1 : 0;
     saveTg();
     const r = el('div', 'gresult');
     const chips = el('div', 'meta');
-    chips.append(el('span', 'chip', d.p ? T('✋ Eigenhändig', '✋ With your own hands') : T('🎛️ Aus der Distanz', '🎛️ From a distance')), el('span', 'chip', d.i ? T('🎯 Tod als Mittel', '🎯 Death as a means') : T('↪️ Tod als Nebenfolge', '↪️ Death as a side effect')));
+    chips.append(el('span', 'chip', d.p ? T('Eigenhändig', 'With your own hands') : T('Aus der Distanz', 'From a distance')), el('span', 'chip', d.i ? T('Tod als Mittel', 'Death as a means') : T('Tod als Nebenfolge', 'Death as a side effect')));
     r.append(chips, el('p', 'gnote', (d.p ? T('Hier müsstest du selbst Hand anlegen. ', 'Here you would have to do it with your own hands. ') : T('Hier löst du den Tod nur aus der Ferne aus. ', 'Here you only trigger the death from afar. ')) + (d.i ? T('Der Tod des Opfers ist das Mittel, das die anderen rettet.', 'The victim’s death is the means that saves the others.') : T('Der Tod des Opfers ist eine Nebenfolge der Rettung.', 'The victim’s death is a side effect of the rescue.'))));
     const next = el('button', 'btn gnext', T('Weiter →', 'Next →'));
     next.onclick = showStack;
@@ -468,11 +504,11 @@ function showStack() {
   }));
 }
 function showStackEnd() {
-  const b = gameScreen(T('Dilemma-Stapel', 'Dilemma stack'));
-  b.append(el('div', 'ghero', '🏁'), el('h2', null, T('Alle 46 Fälle beantwortet', 'All 46 cases answered')));
+  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
+  b.append(icBox('flag', 'big'), el('h2', null, T(`Alle ${TROLLEY_STACK.length} Fälle beantwortet`, `All ${TROLLEY_STACK.length} cases answered`)));
   const pat = patternBlock();
   if (pat) b.append(pat);
   const menu = el('button', 'btn gnext', T('Zum Menü', 'Back to the menu'));
-  menu.onclick = renderGameMenu;
+  menu.onclick = toMenu;
   b.append(menu);
 }

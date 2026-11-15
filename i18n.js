@@ -33,3 +33,10 @@ const WIKI = LANG === 'en' ? {
   voiceNames: /^(Anna|Petra|Markus|Viktor|Yannick|Helena|Martin)\b/i,
   voiceStrip: /\s*\(Deutsch[^)]*\)\)?/i,
 };
+
+// Inhalte nur in der gewählten Sprache laden (Gedankenspiele und Forschungs-Stapel). Die Zeile steht im
+// selben Skript, damit die Dateien wie gewohnt vor app.js der Reihe nach geladen werden. Offline hält der
+// Service Worker beide Sprachen bereit.
+document.write(LANG === 'en'
+  ? '<script src="thoughts.en.js"><\/script><script src="trolley-data.en.js"><\/script>'
+  : '<script src="thoughts.js"><\/script><script src="trolley-data.js"><\/script>');

@@ -37,7 +37,7 @@
     <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head">
       <h1 data-en="Think">Denken</h1>
-      <p class="sub" id="think-stats"></p>
+      <p class="sub think-sub"><span data-en="Questions without easy answers.">Fragen ohne einfache Antwort.</span> <span data-en="Decide – then compare.">Entscheide dich – dann vergleiche.</span></p>
     </header>
     <div id="think-list" class="think-list"></div>
   </section>
@@ -125,7 +125,7 @@
             </select>
           </label>
           <button id="voice-test" class="set-row" type="button">
-            <span class="set-text"><b data-en="Play a sample">Stimmprobe anhören</b></span><span class="set-go">▶</span>
+            <span class="set-text"><b data-en="Play a sample">Stimmprobe anhören</b></span><span class="set-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11"/></svg></span>
           </button>
           <details class="set-more">
             <summary data-en="Get nicer voices">Schönere Stimmen laden</summary>
@@ -138,7 +138,7 @@
       <div class="set-group">
         <details class="set-more">
           <summary data-en="What the app has learned about you">Was die App über dich gelernt hat</summary>
-          <p data-en="👍 and long reading make a topic more frequent, 👎 makes it rarer.">👍 und langes Lesen machen ein Thema häufiger, 👎 seltener.</p>
+          <p data-en="“Like” and long reading make a topic more frequent, “Less” makes it rarer.">„Gefällt mir“ und langes Lesen machen ein Thema häufiger, „Weniger“ seltener.</p>
           <div id="weights" class="weights"></div>
           <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
         </details>
@@ -148,7 +148,7 @@
         <details class="set-more">
           <summary data-en="Sources &amp; licences">Quellen &amp; Lizenzen</summary>
           <p data-en="Article texts come from Wikipedia and are licensed under CC BY-SA 4.0; the authors are listed in each article’s version history (↗ in the reader opens the original). Pictures come from Wikimedia Commons or Wikipedia, each under its own licence – author and licence are shown on the picture.">Artikeltexte stammen aus der Wikipedia und stehen unter der Lizenz CC BY-SA 4.0; die Autorinnen und Autoren stehen in der Versionsgeschichte des jeweiligen Artikels (↗ im Leser öffnet das Original). Bilder stammen von Wikimedia Commons bzw. Wikipedia, jeweils unter eigener Lizenz – Urheber und Lizenz stehen auf dem Bild.</p>
-          <p data-en="Thought experiments and the trolley classics: own texts by WikiFeed. Dilemma stack: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Survey figures: Awad et al. (2020), PNAS 117(5).">Gedankenspiele und Trolley-Klassiker: eigene Texte von WikiFeed. Dilemma-Stapel: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Umfragezahlen: Awad u. a. (2020), PNAS 117(5).</p>
+          <p data-en="Questions under “Think” and the trolley classics: own texts by WikiFeed. Research stack: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Survey figures: Awad et al. (2020), PNAS 117(5).">Fragen unter „Denken“ und Trolley-Klassiker: eigene Texte von WikiFeed. Forschungs-Stapel: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Umfragezahlen: Awad u. a. (2020), PNAS 117(5).</p>
           <p data-en="WikiFeed is not affiliated with Wikipedia or the Wikimedia Foundation.">WikiFeed ist kein Angebot der Wikipedia oder der Wikimedia Foundation.</p>
         </details>
         <details class="set-more">
@@ -160,7 +160,7 @@
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 2.3<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 2.4<br><span id="dims"></span></p>
     </div>
   </section>
 
@@ -212,11 +212,9 @@
 
   <div id="toast" class="toast"></div>
 
+  <!-- i18n.js lädt die Inhalte (Fragen, Forschungs-Stapel) nur in der gewählten Sprache nach. -->
   <script src="i18n.js"></script>
-  <script src="thoughts.js"></script>
-  <script src="thoughts.en.js"></script>
   <script src="app.js"></script>
-  <script src="trolley-data.js"></script>
   <script src="trolley.js"></script>
 </body>
 </html>
