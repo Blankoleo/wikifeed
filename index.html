@@ -37,9 +37,17 @@
     <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head">
       <h1 data-en="Think">Denken</h1>
-      <p class="sub think-sub"><span data-en="Questions without easy answers.">Fragen ohne einfache Antwort.</span> <span data-en="Decide – then compare.">Entscheide dich – dann vergleiche.</span></p>
+      <p id="think-sub" class="sub think-sub"></p>
     </header>
-    <div id="think-list" class="think-list"></div>
+    <!-- Zwei Teile: Entscheiden (Fragen, Spiel, Standpunkte) und Staunen (Schon gewusst?, Fundstücke) -->
+    <div id="think-seg" class="seg think-seg" role="tablist" aria-label="Teil von Denken" data-en-aria="Part of Think">
+      <button type="button" role="tab" id="tab-decide" data-part="decide" aria-controls="think-decide" data-en="Decide">Entscheiden</button>
+      <button type="button" role="tab" id="tab-wonder" data-part="wonder" aria-controls="think-wonder" data-en="Wonder">Staunen</button>
+    </div>
+    <div id="think-list" class="think-list">
+      <div id="think-decide" role="tabpanel" aria-labelledby="tab-decide"></div>
+      <div id="think-wonder" role="tabpanel" aria-labelledby="tab-wonder" hidden></div>
+    </div>
   </section>
 
   <section id="view-saved" class="view">
@@ -174,7 +182,7 @@
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 2.41<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 2.5<br><span id="dims"></span></p>
     </div>
   </section>
 

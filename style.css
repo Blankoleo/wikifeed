@@ -826,3 +826,92 @@ button.th-row:active { background: color-mix(in srgb, var(--accent) 9%, transpar
 .list.calm li { animation: none; }
 .state-card .btn { min-height: 44px; }
 @media (min-width: 700px) { .saved-status { max-width: 640px; margin-left: auto; margin-right: auto; } }
+
+/* ================= Version 2.5: Staunen und Kaninchenbau ================= */
+/* Denken in zwei Teilen: Umschalter wie in iOS (zwei gleich breite Felder, 44 px hoch) */
+.think-seg { grid-template-columns: 1fr 1fr; margin: 14px 16px 2px; }
+.think-seg button { min-height: 44px; font-size: 15px; }
+@media (min-width: 700px) { .think-seg { max-width: 608px; margin-left: auto; margin-right: auto; } }
+.think-list [hidden] { display: none !important; }
+
+/* Karte „Heute“: ein Fakt und das Fundstück des Tages – die Karte selbst ist nicht antippbar, nur ihre Teile */
+.st-today { cursor: default; }
+.st-label { margin: 12px 0 4px !important; font-size: 13px !important; font-weight: 700; color: var(--muted) !important; }
+.st-fund.sep { margin-top: 16px; padding-top: 2px; border-top: 1px solid var(--line); }
+.st-fund h3 { margin: 4px 0 6px !important; }
+.st-today .fd-fig { margin: 16px -18px 0; border-radius: 0; }
+.st-today .fd-fig:not([hidden]) + .st-fund.sep { border-top: 0; margin-top: 0; }
+
+/* Ein Fakt: Text mit farbigen Links, ganzer Eintrag antippbar */
+.dyk-fact { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 64px; margin: 0; padding: 12px 14px 12px 16px; border: 0; border-top: 1px solid var(--line);
+  background: none; color: var(--text); text-align: left; font-size: 17px; line-height: 1.45; transition: background-color .2s; }
+.th-group > .dyk-fact:first-child { border-top: 0; }
+.dyk-fact:active { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.dyk-txt { flex: 1; min-width: 0; overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
+.dyk-a { color: var(--accent); font-weight: 600; }
+.st-today .dyk-fact { padding: 4px 0 0; border: 0; min-height: 44px; font: 600 18px/1.4 var(--serif); }
+.st-today .dyk-fact:active { background: none; opacity: .7; }
+.dyk-src { margin-top: 18px !important; }
+
+/* Bild eines Fundstücks: 16:9, Bildnachweis unten rechts (ohne Glas-Filter) */
+.fd-fig { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 20px; background: var(--line); }
+.fd-fig[hidden] { display: none; }
+.fd-fig img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fd-credit { position: absolute; right: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 3px 9px; border-radius: 99px; font: 13px/1.4 -apple-system, sans-serif;
+  color: #fff; background: rgba(10, 10, 16, .58); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fd-credit[hidden] { display: none; }
+.think-body > .fd-fig { margin: 8px 0 18px; }
+.think-body .fd-teaser { font-size: 17px; margin-top: 8px; }
+.fd-num { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 700;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); font-variant-numeric: tabular-nums; }
+.fd-num.done { color: #fff; background: var(--ok); }
+.fd-num .sym { width: 18px; height: 18px; stroke-width: 2.4; }
+.fd-row { min-height: 56px; }
+.fd-foot { margin-top: 12px !important; }
+
+/* ---------- Im Leser: Fundstück-Schritte ---------- */
+.reader-body .fd-kick { margin: 0 0 6px; font: 700 13px/1.35 -apple-system, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.reader-body .fd-why { margin: 4px 0 18px; padding: 12px 14px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--accent) 8%, transparent); font: italic 1em/1.5 var(--serif); color: var(--rink); }
+.reader-body .fd-nav { margin: 36px 0 0; padding: 18px 16px 16px; border: 1px solid var(--rrule); border-radius: 20px; font-family: -apple-system, sans-serif; text-align: center;
+  background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.fd-dots { display: flex; justify-content: center; gap: 6px; }
+.fd-dots i { width: 22px; height: 4px; border-radius: 99px; background: var(--rrule); }
+.fd-dots i.on { background: var(--accent); }
+.reader-body .fd-step { margin: 10px 0 12px; font-size: 15px; color: var(--rmuted); }
+.fd-nav .btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 52px; font-size: 17px; line-height: 1.25; }
+.fd-nav .btn + .btn { margin-top: 10px; }
+.fd-next small { display: block; max-width: 100%; margin-top: 2px; font-size: 14px; font-weight: 500; opacity: .9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader .btn.ghost2 { background: transparent; color: var(--accent); border-color: var(--rrule); }
+
+/* ---------- Kaninchenbau: drei Abzweigungen ---------- */
+.reader-body .rh { font-family: -apple-system, sans-serif; }
+.reader-body .rh:not(:empty) { margin-top: 36px; }
+.reader-body .rh-h { margin: 0; padding: 0; border: 0; font: 700 21px/1.25 -apple-system, sans-serif; color: var(--rink); }
+.reader-body .rh-sub { margin: 4px 0 12px; font-size: 15px; line-height: 1.4; color: var(--rmuted); }
+.rh-list { border: 1px solid var(--rrule); border-radius: 18px; overflow: hidden; }
+.rh-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px; margin: 0; padding: 10px 12px; border: 0; border-top: 1px solid var(--rrule);
+  background: none; color: var(--rink); text-align: left; font: inherit; transition: background-color .2s; }
+.rh-item:first-child { border-top: 0; }
+.rh-item:active { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.rh-th { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: var(--rrule) center / cover no-repeat;
+  font: 700 20px/1 var(--serif); color: var(--rmuted); }
+.rh-t { flex: 1; min-width: 0; }
+.rh-t b { display: block; font-size: 17px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.rh-t small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: 2px; font-size: 14px; line-height: 1.35; color: var(--rmuted); }
+.rh-item .th-chev, .reader-body .rh-item .th-chev { color: var(--rmuted); }
+
+/* ---------- Spur: wie du hierher gekommen bist ---------- */
+.reader-body .rtrail { margin-top: 32px; font-family: -apple-system, sans-serif; }
+.reader-body .rt-h { margin: 0 0 8px; font: 700 15px/1.3 -apple-system, sans-serif; color: var(--rmuted); }
+.rt-path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 2px; }
+.rt-step, .rt-cur { max-width: 100%; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 12px; font-size: 15px; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rt-step { border: 0; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--rlink); }
+.rt-step:active { transform: scale(.96); }
+.rt-cur { font-weight: 700; color: var(--rink); padding: 0 6px; }
+.rt-sep, .rt-more { color: var(--rmuted); font-size: 17px; padding: 0 2px; }
+.rt-share { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; padding: 0 14px 0 10px; border: 1px solid var(--rrule); border-radius: 12px;
+  background: none; color: var(--accent); font-size: 15px; font-weight: 600; }
+.rt-share .sym { width: 20px; height: 20px; }
+.rt-share:active { transform: scale(.96); }

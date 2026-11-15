@@ -14,6 +14,7 @@ const WIKI = LANG === 'en' ? {
   host: 'en.wikipedia.org',
   top: 'incategory:"Featured articles|Good articles"',
   noList: '-intitle:"List of"',
+  topCats: 'Category:Featured articles|Category:Good articles', // ausgezeichnete Artikel (für die Abzweigungen)
   thought: 'incategory:"Thought experiments|Thought experiments in ethics|Thought experiments in physics|Thought experiments in philosophy of mind|Paradoxes|Philosophical paradoxes|Physical paradoxes|Mathematical paradoxes|Probability theory paradoxes|Logical paradoxes|Decision-making paradoxes|Temporal paradoxes|Paradoxes of infinity"',
   ns: /^(File|Category|Help|Special|Wikipedia|Portal|Template|User|Talk|Draft|Module|MediaWiki):/,
   tts: 'en-US',
@@ -25,6 +26,7 @@ const WIKI = LANG === 'en' ? {
   host: 'de.wikipedia.org',
   top: 'incategory:Wikipedia:Exzellent|Wikipedia:Lesenswert',
   noList: '-intitle:Liste',
+  topCats: 'Kategorie:Wikipedia:Exzellent|Kategorie:Wikipedia:Lesenswert',
   thought: 'incategory:Gedankenexperiment|Paradoxon',
   ns: /^(Datei|Kategorie|Hilfe|Spezial|Wikipedia|Portal|Vorlage|File|Benutzer):/,
   tts: 'de-DE',
@@ -34,9 +36,9 @@ const WIKI = LANG === 'en' ? {
   voiceStrip: /\s*\(Deutsch[^)]*\)\)?/i,
 };
 
-// Inhalte nur in der gewählten Sprache laden (Gedankenspiele und Forschungs-Stapel). Die Zeile steht im
+// Inhalte nur in der gewählten Sprache laden (Gedankenspiele, Forschungs-Stapel, Fundstücke). Die Zeile steht im
 // selben Skript, damit die Dateien wie gewohnt vor app.js der Reihe nach geladen werden. Offline hält der
 // Service Worker beide Sprachen bereit.
 document.write(LANG === 'en'
-  ? '<script src="thoughts.en.js"><\/script><script src="trolley-data.en.js"><\/script>'
-  : '<script src="thoughts.js"><\/script><script src="trolley-data.js"><\/script>');
+  ? '<script src="thoughts.en.js"><\/script><script src="trolley-data.en.js"><\/script><script src="fundstuecke.en.js"><\/script>'
+  : '<script src="thoughts.js"><\/script><script src="trolley-data.js"><\/script><script src="fundstuecke.de.js"><\/script>');

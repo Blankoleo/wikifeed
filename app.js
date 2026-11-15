@@ -4,6 +4,9 @@ const API = 'https://' + WIKI.host + '/w/api.php';
 // Gedankenspiele in der aktiven Sprache (thoughts.js / thoughts.en.js)
 // (i18n.js lädt nur die Datei der aktiven Sprache; fehlt sie, bleibt der Bereich leer statt die App anzuhalten)
 const THOUGHTS = (LANG === 'en' ? typeof THOUGHTS_EN !== 'undefined' && THOUGHTS_EN : typeof THOUGHTS_DE !== 'undefined' && THOUGHTS_DE) || [];
+// Fundstücke in der aktiven Sprache (fundstuecke.de.js / fundstuecke.en.js), nur vollständige Einträge
+const FUND = ((LANG === 'en' ? typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUECKE_EN : typeof FUNDSTUECKE_DE !== 'undefined' && FUNDSTUECKE_DE) || [])
+  .filter(f => f && f.id && f.object && Array.isArray(f.steps) && f.steps.length >= 2 && f.steps.every(s => s && s.title));
 
 // Themen = Wikipedias eigene "articletopic"-Klassifizierung.
 // on:true = deine Interessen als Voreinstellung.
@@ -214,11 +217,22 @@ async function insertSimilar(card, item) {
 }
 
 // ---------- Artikel des Tages ----------
+// Der Tages-Feed der Wikipedia (Artikel des Tages, „Schon gewusst?“) wird je Tag höchstens einmal geholt.
+const featuredMem = new Map();
+function featuredFeed(day) {
+  if (!featuredMem.has(day)) {
+    featuredMem.clear();
+    featuredMem.set(day, wikiFetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`)
+      .then(j => { storeDyk(day, j); return j; })
+      .catch(e => { featuredMem.delete(day); throw e; }));
+  }
+  return featuredMem.get(day);
+}
 async function fetchAotd() {
   const day = today();
   let a = lstore.get('aotd', null);
   if (!a || a.day !== day) {
-    const j = await wikiFetch(`https://${WIKI.host}/api/rest_v1/feed/featured/${day.replace(/-/g, '/')}`);
+    const j = await featuredFeed(day);
     const title = j.tfa?.titles?.normalized || j.tfa?.title?.replace(/_/g, ' ');
     if (!title) return null;
     const q = await api({ titles: title, redirects: '1', prop: 'extracts|pageimages', exintro: '1', explaintext: '1', exsentences: '10', piprop: 'thumbnail', pithumbsize: '900' });
@@ -867,7 +881,9 @@ let popPending = null, popResolve = null;
 function waitPop() {
   popPending = new Promise(res => { popResolve = res; setTimeout(res, 600); }).then(() => { popPending = null; popResolve = null; });
 }
-async function openReader(title, item = null, restoreScroll = 0, origin = null) {
+// opts.thread = { id, i }: der Artikel ist Schritt i des Fundstücks id.
+const READER_MAX = 30; // so viele Artikel merkt sich der Leser für „Zurück“ und die Spur, ältere fallen weg
+async function openReader(title, item = null, restoreScroll = 0, origin = null, opts = null) {
   if (popPending) await popPending;
   if (!readerStack.length) {
     readSession = { item, start: Date.now() };
@@ -878,7 +894,8 @@ async function openReader(title, item = null, restoreScroll = 0, origin = null) 
     cur.scroll = readerScroll.scrollTop;
     if (cur.loaded) { cur.frag = document.createDocumentFragment(); cur.frag.append(...readerBody.childNodes); }
   }
-  readerStack.push({ title, item, scroll: 0 });
+  readerStack.push({ title, item, scroll: 0, ...opts });
+  if (readerStack.length > READER_MAX) readerStack.splice(0, readerStack.length - READER_MAX);
   readerStack.slice(0, -5).forEach(e => { e.frag = null; }); // nur die letzten Artikel im Speicher halten
   if (readerStack.length === 1) {
     // Aus einer Karte geöffnet: Das Kartenbild wächst zum Titelbild des Artikels.
@@ -912,15 +929,23 @@ async function renderArticle(title, restoreScroll = 0) {
     else art = await fetchArticle(title);
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
+    top.title = art.title;
+    const fs = top.thread && fundStep(top.thread);
+    if (fs) readerBody.append(fundKicker(fs));
     readerBody.append(el('h1', 'art-title', art.title));
+    if (fs?.step.link) readerBody.append(el('div', 'fd-why wf-x', fs.step.link));
     if (art.offline) readerBody.append(el('div', 'offnote', T('Offline gespeichert', 'Saved offline')));
     readerBody.append(...art.doc.body.childNodes);
+    // Am Ende: im Fundstück Weiter/Zurück, dann drei Abzweigungen und die Spur, zuletzt der Lizenzhinweis
+    if (fs) readerBody.append(fundNav(fs));
+    readerBody.append(holeBox(art.title));
+    if (readerStack.length > 1) readerBody.append(trailBox());
     readerBody.append(sourceNote(art.title));
     readerScroll.scrollTop = restoreScroll;
     readerChrome();
-    top.title = art.title;
     top.loaded = true;
     setReaderHead(art.title);
+    armReaderEnd();
   } catch (e) {
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
@@ -1073,7 +1098,7 @@ function haptic() {
   } catch {}
 }
 document.addEventListener('click', e => {
-  if (e.target.closest?.('.sb, .seg button, .tpick, .opt, .switch, .tchip, .gchoice .btn, .tabbar button, #reader-save, #reader-speak')) haptic();
+  if (e.target.closest?.('.sb, .seg button, .tpick, .opt, .switch, .tchip, .gchoice .btn, .tabbar button, #reader-save, #reader-speak, .fd-nav .btn')) haptic();
 }, true);
 
 // Lizenzhinweis unter jedem Artikel (CC BY-SA verlangt Quelle, Autoren und Lizenz).
@@ -1151,12 +1176,12 @@ if (canSpeak) {
 }
 function nodeText(n) {
   const c = n.cloneNode(true);
-  c.querySelectorAll('sup, style, .mw-editsection, .noprint, .offnote').forEach(x => x.remove());
+  c.querySelectorAll('sup, style, .mw-editsection, .noprint, .offnote, .wf-x').forEach(x => x.remove());
   return c.textContent.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
 }
 function ttsNodes() {
   return [...readerBody.querySelectorAll('h1, h2, h3, p, li, blockquote, dd')].filter(n =>
-    n.offsetParent !== null && !n.closest('table, figure, .thumb, .infobox') &&
+    n.offsetParent !== null && !n.closest('table, figure, .thumb, .infobox, .wf-x') &&
     !n.parentElement.closest('li, blockquote, dd, p') && nodeText(n).length > 1);
 }
 function chunkText(t) {
@@ -1265,6 +1290,7 @@ function readerBack(fromPopstate = false) {
       heroFor(prev);
       readerScroll.scrollTop = prev.scroll;
       requestAnimationFrame(() => { readerScroll.scrollTop = prev.scroll; readerChrome(); });
+      armReaderEnd();
     } else { heroFor(prev); renderArticle(prev.title, prev.scroll); }
     if (fromPopstate) history.pushState({ reader: true }, '');
     saveSnapSoon();
@@ -1292,6 +1318,9 @@ function closeReader(fromPopstate) {
   }
   if (!fromPopstate && history.state?.reader) { waitPop(); history.back(); }
   saveSnapSoon();
+  // Fortschritt der Fundstücke sofort zeigen: im offenen Fundstück-Blatt und in der Übersicht
+  if (!thinkEl.hidden && thinkL.top()?.t === 'fund') thinkL.redraw();
+  if ($('view-think').classList.contains('active')) renderDenken();
 }
 document.getElementById('reader-back').onclick = () => readerBack(false);
 window.addEventListener('popstate', e => {
@@ -1301,7 +1330,7 @@ window.addEventListener('popstate', e => {
 });
 document.getElementById('reader-save').onclick = () => {
   const top = readerStack[readerStack.length - 1];
-  const item = top.item || { title: top.title, extract: readerBody.querySelector('p')?.textContent?.slice(0, 300) || '', thumb: null, topic: null };
+  const item = top.item || { title: top.title, extract: [...readerBody.querySelectorAll('p')].find(p => !p.closest('.wf-x'))?.textContent?.slice(0, 300) || '', thumb: null, topic: null };
   const on = toggleSaved({ ...item, title: top.title });
   document.getElementById('reader-save').classList.toggle('on', on);
   syncSaveButtons();
@@ -1390,6 +1419,9 @@ const SYM = {
   chart: '<path d="M4 20h16M7 16.5V11M12 16.5V6.5M17 16.5v-8"/>',
   flag: '<path d="M5.5 21V4M5.5 4.5h11l-2.2 4 2.2 4h-11"/>',
   check: '<path d="M5.5 12.5l4 4 9-9.5"/>',
+  spark: '<path d="M11 3.5c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z"/><path d="M18.5 15v5M16 17.5h5"/>',
+  trail: '<circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 16.5c3-2 .5-5.5 4-6.5s4.5.5 4.5-2.6"/>',
+  share: '<path d="M12 14.5V3.8M7.8 7.8 12 3.6l4.2 4.2"/><path d="M5.2 12.2v6.6a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6v-6.6"/>',
   cross: '<path d="M7 7l10 10M17 7L7 17"/>',
   checkc: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/>',
   crossc: '<circle cx="12" cy="12" r="8.5"/><path d="M9.4 9.4l5.2 5.2M14.6 9.4l-5.2 5.2"/>',
@@ -1518,6 +1550,7 @@ function levelSheet(sheet, scroller, key, render, onClose) {
     if (draw) { show(); scroller.scrollTop = 0; }
   };
   L.restore = () => { show(); scroller.scrollTop = L.top().scroll || 0; };
+  L.redraw = () => { const y = scroller.scrollTop; show(); scroller.scrollTop = y; }; // neu zeichnen, Stelle behalten
   // Pfeil oben links: eine Ebene zurück (über den Verlauf, damit Zurück-Geste und Pfeil dasselbe tun)
   L.back = () => {
     if (L.stack.length <= 1) return L.closeAll();
@@ -1526,11 +1559,13 @@ function levelSheet(sheet, scroller, key, render, onClose) {
     history.replaceState({ [key]: L.stack.length }, '');
     L.restore();
   };
-  // Wegziehen: alles schließen und alle Ebenen aus dem Verlauf nehmen
-  L.closeAll = () => {
-    const d = depth(history.state);
+  // Wegziehen: alles schließen und alle Ebenen aus dem Verlauf nehmen.
+  // after: läuft gerade noch ein anderes Zurück im Verlauf (Leser darüber), erst danach die Ebenen entfernen.
+  L.closeAll = async after => {
     L.stack.length = 0;
     finish();
+    if (after) await after;
+    const d = depth(history.state);
     if (d > 0) {
       pend = new Promise(res => { pendRes = res; setTimeout(res, 600); }).then(() => { pend = pendRes = null; });
       history.go(-d);
@@ -1557,6 +1592,8 @@ thinkScroll.addEventListener('scroll', thinkHead, { passive: true });
 
 function renderThinkEntry(e, L) {
   if (e.t === 'coll') renderCollection(collById(e.id));
+  else if (e.t === 'dyk') renderDykSheet();
+  else if (e.t === 'fund') renderFundSheet(fundById(e.id) || FUND[0]);
   else renderCard(thinkById(e.id));
   $('think-back').setAttribute('aria-label', L.prev() ? T('Zurück zur Sammlung', 'Back to the collection') : T('Zurück zur Übersicht', 'Back to the overview'));
   requestAnimationFrame(thinkHead);
@@ -1756,15 +1793,41 @@ function renderStandpoints(box) {
   box.append(wrap);
 }
 
-// Ebene 1: die Übersicht im Tab. Sie wird einmal aufgebaut, danach werden nur Zahlen und Texte aktualisiert.
+// Ebene 1: die Übersicht im Tab, zweigeteilt in „Entscheiden“ und „Staunen“ (Umschalter oben, die Wahl bleibt).
+// Jeder Teil wird einmal aufgebaut, danach werden nur Zahlen und Texte aktualisiert.
+const THINK_PARTS = {
+  decide: [T('Fragen ohne einfache Antwort.', 'Questions without easy answers.'), T('Entscheide dich – dann vergleiche.', 'Decide – then compare.')],
+  wonder: [T('Jeden Tag neue Fakten.', 'New facts every day.'), T('Und Dinge, hinter denen mehr steckt.', 'And everyday things with more to them.')],
+};
+let thinkPart = store.get('thinkPart', 'decide') === 'wonder' ? 'wonder' : 'decide';
+function setThinkPart(part, save = true, draw = true) {
+  thinkPart = part;
+  if (save) store.set('thinkPart', part);
+  document.querySelectorAll('#think-seg button').forEach(b => {
+    const on = b.dataset.part === part;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on);
+    b.tabIndex = on ? 0 : -1;
+  });
+  $('think-decide').hidden = part !== 'decide';
+  $('think-wonder').hidden = part !== 'wonder';
+  const sub = $('think-sub');
+  sub.textContent = '';
+  for (const line of THINK_PARTS[part]) sub.append(el('span', null, line));
+  if (draw) renderDenken();
+}
+document.querySelectorAll('#think-seg button').forEach(b => {
+  b.onclick = () => { if (b.dataset.part !== thinkPart) setThinkPart(b.dataset.part); };
+});
 const dk = { built: false };
 function renderDenken() {
+  if (thinkPart === 'wonder') return renderStaunen();
   if (!THOUGHTS.length) return;
   if (!dk.built) buildDenken();
   updateDenken();
 }
 function buildDenken() {
-  const box = $('think-list');
+  const box = $('think-decide');
   box.innerHTML = '';
   dk.daily = el('section', 'th-daily');
   dk.daily.onclick = () => thinkL.open({ t: 'card', id: dailyThought().id });
@@ -1830,6 +1893,580 @@ function updateDenken() {
   }
   renderStandpoints(dk.you);
   updateThinkDot();
+}
+
+// ---------- Staunen: „Schon gewusst?“ ----------
+// Kurze Fakten aus dem Tages-Feed der Wikipedia (Feld „dyk“). Den Feed gibt es nur für den laufenden Tag,
+// deshalb hebt die App die Fakten der letzten 7 Tage auf (je Sprache getrennt, nur Text und Link-Ziele).
+const DYK_DAYS = 7;
+const dayNum = d => { const [y, m, dd] = d.split('-').map(Number); return Math.floor(Date.UTC(y, m - 1, dd) / 864e5); };
+function dykDays() {
+  const st = lstore.get('dyk', null), now = dayNum(today());
+  return (st && Array.isArray(st.days) ? st.days : [])
+    .filter(d => d && typeof d.day === 'string' && Array.isArray(d.items) && d.items.length && dayNum(d.day) <= now && dayNum(d.day) > now - DYK_DAYS)
+    .sort((a, b) => dayNum(b.day) - dayNum(a.day));
+}
+// Link-Ziel aus einem Wikipedia-Link („https://de.wikipedia.org/wiki/Titel“ oder „./Titel“), sonst null
+function wikiTitleOf(href) {
+  try {
+    const u = new URL(href || '', 'https://' + WIKI.host + '/wiki/');
+    if (u.hostname !== WIKI.host || !u.pathname.startsWith('/wiki/')) return null;
+    const t = decodeURIComponent(u.pathname.slice(6)).replace(/_/g, ' ').trim();
+    return t && !WIKI.ns.test(t) ? t : null;
+  } catch { return null; }
+}
+// Ein Fakt als Folge von Textstücken: { t: Text, a: Link-Ziel, i: kursiv }. Kein HTML wird gespeichert.
+function dykParse(html) {
+  const doc = sanitize(new DOMParser().parseFromString(html, 'text/html'));
+  const parts = [];
+  let main = null, first = null;
+  const add = (t, a, i) => {
+    if (!t) return;
+    const last = parts[parts.length - 1];
+    if (last && !last.a && !a && !!last.i === !!i) last.t += t;
+    else parts.push({ t, ...(a ? { a } : {}), ...(i ? { i: 1 } : {}) });
+  };
+  const walk = (n, i, b) => {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) add(c.nodeValue, null, i);
+      else if (c.nodeType !== 1 || /^(STYLE|SUP|SCRIPT)$/.test(c.tagName)) continue;
+      else if (c.tagName === 'A') {
+        const t = wikiTitleOf(c.getAttribute('href'));
+        add(c.textContent, t, i);
+        if (t) { if (b && !main) main = t; if (!first) first = t; }
+      } else walk(c, i || /^(I|EM)$/.test(c.tagName), b || /^(B|STRONG)$/.test(c.tagName));
+    }
+  };
+  walk(doc.body, false, false);
+  if (!first) return null;
+  // Lesbar machen, ohne am Inhalt etwas zu ändern: Leerraum, Bildhinweise („pictured“ – das Bild zeigt die App
+  // nicht) und die englische Teaser-Form „... that …?“ wird zum Aussagesatz.
+  let teaser = false;
+  for (const p of parts) {
+    p.t = p.t.replace(/[ \t\r\n]+/g, ' ');
+    if (!p.a) p.t = p.t.replace(/\s*\((?:[^()]*\s)?pictured\)/gi, '').replace(/\s*\((?:im |auf dem )?Bild(?: links| rechts| oben| unten| Mitte)?\)/g, '');
+  }
+  if (parts[0] && !parts[0].a) {
+    const t = parts[0].t.replace(/^\s*(?:\.\.\.|…)\s*(?:that|dass),?\s*/i, '');
+    if (t !== parts[0].t) { teaser = true; parts[0].t = t; }
+  }
+  const ps = parts.filter(p => p.t);
+  for (let k = 1; k < ps.length; k++) {
+    if (/\s$/.test(ps[k - 1].t) || /[(„“"']$/.test(ps[k - 1].t)) ps[k].t = ps[k].t.replace(/^\s+/, '');
+    ps[k].t = ps[k].t.replace(/^\s+(?=[,.;:!?)])/, '');
+  }
+  if (!ps.length) return null;
+  ps[0].t = ps[0].t.replace(/^\s+/, '').replace(/^\p{Ll}/u, c => c.toLocaleUpperCase(LANG));
+  const last = ps[ps.length - 1];
+  last.t = last.t.replace(/\s+$/, '');
+  if (teaser && !last.a) last.t = last.t.replace(/\?$/, '.');
+  return { p: ps, m: main || first };
+}
+function dykItems(list) {
+  const out = [], seen = new Set();
+  for (const x of Array.isArray(list) ? list : []) {
+    let it = null;
+    try { it = dykParse(String(x?.html || '')); } catch {}
+    const key = it && it.p.map(p => p.t).join('');
+    if (!it || seen.has(key)) continue; // die deutsche Liste enthält manche Fakten doppelt
+    seen.add(key);
+    out.push(it);
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+// Neue Fakten eines Tages zu den schon gespeicherten dazulegen (die englische Liste wechselt manchmal mittags).
+function storeDyk(day, j) {
+  const items = dykItems(j?.dyk);
+  if (!items.length || day !== today()) return;
+  const days = dykDays();
+  const cur = days.find(d => d.day === day);
+  if (cur) {
+    const have = new Set(cur.items.map(it => it.p.map(p => p.t).join('')));
+    const add = items.filter(it => !have.has(it.p.map(p => p.t).join('')));
+    if (!add.length) return;
+    cur.items = add.concat(cur.items).slice(0, 20);
+  } else days.unshift({ day, items });
+  lstore.set('dyk', { days: days.slice(0, DYK_DAYS) });
+}
+// Heutige Fakten holen, falls noch nicht da. Fehlen sie (offline, kurz nach Mitternacht), frühestens nach 15 Minuten wieder.
+let dykTry = 0;
+async function loadDyk() {
+  const day = today();
+  if (dykDays().some(d => d.day === day) || Date.now() - dykTry < 15 * 60e3 || navigator.onLine === false) return false;
+  dykTry = Date.now();
+  featuredMem.delete(day);
+  try { await featuredFeed(day); } catch { return false; }
+  return dykDays().some(d => d.day === day);
+}
+// Fakt als Text; Links sind farbig. Antippen öffnet den angetippten Link, sonst den Hauptartikel.
+function dykButton(it) {
+  const b = el('button', 'dyk-fact');
+  b.type = 'button';
+  const txt = el('span', 'dyk-txt');
+  for (const p of it.p) {
+    const node = p.a ? el('span', 'dyk-a', p.i ? null : p.t) : (p.i ? el('i') : document.createTextNode(p.t));
+    if (p.a) { node.dataset.t = p.a; if (p.i) node.append(el('i', null, p.t)); }
+    else if (p.i) node.textContent = p.t;
+    txt.append(node);
+  }
+  b.append(txt, chevEl());
+  b.onclick = e => { const a = e.target.closest('.dyk-a'); openReader(a ? a.dataset.t : it.m); };
+  return b;
+}
+function dayLabel(day) {
+  const diff = dayNum(today()) - dayNum(day);
+  if (diff === 0) return T('Heute', 'Today');
+  if (diff === 1) return T('Gestern', 'Yesterday');
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(LANG === 'en' ? 'en-GB' : 'de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+// Ebene 2: alle aufgehobenen Fakten, nach Tagen
+function renderDykSheet() {
+  $('think-title').textContent = T('Schon gewusst?', 'Did you know?');
+  const b = thinkBody;
+  b.innerHTML = '';
+  const head = el('header', 'tc-head');
+  head.append(icBox('spark', 'big'), el('h1', null, T('Schon gewusst?', 'Did you know?')),
+    el('p', 'tc-desc', T('Kurze Fakten, die die Wikipedia jeden Tag auf ihrer Hauptseite zeigt, meist aus neuen Artikeln. Antippen öffnet den Artikel.',
+      'Short facts that Wikipedia shows on its main page every day, mostly from new articles. Tap one to open the article.')),
+    el('p', 'tc-stats', T('Fakten von Tagen, an denen du die App geöffnet hast, bleiben eine Woche hier.', 'Facts from days you opened the app stay here for a week.')));
+  b.append(head);
+  const days = dykDays();
+  if (!days.length) b.append(el('p', 'think-note', T('Noch keine Fakten da. Sie kommen, sobald du online bist.', 'No facts yet. They will arrive as soon as you are online.')));
+  for (const d of days) {
+    b.append(el('h2', 'tc-sec', dayLabel(d.day)));
+    const g = el('div', 'th-group');
+    for (const it of d.items) g.append(dykButton(it));
+    b.append(g);
+  }
+  b.append(el('p', 'th-foot dyk-src', T('Quelle: Rubrik „Schon gewusst?“ der Wikipedia-Hauptseite, Text unter CC BY-SA 4.0.', 'Source: the “Did you know …” section of the Wikipedia main page, text under CC BY-SA 4.0.')));
+}
+
+// ---------- Staunen: Fundstücke ----------
+// Ein Alltagsding als Einstieg, dann 4–6 Wikipedia-Artikel in fester Reihenfolge. Fortschritt je Fundstück:
+// lstore 'fund' = { id: { r: [gelesene Schritte], c: zuletzt geöffneter Schritt } }.
+const fundById = id => FUND.find(f => f.id === id);
+function fundStep(th) {
+  const f = th && fundById(th.id), step = f?.steps[th.i];
+  return step ? { f, i: th.i, n: f.steps.length, step } : null;
+}
+function fundProg(f) {
+  const p = lstore.get('fund', {})[f.id] || {};
+  const n = f.steps.length;
+  const read = new Set((Array.isArray(p.r) ? p.r : []).filter(i => Number.isInteger(i) && i >= 0 && i < n));
+  const c = Number.isInteger(p.c) && p.c >= 0 && p.c < n ? p.c : null;
+  // Hier geht es weiter: beim zuletzt geöffneten Schritt, falls noch ungelesen, sonst beim nächsten ungelesenen
+  let next = 0;
+  if (read.size < n) for (let k = 0; k < n; k++) { const i = ((c ?? 0) + k) % n; if (!read.has(i)) { next = i; break; } }
+  return { read, c, n, next, done: read.size === n };
+}
+function fundSave(id, fn) {
+  const all = lstore.get('fund', {});
+  const p = all[id] && typeof all[id] === 'object' ? all[id] : {};
+  if (fn(p) === false) return;
+  all[id] = p;
+  lstore.set('fund', all);
+}
+const fundSeen = (id, i) => fundSave(id, p => { if (p.c === i) return false; p.c = i; });
+const fundRead = (id, i) => fundSave(id, p => { const r = Array.isArray(p.r) ? p.r : []; if (r.includes(i)) return false; p.r = [...r, i].sort((a, b) => a - b); });
+function fundOpen(f, i) {
+  fundSeen(f.id, i);
+  openReader(f.steps[i].title, null, 0, null, { thread: { id: f.id, i } });
+}
+const stepsLabel = f => T(`${f.steps.length} Schritte`, `${f.steps.length} steps`);
+const progLabel = p => p.read.size ? T(`${p.read.size} von ${p.n} gelesen`, `${p.read.size} of ${p.n} read`) : null;
+function fundGoLabel(p) {
+  if (p.done) return T('Noch einmal von vorn', 'Start again');
+  if (!p.read.size && !p.next) return T('Mit Schritt 1 beginnen', 'Start with step 1');
+  return T(`Weiterlesen bei Schritt ${p.next + 1}`, `Continue with step ${p.next + 1}`);
+}
+// Das Einstiegsbild: Hauptbild des Artikels, mit Bildnachweis. Ohne Bild bleibt der Platz leer (kein Rahmen).
+const imgMem = new Map();
+function pageImage(title, size, urgent = false) {
+  const key = size + '|' + title;
+  if (imgMem.size > 60) imgMem.clear();
+  if (!imgMem.has(key)) imgMem.set(key, api({ titles: title, redirects: '1', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: String(size) }, urgent)
+    .then(d => d.query?.pages?.[0]?.thumbnail?.source || null).catch(() => { imgMem.delete(key); return null; }));
+  return imgMem.get(key);
+}
+function fundFigure(f, size) {
+  const fig = el('div', 'fd-fig');
+  fig.hidden = true;
+  const img = el('img');
+  img.alt = '';
+  img.decoding = 'async';
+  const cr = el('a', 'fd-credit');
+  cr.target = '_blank'; cr.rel = 'noopener'; cr.hidden = true;
+  cr.onclick = e => e.stopPropagation();
+  fig.append(img, cr);
+  pageImage(f.image || f.steps[0].title, size).then(u => {
+    if (!u || !fig.isConnected) return;
+    img.onload = () => { fig.hidden = false; };
+    img.src = u;
+    imageCredit(u).then(c => {
+      if (!c) return;
+      cr.textContent = T('Bild: ', 'Image: ') + [c.artist || 'Wikimedia Commons', c.license].filter(Boolean).join(' · ');
+      cr.href = c.page;
+      cr.hidden = false;
+    });
+  });
+  return fig;
+}
+// Ebene 2: das Fundstück – Bild, Frage, Knopf und die Schritte (gelesene mit Haken)
+function renderFundSheet(f) {
+  if (!f) return;
+  $('think-title').textContent = f.object;
+  const b = thinkBody;
+  b.innerHTML = '';
+  const p = fundProg(f);
+  const k = el('span', 'th-kind');
+  k.append(el('span', 'caps', T('Fundstück', 'Curiosity')), document.createTextNode('· ' + (progLabel(p) || stepsLabel(f))));
+  b.append(fundFigure(f, 900), k, el('h1', null, f.object), el('h2', 'think-q', f.q || T('Was steckt dahinter?', 'What’s behind it?')));
+  if (f.teaser) b.append(el('p', 'think-text fd-teaser', f.teaser));
+  const go = el('button', 'btn', fundGoLabel(p));
+  go.type = 'button';
+  go.onclick = () => fundOpen(f, p.next);
+  b.append(go, el('h3', null, T('Die Schritte', 'The steps')));
+  const g = el('div', 'th-group');
+  f.steps.forEach((s, i) => {
+    const r = el('button', 'th-row fd-row');
+    r.type = 'button';
+    const num = el('span', 'fd-num' + (p.read.has(i) ? ' done' : ''));
+    if (p.read.has(i)) num.append(symEl('check'), el('span', 'vh', T(`Schritt ${i + 1}, gelesen`, `Step ${i + 1}, read`)));
+    else num.textContent = i + 1;
+    const rt = el('span', 'th-rt');
+    rt.append(el('b', null, s.title));
+    r.append(num, rt, chevEl());
+    r.onclick = () => fundOpen(f, i);
+    g.append(r);
+  });
+  b.append(g, el('p', 'th-foot fd-foot', T('Jeder Schritt ist ein Wikipedia-Artikel. Unten im Artikel geht es zum nächsten.', 'Each step is a Wikipedia article. At the end of each article you can go on to the next.')));
+}
+// Im Leser: oben „Der Bleistift · Schritt 2 von 5“, unter dem Titel der Verbindungssatz, unten Weiter und Zurück
+function fundKicker(fs) {
+  return el('div', 'fd-kick wf-x', `${fs.f.object} · ` + T(`Schritt ${fs.i + 1} von ${fs.n}`, `Step ${fs.i + 1} of ${fs.n}`));
+}
+function fundNav(fs) {
+  const { f, i, n } = fs;
+  const box = el('div', 'fd-nav wf-x');
+  box.dataset.id = f.id;
+  box.dataset.i = i;
+  const dots = el('span', 'fd-dots');
+  dots.setAttribute('aria-hidden', 'true');
+  for (let k = 0; k < n; k++) dots.append(el('i', k <= i ? 'on' : null));
+  box.append(dots, el('p', 'fd-step', T(`Schritt ${i + 1} von ${n}`, `Step ${i + 1} of ${n}`)));
+  if (i < n - 1) {
+    const nx = el('button', 'btn fd-next');
+    nx.type = 'button';
+    nx.append(el('span', null, T('Weiter', 'Next')), el('small', null, f.steps[i + 1].title));
+    nx.onclick = () => { fundRead(f.id, i); fundSeen(f.id, i + 1); openReader(f.steps[i + 1].title, null, 0, null, { thread: { id: f.id, i: i + 1 } }); };
+    box.append(nx);
+  } else {
+    const done = el('button', 'btn fd-next', T('Fertig', 'Done'));
+    done.type = 'button';
+    done.onclick = () => { fundRead(f.id, i); closeReaderAll(); if (fundProg(f).done) toast(T('Alle Schritte gelesen', 'All steps read')); };
+    box.append(done);
+  }
+  if (i > 0) {
+    const bk = el('button', 'btn ghost2 fd-prev', T(`Zurück zu Schritt ${i}`, `Back to step ${i}`));
+    bk.type = 'button';
+    bk.onclick = () => {
+      const prev = readerStack[readerStack.length - 2];
+      fundSeen(f.id, i - 1);
+      if (prev?.thread?.id === f.id && prev.thread.i === i - 1) readerBack(false);
+      else readerReplace(f.steps[i - 1].title, { thread: { id: f.id, i: i - 1 } });
+    };
+    box.append(bk);
+  }
+  return box;
+}
+// Den obersten Artikel durch einen anderen ersetzen (Zurück im Fundstück, wenn der vorige Schritt nicht im Stapel liegt)
+function readerReplace(title, opts) {
+  const e = { title, item: null, scroll: 0, ...opts };
+  readerStack[readerStack.length - 1] = e;
+  heroFor(e);
+  saveSnapSoon();
+  renderArticle(title);
+}
+// Wegziehen im Fundstück: Leser und Fundstück-Blatt schließen; die Ebenen des Blatts erst nach dem Zurück des Lesers entfernen
+function closeFundAll() {
+  closeReaderAll();
+  if (!thinkEl.hidden) thinkL.closeAll(popPending);
+}
+// Jeden Tag ein anderes Fundstück, in fester Reihenfolge (wie die Frage des Tages)
+function dailyFund(day = today()) {
+  const n = FUND.length, gcd = (a, b) => b ? gcd(b, a % b) : a;
+  if (!n) return null;
+  const step = [7, 11, 13, 17].find(x => gcd(x, n) === 1) || 1;
+  return FUND[(dayNum(day) * step) % n];
+}
+
+// Ebene 1, Teil „Staunen“: Karte „Heute“ (ein Fakt + das Fundstück des Tages), „Schon gewusst?“, alle Fundstücke
+const sn = { built: false };
+function renderStaunen() {
+  if (!sn.built) buildStaunen();
+  updateStaunen();
+  loadDyk().then(ok => { if (ok && thinkPart === 'wonder') updateStaunen(); });
+}
+function buildStaunen() {
+  const box = $('think-wonder');
+  box.innerHTML = '';
+  sn.today = el('section', 'th-daily st-today');
+  sn.dyk = el('div');
+  box.append(sn.today, sn.dyk);
+  sn.rows = [];
+  if (FUND.length) {
+    box.append(el('h2', 'th-sec', T('Fundstücke', 'Curiosities')));
+    const g = el('div', 'th-group');
+    for (const f of FUND) {
+      const r = el('button', 'th-row');
+      r.type = 'button';
+      const rt = el('span', 'th-rt'), meta = el('span', 'th-meta'), mini = el('span', 'th-mini'), fill = el('i'), txt = el('span'), state = el('span', 'st-state');
+      mini.append(fill);
+      meta.append(mini, txt);
+      rt.append(el('b', null, f.object), el('span', 'th-q', f.teaser || f.q || ''), meta);
+      r.append(icBox('trail'), rt, state);
+      r.onclick = () => thinkL.open({ t: 'fund', id: f.id });
+      g.append(r);
+      sn.rows.push({ f, mini, fill, txt, state });
+    }
+    box.append(g);
+  }
+  sn.fig = null;
+  sn.built = true;
+}
+function updateStaunen() {
+  const days = dykDays(), d0 = days[0]?.day === today() ? days[0] : null;
+  const f = dailyFund();
+  // Karte „Heute“ – was fehlt, wird ausgeblendet, nie leer gezeigt
+  const s = sn.today;
+  s.textContent = '';
+  s.hidden = !d0 && !f;
+  const k = el('span', 'th-kind');
+  k.append(el('span', 'caps', T('Heute', 'Today')));
+  s.append(k);
+  // Auf der Karte der kürzeste Fakt des Tages: am schnellsten gelesen, die übrigen stehen unter „Alle Fakten“
+  const len = it => it.p.reduce((a, p) => a + p.t.length, 0);
+  if (d0) s.append(el('p', 'st-label', T('Schon gewusst?', 'Did you know?')), dykButton(d0.items.reduce((a, b) => len(b) < len(a) ? b : a)));
+  if (f) {
+    const p = fundProg(f);
+    // Das Bild nur einmal laden, solange es dasselbe Fundstück ist
+    if (!sn.fig || sn.figFor !== f.id) { sn.fig = fundFigure(f, 640); sn.figFor = f.id; }
+    const part = el('div', 'st-fund' + (d0 ? ' sep' : ''));
+    part.append(el('p', 'st-label', T('Fundstück', 'Curiosity')), el('h3', null, f.object), el('p', 'th-dtext', f.q || T('Was steckt dahinter?', 'What’s behind it?')));
+    const go = el('button', 'btn th-wide', p.read.size ? fundGoLabel(p) + ' ›' : T('Ansehen ›', 'Take a look ›'));
+    go.type = 'button';
+    go.onclick = () => thinkL.open({ t: 'fund', id: f.id });
+    part.append(go);
+    if (progLabel(p)) part.append(el('p', 'th-later', progLabel(p)));
+    s.append(sn.fig, part);
+  }
+  // „Schon gewusst?“: ein Eintrag für alle aufgehobenen Tage
+  sn.dyk.textContent = '';
+  if (days.length) {
+    const n = days.reduce((a, d) => a + d.items.length, 0);
+    sn.dyk.append(el('h2', 'th-sec', T('Schon gewusst?', 'Did you know?')));
+    const g = el('div', 'th-group');
+    const r = el('button', 'th-row');
+    r.type = 'button';
+    const rt = el('span', 'th-rt'), meta = el('span', 'th-meta');
+    meta.append(el('span', null, d0 ? T(`${d0.items.length} von heute · ${n} insgesamt`, `${d0.items.length} from today · ${n} in all`) : T(`${n} Fakten`, `${n} facts`)));
+    rt.append(el('b', null, T('Alle Fakten', 'All facts')), el('span', 'th-q', days.length > 1 ? T(`Von heute und ${days.length - 1} Tagen davor`, `From today and ${days.length - 1} earlier days`) : T('Von heute', 'From today')), meta);
+    if (!d0) rt.querySelector('.th-q').textContent = T('Aus den letzten Tagen', 'From the last few days');
+    r.append(icBox('spark'), rt, chevEl());
+    r.onclick = () => thinkL.open({ t: 'dyk' });
+    g.append(r);
+    sn.dyk.append(g);
+  }
+  // Fundstücke: Fortschritt je Zeile
+  for (const r of sn.rows) {
+    const p = fundProg(r.f);
+    r.mini.hidden = !p.read.size;
+    r.fill.style.width = (p.read.size / p.n * 100) + '%';
+    r.txt.textContent = progLabel(p) || stepsLabel(r.f);
+    r.state.textContent = '';
+    if (p.done) { r.state.className = 'th-state ok'; r.state.append(symEl('checkc'), el('span', 'vh', T('alle Schritte gelesen', 'all steps read'))); }
+    else { r.state.className = 'st-state'; r.state.append(chevEl()); }
+  }
+}
+
+// ---------- Kaninchenbau: drei Abzweigungen am Ende jedes Artikels ----------
+// Erst wenn das Ende des Artikels in die Nähe kommt, werden zwei Anfragen gestellt (über die Warteschlange in api()):
+// die Links aus dem Text und „morelike:“. Gefiltert werden Jahreszahlen, Daten, Länder und Orte, sehr allgemeine
+// Begriffe, Listen und Begriffsklärungen; ausgezeichnete und ausführliche Artikel werden bevorzugt.
+const HOLE_PROPS = { prop: 'info|pageprops|description|pageimages|categories', ppprop: 'disambiguation', piprop: 'thumbnail', pithumbsize: '160', pilimit: 'max',
+  clcategories: WIKI.topCats, cllimit: 'max', redirects: '1' };
+const MONTHS = 'Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|January|February|March|May|June|July|October|December';
+const HOLE_BAD_TITLE = new RegExp(`^(\\d{1,4}(er)?( Jahre)?|\\d{1,4}s|\\d{1,4} (v\\. Chr\\.|n\\. Chr\\.|BC|BCE|AD|CE)|\\d{1,2}\\. (${MONTHS})( \\d{1,4})?|(${MONTHS})( \\d{1,2})?(, \\d{1,4})?|(${MONTHS}) \\d{4})$`
+  + '|(Jahrhundert|Jahrtausend|century|millennium)\\b|^(Liste|Listen|List|Lists|Index|Outline|Timeline|Glossary|Chronologie|Zeittafel) |\\((Begriffsklärung|disambiguation)\\)', 'i');
+const HOLE_BAD_DESC = /\b(country|sovereign state|constituent country|state of the United States|state (?:of|in) (?:Germany|Austria|Australia|India|Brazil|Mexico|Nigeria|Malaysia)|U\.S\. state|federal state|federated state|province|region of|city in|city of|capital city|town in|village in|municipality|commune in|district of|county|human settlement|continent|ocean|academic discipline|branch of|field of study|religion|ethnic group|nationality|calendar year|decade|century|month of|day of the year|Wikimedia|unit of|Staat|Land in|Bundesland|Bundesstaat|Provinz|Region in|Stadt|Großstadt|Kleinstadt|Hauptstadt|Kreisstadt|Gemeinde|Ortschaft|Ort in|Dorf|Landkreis|Bezirk|Kanton|Kontinent|Ozean|Wissenschaft|Fachgebiet|Teilgebiet|Religion|Volk|Ethnie|Jahr|Jahrzehnt|Jahrhundert|Monat|Maßeinheit)\b/i;
+const HOLE_LANG = /\b(language|Sprache)\b/i;
+const HOLE_REALM = /\b(Reich|Kaiserreich|Königreich|Republik|empire|kingdom|republic|dynasty|Dynastie)\b/i; // Staaten der Geschichte
+const HOLE_GENERAL = new Set(('Mensch|Wasser|Erde|Sonne|Mond|Leben|Tod|Gott|Zeit|Liebe|Geld|Krieg|Frieden|Kunst|Musik|Wissenschaft|Physik|Chemie|Biologie|Mathematik|Geschichte|Philosophie|Religion|Christentum|Islam|Judentum|Europa|Asien|Afrika|Amerika|Nordamerika|Südamerika|Australien|Antarktis|Internet|Computer|Tier|Pflanze|Pflanzen|Lebewesen|Latein|Deutschland|Vereinigte Staaten|Frankreich|Vereinigtes Königreich|Römisches Reich|Antike|Mittelalter|Neuzeit|Zweiter Weltkrieg|Erster Weltkrieg'
+  + '|Human|Humans|Homo sapiens|Water|Earth|Sun|Moon|Life|Death|God|Time|Love|Money|War|Peace|Art|Music|Science|Physics|Chemistry|Biology|Mathematics|History|Philosophy|Christianity|Judaism|Europe|Asia|Africa|Americas|North America|South America|Australia|Antarctica|Animal|Plant|Organism|Latin|Germany|United States|France|United Kingdom|Roman Empire|Classical antiquity|Middle Ages|World War II|World War I').split('|'));
+const holeMem = new Map();
+function holeOk(p, skip) {
+  if (!p || p.missing || p.invalid || p.ns !== 0 || skip.has(p.title)) return false;
+  if (p.pageprops && 'disambiguation' in p.pageprops) return false;
+  if ((p.length || 0) < 3000 || HOLE_BAD_TITLE.test(p.title) || WIKI.ns.test(p.title) || HOLE_GENERAL.has(p.title)) return false;
+  const d = p.description || '';
+  return !HOLE_BAD_DESC.test(d) && !HOLE_REALM.test(d) && !HOLE_REALM.test(p.title) && !(HOLE_LANG.test(d) && !/programming|Programmier/i.test(d));
+}
+// Links aus dem Fließtext (ohne Infokästen, Tabellen, Bildunterschriften), höchstens 50, gleichmäßig über den Artikel verteilt
+function holeLinks(root) {
+  const out = [], seen = new Set();
+  const blocks = [...root.querySelectorAll('p, li, dd')].filter(n => !n.closest('table, .infobox, .navbox, figure, .thumb, .wf-x, .hatnote, .reflist, ol.references'));
+  blocks.forEach((n, bi) => n.querySelectorAll('a[href^="/wiki/"]').forEach(a => {
+    const t = wikiTitleOf(a.getAttribute('href').split('#')[0]);
+    if (t && !seen.has(t)) { seen.add(t); out.push({ t, lead: bi === 0 }); }
+  }));
+  if (out.length <= 50) return out;
+  return Array.from({ length: 50 }, (_, k) => out[Math.floor(k * out.length / 50)]);
+}
+function holeFor(title, links) {
+  if (holeMem.has(title)) return holeMem.get(title);
+  const pr = (async () => {
+    const jobs = [api({ ...HOLE_PROPS, generator: 'search', gsrsearch: 'morelike:' + title, gsrlimit: '20', gsrnamespace: '0' })];
+    if (links.length) jobs.push(api({ ...HOLE_PROPS, titles: links.map(l => l.t).join('|') }));
+    const [like, linked] = await Promise.allSettled(jobs);
+    if (like.status !== 'fulfilled' && linked?.status !== 'fulfilled') throw like.reason;
+    const skip = new Set([title, ...readerStack.map(e => e.title)]);
+    const cand = new Map();
+    const lead = new Map(links.map(l => [l.t, l.lead]));
+    if (linked?.status === 'fulfilled') {
+      const q = linked.value.query || {};
+      for (const r of q.redirects || []) if (lead.has(r.from)) lead.set(r.to, lead.get(r.from));
+      for (const n of q.normalized || []) if (lead.has(n.from)) lead.set(n.to, lead.get(n.from));
+      for (const p of q.pages || []) if (holeOk(p, skip)) cand.set(p.title, { p, linked: true, lead: !!lead.get(p.title), like: null });
+    }
+    if (like.status === 'fulfilled') {
+      (like.value.query?.pages || []).sort((a, b) => a.index - b.index).forEach((p, k) => {
+        if (!holeOk(p, skip)) return;
+        const c = cand.get(p.title);
+        if (c) c.like = k; else cand.set(p.title, { p, linked: false, lead: false, like: k });
+      });
+    }
+    const score = c => {
+      const cats = (c.p.categories || []).map(x => x.title).join('|');
+      return (/Exzellent|Featured/.test(cats) ? 3 : cats ? 2 : 0) + (c.p.length >= 20000 ? 1.5 : c.p.length >= 8000 ? 1 : 0)
+        + (c.p.thumbnail ? 1 : 0) + (c.linked && c.like != null ? 1.5 : 0) + (c.lead ? -1.5 : 0) + (c.like != null ? .5 - c.like * .03 : 0);
+    };
+    const picks = [], descs = new Set(), firsts = new Set();
+    for (const c of [...cand.values()].sort((a, b) => score(b) - score(a))) {
+      const d = (c.p.description || '').toLowerCase(), w1 = c.p.title.split(/[\s(,]/)[0].toLowerCase();
+      if ((d && descs.has(d)) || (w1.length > 4 && firsts.has(w1))) continue; // drei verschiedene Richtungen statt dreimal dasselbe
+      picks.push(c); if (d) descs.add(d); firsts.add(w1);
+      if (picks.length === 3) break;
+    }
+    const out = picks.map(c => ({ title: c.p.title, desc: c.p.description || '', thumb: c.p.thumbnail?.source || null }));
+    // Ohne Kurzbeschreibung: der erste Satz des Artikels
+    const need = out.filter(o => !o.desc);
+    if (need.length) {
+      try {
+        const d = await api({ titles: need.map(o => o.title).join('|'), prop: 'extracts', exintro: '1', explaintext: '1', exsentences: '1', exlimit: 'max' });
+        for (const p of d.query?.pages || []) { const o = need.find(x => x.title === p.title); if (o && p.extract) o.desc = p.extract; }
+      } catch {}
+    }
+    return out;
+  })();
+  holeMem.set(title, pr);
+  pr.catch(() => holeMem.delete(title));
+  while (holeMem.size > 40) holeMem.delete(holeMem.keys().next().value);
+  return pr;
+}
+function holeBox(title) {
+  const s = el('section', 'rh wf-x');
+  s.dataset.t = title;
+  return s;
+}
+const HOLE_HEAD = [[T('Eine Abzweigung', 'One detour')], [T('Zwei Abzweigungen', 'Two detours')], [T('Drei Abzweigungen', 'Three detours')]];
+async function fillHole(sec) {
+  let res = null;
+  try { res = await holeFor(sec.dataset.t, holeLinks(readerBody)); } catch {}
+  if (!res?.length) { sec.remove(); return; }
+  sec.append(el('h2', 'rh-h', HOLE_HEAD[res.length - 1][0]), el('p', 'rh-sub', T('Verwandte Artikel zum Weiterlesen.', 'Related articles to read next.')));
+  const list = el('div', 'rh-list');
+  for (const r of res) {
+    const b = el('button', 'rh-item');
+    b.type = 'button';
+    const th = el('span', 'rh-th');
+    th.setAttribute('aria-hidden', 'true');
+    if (r.thumb && /^https:\/\/[a-z0-9.-]+\.wikimedia\.org\//.test(r.thumb)) th.style.backgroundImage = `url("${r.thumb.replace(/["\\]/g, encodeURIComponent)}")`;
+    else th.textContent = r.title[0];
+    const t = el('span', 'rh-t');
+    t.append(el('b', null, r.title));
+    if (r.desc) t.append(el('small', null, r.desc));
+    b.append(th, t, chevEl());
+    b.onclick = () => openReader(r.title, { title: r.title, extract: r.desc, thumb: null, topic: null });
+    list.append(b);
+  }
+  sec.append(list);
+}
+// „Wie du hierher gekommen bist“: die letzten Artikel im Leser, antippen springt zurück
+function trailBox() {
+  const box = el('div', 'rtrail wf-x');
+  box.append(el('h3', 'rt-h', T('Wie du hierher gekommen bist', 'How you got here')));
+  const path = el('div', 'rt-path');
+  const list = readerStack.slice(), shown = list.slice(-6);
+  const sep = () => { const x = el('span', 'rt-sep', '›'); x.setAttribute('aria-hidden', 'true'); return x; };
+  if (list.length > shown.length) path.append(el('span', 'rt-more', '…'), sep());
+  shown.forEach((e, k) => {
+    if (k) path.append(sep());
+    if (k === shown.length - 1) { const c = el('span', 'rt-cur', e.title); c.setAttribute('aria-current', 'page'); path.append(c); }
+    else {
+      const b = el('button', 'rt-step', e.title);
+      b.type = 'button';
+      b.setAttribute('aria-label', T('Zurück zu ', 'Back to ') + e.title);
+      b.onclick = () => readerJump(e);
+      path.append(b);
+    }
+  });
+  const share = el('button', 'rt-share');
+  share.type = 'button';
+  share.append(symEl('share'), el('span', null, T('Spur teilen', 'Share path')));
+  share.onclick = () => shareTrail(list.map(e => e.title));
+  box.append(path, share);
+  return box;
+}
+function readerJump(e) {
+  const i = readerStack.indexOf(e);
+  if (i < 0) { openReader(e.title, e.item, 0, null, e.thread ? { thread: e.thread } : null); return; }
+  if (i >= readerStack.length - 1) return;
+  readerStack.length = i + 2;
+  readerBack(false);
+}
+async function shareTrail(titles) {
+  const url = t => 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(t.replace(/ /g, '_'));
+  const text = titles.join(' › ') + '\n\n' + titles.map(t => t + '\n' + url(t)).join('\n\n');
+  if (navigator.share) {
+    try { await navigator.share({ title: T('Meine Spur durch die Wikipedia', 'My path through Wikipedia'), text }); return; }
+    catch (e) { if (e?.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text); toast(T('Spur kopiert', 'Path copied')); }
+  catch { toast(T('Teilen hat nicht geklappt', 'Sharing did not work')); }
+}
+// Beobachter am Ende des Artikels: Abzweigungen kurz vorher laden, einen Fundstück-Schritt als gelesen zählen, wenn das Ende sichtbar ist
+let holeObs = null, readEndObs = null;
+function armReaderEnd() {
+  if (!('IntersectionObserver' in window)) return;
+  holeObs ||= new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    holeObs.unobserve(en.target);
+    en.target.classList.add('rh-done');
+    fillHole(en.target);
+  }), { root: readerScroll, rootMargin: '0px 0px 600px 0px' });
+  readEndObs ||= new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    readEndObs.unobserve(en.target);
+    fundRead(en.target.dataset.id, Number(en.target.dataset.i));
+  }), { root: readerScroll });
+  holeObs.disconnect();
+  readEndObs.disconnect();
+  const h = readerBody.querySelector('.rh:not(.rh-done)');
+  if (h) holeObs.observe(h);
+  const nav = readerBody.querySelector('.fd-nav');
+  if (nav) readEndObs.observe(nav);
 }
 
 // ---------- Themen-Seite ----------
@@ -2079,7 +2716,8 @@ readerScroll.addEventListener('scroll', () => {
 readerBody.lang = LANG; // für saubere Silbentrennung
 
 // ---------- Blätter wegziehen, große Titel, Schriftgröße ----------
-sheetDrag(reader, readerScroll, closeReaderAll);
+// Im Fundstück schließt Wegziehen alles: den Artikel und das Fundstück-Blatt dahinter.
+sheetDrag(reader, readerScroll, () => readerStack.some(e => e.thread) ? closeFundAll() : closeReaderAll());
 sheetDrag(thinkEl, thinkScroll, () => thinkL.closeAll());
 sheetDrag($('game'), $('game-scroll'), () => closeTrolley());
 // Große Titel: Beim Scrollen erscheint oben eine Glasleiste mit dem Titel in klein.
@@ -2146,7 +2784,7 @@ function saveSnap() {
     sessionStorage.setItem(SNAP_KEY, JSON.stringify({
       t: Date.now(), lang: LANG, idx: idx - from,
       items: cards.slice(from, idx + 10).map(c => cardItems.get(c)),
-      reader: !reader.hidden && top?.loaded ? { title: top.title, scroll: readerScroll.scrollTop } : null, // nur Artikel, die wirklich geladen sind
+      reader: !reader.hidden && top?.loaded ? { title: top.title, scroll: readerScroll.scrollTop, thread: top.thread || null } : null, // nur Artikel, die wirklich geladen sind
     }));
   } catch {}
 }
@@ -2166,7 +2804,7 @@ function restoreSnap() {
   const card = [...feedEl.querySelectorAll('.card')][Math.min(s.idx, s.items.length - 1)];
   if (card) feedEl.scrollTop = card.offsetTop;
   feedFx();
-  if (s.reader?.title) openReader(s.reader.title, null, s.reader.scroll || 0);
+  if (s.reader?.title) openReader(s.reader.title, null, s.reader.scroll || 0, null, s.reader.thread && fundStep(s.reader.thread) ? { thread: s.reader.thread } : null);
   return true;
 }
 feedEl.addEventListener('scroll', saveSnapSoon, { passive: true });
@@ -2176,7 +2814,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 // ---------- Start ----------
 renderSaved();
+setThinkPart(thinkPart, false, false);
 updateThinkDot();
+// Einmal am Tag die Fakten für „Schon gewusst?“ holen, damit man sie später nachlesen kann (leise im Hintergrund)
+setTimeout(() => loadDyk().catch(() => {}), 6000);
 // Nach Mitternacht: neue Frage des Tages, roter Punkt neu berechnen
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
