@@ -6,7 +6,7 @@ const FUNDSTUECKE_EN = [
   "id": "kaugummi",
   "object": "Chewing gum",
   "image": "Chewing gum",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "Long before gum came in wrappers, people chewed the sap of a tree.",
   "steps": [
    {
@@ -31,7 +31,7 @@ const FUNDSTUECKE_EN = [
   "id": "mikrowelle",
   "object": "The microwave oven",
   "image": "Microwave oven",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The box that reheats your leftovers grew out of Second World War radar.",
   "steps": [
    {
@@ -60,7 +60,7 @@ const FUNDSTUECKE_EN = [
   "id": "kork",
   "object": "The cork",
   "image": "Cork (material)",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "A slice of cork under a microscope gave the building block of life its name.",
   "steps": [
    {
@@ -89,7 +89,7 @@ const FUNDSTUECKE_EN = [
   "id": "streichholz",
   "object": "The match",
   "image": "Match",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "Matches contain an element that an alchemist stumbled on while trying to make gold.",
   "steps": [
    {
@@ -114,7 +114,7 @@ const FUNDSTUECKE_EN = [
   "id": "vanille",
   "object": "The vanilla pod",
   "image": "Vanilla",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "Vanilla grows all over the world today thanks to a 12-year-old boy.",
   "steps": [
    {
@@ -143,7 +143,7 @@ const FUNDSTUECKE_EN = [
   "id": "roboter",
   "object": "The robot",
   "image": "R.U.R.",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The word robot comes from a play, and really from the playwright's brother.",
   "steps": [
    {
@@ -172,7 +172,7 @@ const FUNDSTUECKE_EN = [
   "id": "fingerabdruck",
   "object": "The fingerprint",
   "image": "Fingerprint",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "From your fingertip, it's a short trip to the most famous curve in statistics.",
   "steps": [
    {
@@ -197,7 +197,7 @@ const FUNDSTUECKE_EN = [
   "id": "glasauge",
   "object": "The glass eye",
   "image": "Ocular prosthesis",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The glass used for some artificial eyes leads to an abandoned mining town in Greenland.",
   "steps": [
    {
@@ -222,7 +222,7 @@ const FUNDSTUECKE_EN = [
   "id": "sicherheitsnadel",
   "object": "The safety pin",
   "image": "Safety pin",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The safety pin has an inventor, and yet its ancestors date back to the Bronze Age.",
   "steps": [
    {
@@ -247,7 +247,7 @@ const FUNDSTUECKE_EN = [
   "id": "bleistift",
   "object": "The pencil",
   "image": "Pencil",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "There is no lead in a pencil, just a close relative of diamond.",
   "steps": [
    {
@@ -272,7 +272,7 @@ const FUNDSTUECKE_EN = [
   "id": "quarzuhr",
   "object": "The quartz watch",
   "image": "Quartz clock",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "A crystal keeps time in your watch, and two brothers found out why.",
   "steps": [
    {
@@ -301,7 +301,7 @@ const FUNDSTUECKE_EN = [
   "id": "und-zeichen",
   "object": "The ampersand &",
   "image": "Ligature (writing)",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "Hidden in the & are two Latin letters, and the trail leads to Cicero's secretary.",
   "steps": [
    {
@@ -330,7 +330,7 @@ const FUNDSTUECKE_EN = [
   "id": "gaensehaut",
   "object": "Goose bumps",
   "image": "Goose bumps",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "When the hairs on your arm stand up, your body is doing what a porcupine does in danger.",
   "steps": [
    {
@@ -355,7 +355,7 @@ const FUNDSTUECKE_EN = [
   "id": "strichcode",
   "object": "The barcode",
   "image": "Barcode",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The stripes on every package are based on an old telegraph code.",
   "steps": [
    {
@@ -380,7 +380,7 @@ const FUNDSTUECKE_EN = [
   "id": "banane",
   "object": "The banana",
   "image": "Gros Michel",
-  "q": "What's behind it?",
+  "q": "What’s behind it?",
   "teaser": "The banana we eat today is a stand-in for one that a fungus nearly wiped out.",
   "steps": [
    {

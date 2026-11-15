@@ -4,7 +4,7 @@
 const FUNDSTUECKE_DE = [
  {
   "id": "kaugummi",
-  "object": "Das Kaugummi",
+  "object": "Der Kaugummi",
   "image": "Kaugummi",
   "q": "Was steckt dahinter?",
   "teaser": "Lange bevor es Kaugummi im Laden gab, kauten Menschen den Saft eines Baumes.",

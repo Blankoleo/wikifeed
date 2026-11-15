@@ -419,7 +419,7 @@ async function imageCredit(url) {
     const d = await wikiFetch(u);
     const md = d.query?.pages?.[0]?.imageinfo?.[0]?.extmetadata || {};
     const txt = h => h ? (new DOMParser().parseFromString(h, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim() : '';
-    const artist = txt(md.Artist?.value) || txt(md.Credit?.value);
+    const artist = (txt(md.Artist?.value) || txt(md.Credit?.value)).replace(/^(.{4,}?)\s*\1$/, '$1'); // „Unknown authorUnknown author“ -> einmal
     return { artist: artist.length > 60 ? artist.slice(0, 58) + '…' : artist, license: txt(md.LicenseShortName?.value),
       page: 'https://' + f.host + '/wiki/File:' + encodeURIComponent(f.file.replace(/ /g, '_')) };
   })().catch(() => null);
@@ -951,7 +951,9 @@ async function renderArticle(title, restoreScroll = 0) {
     readerBody.innerHTML = '';
     readerBody.append(el('p', 'loading', navigator.onLine === false
       ? T('Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (unter „Gemerkt“) kannst du auch ohne Netz lesen.', 'You are offline and this article is not saved. Saved articles (under “Saved”) can be read without a connection.')
-      : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
+      : e instanceof TypeError // Netzfehler: verständlicher Hinweis statt „Failed to fetch“
+        ? T('Der Artikel konnte nicht geladen werden. Prüfe die Verbindung und versuche es noch einmal.', 'The article could not be loaded. Check your connection and try again.')
+        : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
   }
 }
 
@@ -1797,7 +1799,7 @@ function renderStandpoints(box) {
 // Jeder Teil wird einmal aufgebaut, danach werden nur Zahlen und Texte aktualisiert.
 const THINK_PARTS = {
   decide: [T('Fragen ohne einfache Antwort.', 'Questions without easy answers.'), T('Entscheide dich – dann vergleiche.', 'Decide – then compare.')],
-  wonder: [T('Jeden Tag neue Fakten.', 'New facts every day.'), T('Und Dinge, hinter denen mehr steckt.', 'And everyday things with more to them.')],
+  wonder: [T('Jeden Tag neue Fakten.', 'New facts every day.'), T('Und Dinge, hinter denen mehr steckt.', 'And everyday things with a story behind them.')],
 };
 let thinkPart = store.get('thinkPart', 'decide') === 'wonder' ? 'wonder' : 'decide';
 function setThinkPart(part, save = true, draw = true) {
@@ -2028,12 +2030,12 @@ function renderDykSheet() {
   b.innerHTML = '';
   const head = el('header', 'tc-head');
   head.append(icBox('spark', 'big'), el('h1', null, T('Schon gewusst?', 'Did you know?')),
-    el('p', 'tc-desc', T('Kurze Fakten, die die Wikipedia jeden Tag auf ihrer Hauptseite zeigt, meist aus neuen Artikeln. Antippen öffnet den Artikel.',
-      'Short facts that Wikipedia shows on its main page every day, mostly from new articles. Tap one to open the article.')),
+    el('p', 'tc-desc', T('Kurze Fakten von der Hauptseite der Wikipedia, jeden Tag andere, meist aus neuen Artikeln. Antippen öffnet den Artikel.',
+      'Short facts from the Wikipedia main page, new every day and mostly from new articles. Tap one to open the article.')),
     el('p', 'tc-stats', T('Fakten von Tagen, an denen du die App geöffnet hast, bleiben eine Woche hier.', 'Facts from days you opened the app stay here for a week.')));
   b.append(head);
   const days = dykDays();
-  if (!days.length) b.append(el('p', 'think-note', T('Noch keine Fakten da. Sie kommen, sobald du online bist.', 'No facts yet. They will arrive as soon as you are online.')));
+  if (!days.length) b.append(el('p', 'think-note', T('Noch keine Fakten da. Sie kommen, sobald du online bist.', 'No facts yet. They’ll appear once you’re online.')));
   for (const d of days) {
     b.append(el('h2', 'tc-sec', dayLabel(d.day)));
     const g = el('div', 'th-group');
@@ -2141,7 +2143,7 @@ function renderFundSheet(f) {
     r.onclick = () => fundOpen(f, i);
     g.append(r);
   });
-  b.append(g, el('p', 'th-foot fd-foot', T('Jeder Schritt ist ein Wikipedia-Artikel. Unten im Artikel geht es zum nächsten.', 'Each step is a Wikipedia article. At the end of each article you can go on to the next.')));
+  b.append(g, el('p', 'th-foot fd-foot', T('Jeder Schritt ist ein Wikipedia-Artikel. Unten im Artikel geht es zum nächsten.', 'Each step is a Wikipedia article. At the end of each one, you can go on to the next.')));
 }
 // Im Leser: oben „Der Bleistift · Schritt 2 von 5“, unter dem Titel der Verbindungssatz, unten Weiter und Zurück
 function fundKicker(fs) {
@@ -2254,7 +2256,7 @@ function updateStaunen() {
     // Das Bild nur einmal laden, solange es dasselbe Fundstück ist
     if (!sn.fig || sn.figFor !== f.id) { sn.fig = fundFigure(f, 640); sn.figFor = f.id; }
     const part = el('div', 'st-fund' + (d0 ? ' sep' : ''));
-    part.append(el('p', 'st-label', T('Fundstück', 'Curiosity')), el('h3', null, f.object), el('p', 'th-dtext', f.q || T('Was steckt dahinter?', 'What’s behind it?')));
+    part.append(el('p', 'st-label', T('Fundstück', 'Curiosity')), el('h3', null, f.object), el('p', 'th-dtext', f.teaser || f.q || T('Was steckt dahinter?', 'What’s behind it?')));
     const go = el('button', 'btn th-wide', p.read.size ? fundGoLabel(p) + ' ›' : T('Ansehen ›', 'Take a look ›'));
     go.type = 'button';
     go.onclick = () => thinkL.open({ t: 'fund', id: f.id });
@@ -2271,8 +2273,8 @@ function updateStaunen() {
     const r = el('button', 'th-row');
     r.type = 'button';
     const rt = el('span', 'th-rt'), meta = el('span', 'th-meta');
-    meta.append(el('span', null, d0 ? T(`${d0.items.length} von heute · ${n} insgesamt`, `${d0.items.length} from today · ${n} in all`) : T(`${n} Fakten`, `${n} facts`)));
-    rt.append(el('b', null, T('Alle Fakten', 'All facts')), el('span', 'th-q', days.length > 1 ? T(`Von heute und ${days.length - 1} Tagen davor`, `From today and ${days.length - 1} earlier days`) : T('Von heute', 'From today')), meta);
+    meta.append(el('span', null, d0 && n > d0.items.length ? T(`${d0.items.length} von heute · ${n} insgesamt`, `${d0.items.length} from today · ${n} in all`) : T(`${n} Fakten`, `${n} facts`)));
+    rt.append(el('b', null, T('Alle Fakten', 'All facts')), el('span', 'th-q', days.length > 2 ? T(`Von heute und ${days.length - 1} Tagen davor`, `From today and ${days.length - 1} earlier days`) : days.length === 2 ? T('Von heute und einem Tag davor', 'From today and one earlier day') : T('Von heute', 'From today')), meta);
     if (!d0) rt.querySelector('.th-q').textContent = T('Aus den letzten Tagen', 'From the last few days');
     r.append(icBox('spark'), rt, chevEl());
     r.onclick = () => thinkL.open({ t: 'dyk' });
@@ -2406,7 +2408,7 @@ async function fillHole(sec) {
 // „Wie du hierher gekommen bist“: die letzten Artikel im Leser, antippen springt zurück
 function trailBox() {
   const box = el('div', 'rtrail wf-x');
-  box.append(el('h3', 'rt-h', T('Wie du hierher gekommen bist', 'How you got here')));
+  box.append(el('h3', 'rt-h', T('Wie du hierhergekommen bist', 'How you got here')));
   const path = el('div', 'rt-path');
   const list = readerStack.slice(), shown = list.slice(-6);
   const sep = () => { const x = el('span', 'rt-sep', '›'); x.setAttribute('aria-hidden', 'true'); return x; };
@@ -2424,7 +2426,7 @@ function trailBox() {
   });
   const share = el('button', 'rt-share');
   share.type = 'button';
-  share.append(symEl('share'), el('span', null, T('Spur teilen', 'Share path')));
+  share.append(symEl('share'), el('span', null, T('Spur teilen', 'Share trail')));
   share.onclick = () => shareTrail(list.map(e => e.title));
   box.append(path, share);
   return box;
@@ -2440,11 +2442,11 @@ async function shareTrail(titles) {
   const url = t => 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(t.replace(/ /g, '_'));
   const text = titles.join(' › ') + '\n\n' + titles.map(t => t + '\n' + url(t)).join('\n\n');
   if (navigator.share) {
-    try { await navigator.share({ title: T('Meine Spur durch die Wikipedia', 'My path through Wikipedia'), text }); return; }
+    try { await navigator.share({ title: T('Meine Spur durch die Wikipedia', 'My trail through Wikipedia'), text }); return; }
     catch (e) { if (e?.name === 'AbortError') return; }
   }
-  try { await navigator.clipboard.writeText(text); toast(T('Spur kopiert', 'Path copied')); }
-  catch { toast(T('Teilen hat nicht geklappt', 'Sharing did not work')); }
+  try { await navigator.clipboard.writeText(text); toast(T('Spur kopiert', 'Trail copied')); }
+  catch { toast(T('Teilen hat nicht geklappt', 'Couldn’t share')); }
 }
 // Beobachter am Ende des Artikels: Abzweigungen kurz vorher laden, einen Fundstück-Schritt als gelesen zählen, wenn das Ende sichtbar ist
 let holeObs = null, readEndObs = null;
