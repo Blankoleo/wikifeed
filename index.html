@@ -45,6 +45,20 @@
   <section id="view-saved" class="view">
     <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head"><h1 data-en="Saved">Gemerkt</h1></header>
+    <div id="saved-controls" class="saved-controls" hidden>
+      <label class="saved-search" for="saved-search"><span data-en="Search saved articles">Merkliste durchsuchen</span>
+        <input id="saved-search" type="search" placeholder="Titel, Text oder Thema …" data-en-ph="Title, text or topic …" autocomplete="off">
+      </label>
+      <label class="saved-sort" for="saved-sort"><span data-en="Sort by">Sortieren nach</span>
+        <select id="saved-sort">
+          <option value="newest" data-en="Recently saved">Zuletzt gemerkt</option>
+          <option value="oldest" data-en="Oldest saved">Zuerst gemerkt</option>
+          <option value="az" data-en="Title A–Z">Titel A–Z</option>
+          <option value="za" data-en="Title Z–A">Titel Z–A</option>
+        </select>
+      </label>
+    </div>
+    <p id="saved-status" class="saved-status" role="status" hidden></p>
     <ul id="saved-list" class="list"></ul>
     <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap “Save” on a card to keep an article for later – it can then be read without an internet connection too.">Noch nichts gemerkt. Tippe auf einer Karte auf „Merken“, um einen Artikel für später aufzuheben – er ist dann auch ohne Internet lesbar.</p>
   </section>
@@ -160,7 +174,7 @@
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 2.3<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 2.4<br><span id="dims"></span></p>
     </div>
   </section>
 
