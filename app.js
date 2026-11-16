@@ -15,7 +15,7 @@ const FUND = ((LANG === 'en' ? typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUE
 // on:true = deine Interessen als Voreinstellung.
 const TOPICS = [
   // Eigene Suchanfrage statt articletopic: Wikipedias Kategorien für Gedankenexperimente und Paradoxa.
-  { id: 'thought', label: T('Gedankenexperimente & Paradoxa', 'Thought experiments & paradoxes'), on: true, query: WIKI.thought, minLen: 2000 },
+  { id: 'thought', label: T('Gedankenexperimente & Paradoxien', 'Thought experiments & paradoxes'), on: true, query: WIKI.thought, minLen: 2000 },
   { id: 'history', label: T('Geschichte', 'History'), on: true },
   { id: 'biography', label: T('Biografien', 'Biographies'), on: true },
   { id: 'women', label: T('Biografien (Frauen)', 'Biographies (women)'), on: true },
@@ -29,8 +29,8 @@ const TOPICS = [
   { id: 'earth-and-environment', label: T('Erde & Umwelt', 'Earth & environment'), on: true },
   { id: 'mathematics', label: T('Mathematik', 'Mathematics'), on: true },
   { id: 'physics', label: T('Physik', 'Physics'), on: true },
-  { id: 'engineering', label: T('Technik', 'Engineering'), on: true },
-  { id: 'technology', label: T('Technologie', 'Technology'), on: true },
+  { id: 'engineering', label: T('Ingenieurwesen', 'Engineering'), on: true },
+  { id: 'technology', label: T('Technik & Geräte', 'Technology'), on: true },
   { id: 'space', label: T('Weltraum', 'Space'), on: true },
   { id: 'medicine-and-health', label: T('Medizin & Gesundheit', 'Medicine & health'), on: false },
   { id: 'military-and-warfare', label: T('Krieg & Militär', 'Military & warfare'), on: false },
@@ -38,7 +38,7 @@ const TOPICS = [
   { id: 'transportation', label: T('Verkehr', 'Transportation'), on: false },
   { id: 'food-and-drink', label: T('Essen & Trinken', 'Food & drink'), on: false },
   { id: 'architecture', label: T('Architektur', 'Architecture'), on: false },
-  { id: 'visual-arts', label: T('Kunst', 'Visual arts'), on: false },
+  { id: 'visual-arts', label: T('Bildende Kunst', 'Visual arts'), on: false },
   { id: 'literature', label: T('Literatur', 'Literature'), on: false },
   { id: 'music', label: T('Musik', 'Music'), on: false },
   { id: 'films', label: T('Film', 'Film'), on: false },
@@ -128,6 +128,8 @@ function apiFree() {
   const go = apiQueue.shift();
   if (go) go(); else apiActive--; // der Platz geht direkt an die nächste wartende Anfrage
 }
+// Fehler mit einem Satz für Menschen (friendly): Nur solche Texte zeigt die App an, nie HTTP-Codes oder API-Rohtext.
+function niceError(msg) { const e = new Error(msg); e.friendly = true; return e; }
 async function wikiFetch(url, urgent = false) {
   for (let attempt = 0; ; attempt++) {
     await apiSlot(urgent);
@@ -140,9 +142,9 @@ async function wikiFetch(url, urgent = false) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return await res.json();
       }
-      if (attempt) throw new Error(T('Wikipedia ist gerade überlastet', 'Wikipedia is busy right now'));
+      if (attempt) throw niceError(T('Wikipedia ist gerade überlastet. Versuche es in einem Moment noch einmal.', 'Wikipedia is busy right now. Try again in a moment.'));
     } catch (e) {
-      if (e.name === 'AbortError') throw new Error(T('Wikipedia antwortet gerade nicht', 'Wikipedia is not responding'));
+      if (e.name === 'AbortError') throw niceError(T('Wikipedia antwortet gerade nicht. Versuche es in einem Moment noch einmal.', 'Wikipedia isn’t responding right now. Try again in a moment.'));
       throw e;
     } finally {
       clearTimeout(timer);
@@ -479,7 +481,7 @@ function stateCard(kind, msg) {
   const inner = el('div');
   inner.append(el('p', null, msg));
   if (kind === 'error') {
-    const b = el('button', 'btn', T('Nochmal versuchen', 'Try again'));
+    const b = el('button', 'btn', T('Noch einmal versuchen', 'Try again'));
     b.onclick = () => { c.remove(); loadBlocked = false; loadMore(); };
     inner.append(b);
   }
@@ -494,7 +496,7 @@ async function loadMore() {
   loading = true;
   const gen = feedGen;
   const first = cardCount === 0;
-  const spinner = first ? stateCard('loading', T('Suche spannende Artikel …', 'Finding interesting articles …')) : null;
+  const spinner = first ? stateCard('loading', T('Artikel werden geladen …', 'Loading articles…')) : null;
   try {
     // Höchstens drei Runden, falls nichts Neues kommt – danach entscheidet der Nutzer (Knopf „Nochmal versuchen“).
     for (let round = 0; round < 3; round++) {
@@ -528,10 +530,9 @@ async function loadMore() {
     spinner?.remove();
     loadBlocked = true;
     stateCard('error', navigator.onLine === false
-      ? T('Du bist offline. Unter „Gemerkt“ kannst du deine gespeicherten Artikel trotzdem lesen.', 'You are offline. You can still read your saved articles under “Saved”.')
-      : T('Konnte keine Artikel laden (', 'Could not load articles (') + e.message + (e instanceof TypeError // Netzfehler
-        ? T('). Bist du online?', '). Are you online?')
-        : T('). Versuche es gleich noch einmal.', '). Please try again in a moment.')));
+      ? T('Du bist offline. Unter „Gemerkt“ kannst du deine gemerkten Artikel trotzdem lesen.', 'You’re offline. You can still read your saved articles under “Saved”.')
+      : e?.friendly ? e.message
+      : T('Gerade lassen sich keine Artikel laden. Prüfe deine Internetverbindung und versuche es noch einmal.', 'Articles can’t be loaded right now. Check your internet connection and try again.'));
   } finally {
     if (gen === feedGen) loading = false;
   }
@@ -601,11 +602,15 @@ function addCard(item, afterEl) {
   const meta = el('div', 'meta');
   if (item.aotd) meta.append(el('span', 'chip top', T('Artikel des Tages', 'Article of the day')));
   if (item.topic) meta.append(el('span', 'chip', topicLabel(item.topic)));
-  if (item.top) meta.append(el('span', 'chip top', T('Top-Artikel', 'Top article')));
+  if (item.top) meta.append(el('span', 'chip top', T('Ausgezeichnet', 'Featured')));
   if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
   body.append(meta, h, p, el('div', 'src', T('Wikipedia · CC BY-SA 4.0', 'Wikipedia · CC BY-SA 4.0')));
+  // Tastatur und VoiceOver: die Textfläche ist der Knopf zum Artikel (Enter und Leertaste über den gemeinsamen keydown-Handler)
+  body.setAttribute('role', 'button');
+  body.tabIndex = 0;
+  body.setAttribute('aria-label', T(`${item.title}. Artikel öffnen`, `${item.title}. Open article`));
 
   // Seitenleiste im TikTok-Stil: Herz, Merken, Weniger davon, Teilen.
   const side = el('div', 'side');
@@ -619,7 +624,7 @@ function addCard(item, afterEl) {
   };
   const like = mk('like', ICONS.heart, T('Gefällt mir', 'Like'));
   const save = mk('save', ICONS.bookmark, T('Merken', 'Save'));
-  const less = mk('less', ICONS.less, T('Weniger', 'Less'));
+  const less = mk('less', ICONS.less, T('Weniger', 'Show less'));
   const share = mk('share', ICONS.share, T('Teilen', 'Share'));
   if (isSaved(item.title)) save.classList.add('on');
 
@@ -642,14 +647,14 @@ function addCard(item, afterEl) {
     const on = toggleSaved(item);
     save.classList.toggle('on', on);
     if (on) { adjust(item.topic, 1.1); burst(save, ['#ffc94a', '#fff0b8']); }
-    toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
+    toast(on ? T('Gemerkt · offline verfügbar', 'Saved · available offline') : T('Nicht mehr gemerkt', 'Removed from Saved'));
   };
   less.onclick = () => {
     adjust(item.topic, 0.7);
     if (like.classList.contains('on')) { adjust(item.topic, 1 / 1.3); like.classList.remove('on'); }
     if (item.seed) dropSeed(item.seed);
     dropSeed(item.title);
-    toast(item.topic ? T(`Weniger ${topicLabel(item.topic)}`, `Less ${topicLabel(item.topic)}`) : T('Weniger davon', 'Less of this'));
+    toast(item.topic ? T(`Weniger aus „${topicLabel(item.topic)}“`, `Fewer from “${topicLabel(item.topic)}”`) : T('Weniger davon', 'Fewer like this'));
     card.classList.add('gone');
     setTimeout(() => next(card), 380);
     setTimeout(() => card.classList.remove('gone'), 1300);
@@ -755,7 +760,7 @@ async function fetchArticle(title, urgent = true) {
   let a = articleMem.get(title);
   if (!a) {
     const d = await api({ action: 'parse', page: title, prop: 'text|displaytitle', redirects: '1', disableeditsection: '1', disabletoc: '1' }, urgent);
-    if (d.error) throw new Error(d.error.code === 'missingtitle' ? T('Diesen Artikel gibt es (noch) nicht.', 'This article does not exist (yet).') : d.error.info);
+    if (d.error) throw niceError(d.error.code === 'missingtitle' ? T('Diesen Artikel gibt es (noch) nicht.', 'This article doesn’t exist (yet).') : T('Dieser Artikel lässt sich gerade nicht laden. Versuche es gleich noch einmal.', 'This article can’t be loaded right now. Try again in a moment.'));
     a = { title: d.parse.title, html: d.parse.text };
     articleMem.set(title, a);
     articleMem.set(a.title, a);
@@ -850,17 +855,18 @@ function renderSaved(calm = false) {
   status.hidden = !query || !items.length;
   status.textContent = T(`${items.length} von ${total} gemerkten Artikeln`, `${items.length} of ${total} saved articles`);
   none.hidden = !query || items.length > 0;
-  none.textContent = T(`Nichts gefunden für „${query}“. Gesucht wird in Titel, Text und Thema.`, `Nothing found for “${query}”. Search looks at title, text and topic.`);
+  none.textContent = T(`Nichts gefunden für „${query}“. Gesucht wird in Titel, Text und Thema.`, `Nothing found for “${query}”. Search looks at the title, text and topic.`);
   for (const s of items) {
     const li = el('li');
     const th = el('div', 'thumb');
     if (s.thumb) th.style.backgroundImage = `url("${s.thumb}")`;
     const t = el('div', 't');
     t.append(el('b', null, s.title), el('small', null, s.extract));
+    a11yOpen(t, s.title);
     if (s.off) { const ob = el('span', 'offbadge'); ob.append(symEl('check', 'in'), T('offline verfügbar', 'available offline')); t.append(ob); }
     const del = el('button', 'del');
     del.append(symEl('cross'));
-    del.setAttribute('aria-label', T('Entfernen', 'Remove'));
+    del.setAttribute('aria-label', T(`„${s.title}“ entfernen`, `Remove “${s.title}”`));
     del.onclick = e => { e.stopPropagation(); toggleSaved(s); syncSaveButtons(); };
     li.append(th, t, del);
     li.onclick = () => openReader(s.title, s);
@@ -906,6 +912,7 @@ async function openReader(title, item = null, restoreScroll = 0, origin = null, 
     reader.classList.toggle('hero-open', !!r);
     heroEl.style.height = r ? Math.min(Math.round(r.bottom + 6), Math.round(innerHeight * .62)) + 'px' : '';
     reader.hidden = false;
+    sheetShown(reader);
     if (r) reader.animate([{ clipPath: insetOf(r) }, { clipPath: 'inset(0px 0px 0px 0px round 0px)' }], { duration: 480, easing: 'cubic-bezier(.2, .85, .2, 1)' });
   }
   heroFor(readerStack[readerStack.length - 1]);
@@ -922,7 +929,7 @@ async function renderArticle(title, restoreScroll = 0) {
   const top = readerStack[readerStack.length - 1];
   setReaderHead(title);
   ttsStop();
-  readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>' + T('Lade Artikel …', 'Loading article …') + '</div>';
+  readerBody.innerHTML = '<div class="loading"><div class="spinner"></div>' + T('Artikel wird geladen …', 'Loading article…') + '</div>';
   readerScroll.scrollTop = 0;
   try {
     // Gemerkte Artikel kommen sofort aus dem Offline-Speicher, alles andere aus dem Netz.
@@ -937,8 +944,10 @@ async function renderArticle(title, restoreScroll = 0) {
     if (fs) readerBody.append(fundKicker(fs));
     readerBody.append(el('h1', 'art-title', art.title));
     if (fs?.step.link) readerBody.append(el('div', 'fd-why wf-x', fs.step.link));
-    if (art.offline) readerBody.append(el('div', 'offnote', T('Offline gespeichert', 'Saved offline')));
+    if (art.offline) readerBody.append(el('div', 'offnote', T('Offline verfügbar', 'Available offline')));
+    tidyArticle(art.doc.body);
     readerBody.append(...art.doc.body.childNodes);
+    dedupeHero();
     // Am Ende: im Fundstück Weiter/Zurück, dann drei Abzweigungen und die Spur, zuletzt der Lizenzhinweis
     if (fs) readerBody.append(fundNav(fs));
     readerBody.append(holeBox(art.title));
@@ -949,16 +958,161 @@ async function renderArticle(title, restoreScroll = 0) {
     top.loaded = true;
     setReaderHead(art.title);
     armReaderEnd();
+    refocusSheet();
   } catch (e) {
     if (readerStack[readerStack.length - 1] !== top) return;
     readerBody.innerHTML = '';
+    // Nur verständliche Sätze zeigen, nie HTTP-Codes oder „Failed to fetch“
     readerBody.append(el('p', 'loading', navigator.onLine === false
-      ? T('Du bist offline und dieser Artikel ist nicht gespeichert. Gemerkte Artikel (unter „Gemerkt“) kannst du auch ohne Netz lesen.', 'You are offline and this article is not saved. Saved articles (under “Saved”) can be read without a connection.')
-      : e instanceof TypeError // Netzfehler: verständlicher Hinweis statt „Failed to fetch“
-        ? T('Der Artikel konnte nicht geladen werden. Prüfe die Verbindung und versuche es noch einmal.', 'The article could not be loaded. Check your connection and try again.')
-        : T('Artikel konnte nicht geladen werden: ', 'Could not load the article: ') + e.message));
+      ? T('Du bist offline, und dieser Artikel ist nicht gemerkt. Gemerkte Artikel (unter „Gemerkt“) kannst du auch ohne Internet lesen.', 'You’re offline, and this article isn’t saved. Saved articles (under “Saved”) are available offline.')
+      : e?.friendly ? e.message
+      : T('Dieser Artikel lässt sich gerade nicht laden. Prüfe deine Internetverbindung und versuche es noch einmal.', 'This article can’t be loaded right now. Check your internet connection and try again.')));
+    if (navigator.onLine !== false) {
+      const again = el('button', 'btn reader-retry', T('Noch einmal versuchen', 'Try again'));
+      again.type = 'button';
+      again.onclick = () => renderArticle(title, restoreScroll);
+      readerBody.append(again);
+    }
+    refocusSheet();
   }
 }
+
+// ---------- Leser: Artikel aufräumen ----------
+// Wie die mobile Wikipedia: der erste Absatz vor Infokasten und Bildern, leere Abschnitte („Einzelnachweise“ ohne
+// sichtbaren Inhalt) fallen weg. Läuft einmal pro geöffnetem Artikel auf dem frischen Dokument, ohne Beobachter.
+const ART_HIDDEN = '.mw-editsection, .navbox, .noprint, .metadata, sup.reference, .mw-empty-elt, .sisterproject, #normdaten, .hatnote, .Vorlage_Begriffsklaerungshinweis, .mw-references-wrap, .reflist, ol.references, .navigation-not-searchable, style, link, meta';
+function headLevel(n) {
+  if (n.nodeType !== 1) return 0;
+  const h = n.matches('.mw-heading') ? n.querySelector('h2, h3, h4, h5, h6') : n;
+  const m = h && h.tagName.match(/^H([2-6])$/);
+  return m ? Number(m[1]) : 0;
+}
+function hasContent(n) {
+  if (n.nodeType === 3) return /\S/.test(n.nodeValue);
+  if (n.nodeType !== 1 || n.matches(ART_HIDDEN)) return false;
+  const c = n.cloneNode(true);
+  c.querySelectorAll(ART_HIDDEN).forEach(x => x.remove());
+  return /\S/.test(c.textContent) || !!c.querySelector('img, video, audio, svg, math');
+}
+function tidyArticle(body) {
+  const root = body.querySelector('.mw-parser-output') || body;
+  for (let changed = true, guard = 0; changed && guard < 8; guard++) {
+    changed = false;
+    const kids = [...root.childNodes];
+    for (let i = 0; i < kids.length; i++) {
+      const lv = headLevel(kids[i]);
+      if (!lv || !kids[i].isConnected) continue;
+      let j = i + 1, content = false;
+      for (; j < kids.length; j++) {
+        if (!kids[j].isConnected) continue;
+        if (headLevel(kids[j])) break;
+        if (hasContent(kids[j])) { content = true; break; }
+      }
+      if (content) continue;
+      const next = j < kids.length ? headLevel(kids[j]) : 0;
+      if (!next || next <= lv) { kids[i].remove(); changed = true; }
+    }
+  }
+  const top = [...root.children];
+  const lead = top.find(n => n.tagName === 'P' && n.textContent.trim().length > 40);
+  if (!lead) return;
+  const box = top.slice(0, top.indexOf(lead)).find(n => n.matches('table, figure, .thumb, .infobox, .float-right, .tright'));
+  if (box) box.before(lead);
+}
+// Dasselbe Bild nicht zweimal: Steht das Titelbild auch im Artikel (meist im Infokasten), wird es dort ausgeblendet.
+function dedupeHero() {
+  const src = !heroEl.hidden && heroImg.getAttribute('src');
+  const f = src && fileFromThumb(src);
+  if (!f) return;
+  for (const img of readerBody.querySelectorAll('img')) {
+    const g = fileFromThumb(img.getAttribute('src') || '');
+    if (!g || g.file !== f.file) continue;
+    const fig = img.closest('figure, .thumb, .gallerybox'), row = img.closest('tr');
+    let target = fig || img.closest('a') || img;
+    if (!fig && row && row.querySelectorAll('img').length === 1 && row.textContent.trim().length < 200) target = row;
+    target.classList.add('wf-dup');
+    break;
+  }
+}
+
+// ---------- Blätter als Dialoge: Fokus, inert, Escape ----------
+// Ein offenes Blatt (Leser, Denken, Trolley-Spiel) ist ein modaler Dialog: Der Fokus springt hinein, bleibt darin und
+// kehrt beim Schließen zum Auslöser zurück. Alles dahinter ist inert. Ein einziger keydown-Handler für die ganze App.
+const sheetStack = []; // { sheet, opener }
+function topSheet() {
+  if (!reader.hidden) return reader;
+  for (let i = sheetStack.length - 1; i >= 0; i--) if (!sheetStack[i].sheet.hidden) return sheetStack[i].sheet;
+  return null;
+}
+function syncInert() {
+  const top = topSheet();
+  document.querySelectorAll('.view, .tabbar').forEach(n => { n.inert = !!top; });
+  for (const s of [thinkEl, $('game'), reader]) s.inert = !!top && s !== top;
+}
+const focusSheet = s => s.querySelector('header button')?.focus({ preventScroll: true });
+function sheetShown(s) {
+  if (!sheetStack.some(e => e.sheet === s)) sheetStack.push({ sheet: s, opener: document.activeElement });
+  syncInert();
+  if (topSheet() === s && !s.contains(document.activeElement)) focusSheet(s);
+}
+function sheetHidden(s) {
+  const i = sheetStack.findIndex(e => e.sheet === s);
+  const op = i >= 0 ? sheetStack.splice(i, 1)[0].opener : null;
+  syncInert();
+  const top = topSheet();
+  if (op && op.isConnected && op !== document.body && !op.closest('[inert], [hidden]') && (!top || top.contains(op))) op.focus({ preventScroll: true });
+  else if (top) focusSheet(top);
+}
+// Nach dem Neuzeichnen (neuer Artikel, nächste Frage) den Fokus im obersten Blatt halten
+function refocusSheet() { const t = topSheet(); if (t && !t.contains(document.activeElement)) focusSheet(t); }
+// Listeneinträge (Suche, Gemerkt): die Textfläche ist per Tab erreichbar und öffnet den Artikel
+function a11yOpen(node, title) {
+  node.setAttribute('role', 'button');
+  node.tabIndex = 0;
+  node.setAttribute('aria-label', T(`${title}. Artikel öffnen`, `${title}. Open article`));
+}
+// Eine einzige versteckte Live-Region für kurze Ansagen (z. B. nach einer Antwort)
+function say(msg) {
+  const r = $('sr-live');
+  if (!r) return;
+  r.textContent = '';
+  setTimeout(() => { r.textContent = msg; }, 60);
+}
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
+document.addEventListener('keydown', e => {
+  const top = topSheet();
+  if (e.key === 'Escape' && top) {
+    if (e.target.closest?.('select')) return;
+    e.preventDefault();
+    focusSheet(top);
+    top.querySelector('header button')?.click(); // wie der Zurück-Knopf: eine Ebene zurück, auf der obersten Ebene schließen
+    return;
+  }
+  if (e.key === 'Tab' && top) {
+    const f = [...top.querySelectorAll(FOCUSABLE)].filter(n => n.getClientRects().length);
+    if (!f.length) return;
+    const a = document.activeElement, first = f[0], last = f[f.length - 1];
+    if (!top.contains(a)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+    else if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+    return;
+  }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[role="button"]:not(button)')) {
+    e.preventDefault();
+    e.target.click();
+    return;
+  }
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+  if (step && e.target.matches?.('[role="radio"], [role="tab"]')) {
+    const group = e.target.closest('[role="radiogroup"], [role="tablist"]');
+    if (!group) return;
+    const items = [...group.querySelectorAll('[role="radio"], [role="tab"]')];
+    const n = items[(items.indexOf(e.target) + step + items.length) % items.length];
+    e.preventDefault();
+    n.focus();
+    n.click();
+  }
+});
 
 // ---------- Leser: Titelbild ----------
 const heroEl = $('reader-hero'), heroImg = $('reader-hero-img'), heroCredit = $('reader-credit');
@@ -986,6 +1140,7 @@ function setHero(thumb) {
       heroCredit.href = c.page;
       heroCredit.hidden = false;
     });
+    dedupeHero();
   } else { heroImg.removeAttribute('src'); heroH = 0; }
   readerChrome();
 }
@@ -1209,7 +1364,7 @@ function ttsStart() {
   const start = Math.max(0, nodes.findIndex(n => n.getBoundingClientRect().bottom > topY + 4));
   Object.assign(tts, { on: true, token: tts.token + 1, nodes, ni: start, chunks: [], ci: 0 });
   speakBtn.classList.add('on');
-  speakBtn.setAttribute('aria-label', T('Vorlesen stoppen', 'Stop reading'));
+  speakBtn.setAttribute('aria-label', T('Vorlesen stoppen', 'Stop reading aloud'));
   // Bildschirm anlassen – bei gesperrtem Handy stoppt die Stimme sonst.
   navigator.wakeLock?.request('screen').then(l => { if (tts.on) tts.lock = l; else l.release(); }).catch(() => {});
   speechSynthesis.cancel();
@@ -1218,7 +1373,7 @@ function ttsStart() {
 function ttsSpeakNode() {
   readerBody.querySelector('.tts-now')?.classList.remove('tts-now');
   const n = tts.nodes[tts.ni];
-  if (!n || !n.isConnected) { ttsStop(); if (!n) toast(T('Fertig vorgelesen', 'Finished reading')); return; }
+  if (!n || !n.isConnected) { ttsStop(); if (!n) toast(T('Fertig vorgelesen', 'Finished reading aloud')); return; }
   n.classList.add('tts-now');
   n.scrollIntoView({ block: 'center', behavior: 'smooth' });
   tts.chunks = chunkText(nodeText(n));
@@ -1238,7 +1393,7 @@ function ttsSpeakChunk() {
   u.onerror = e => {
     if (token !== tts.token || e.error === 'interrupted' || e.error === 'canceled') return;
     ttsStop();
-    toast(T('Vorlesen ist hier leider nicht möglich', 'Reading aloud is not available here'));
+    toast(T('Dieser Browser kann nicht vorlesen.', 'This browser can’t read aloud.'));
   };
   tts.utter = u; // Referenz halten, sonst verliert Safari das Ende-Signal
   speechSynthesis.speak(u);
@@ -1296,6 +1451,7 @@ function readerBack(fromPopstate = false) {
       readerScroll.scrollTop = prev.scroll;
       requestAnimationFrame(() => { readerScroll.scrollTop = prev.scroll; readerChrome(); });
       armReaderEnd();
+      refocusSheet();
     } else { heroFor(prev); renderArticle(prev.title, prev.scroll); }
     if (fromPopstate) history.pushState({ reader: true }, '');
     saveSnapSoon();
@@ -1306,6 +1462,7 @@ function readerBack(fromPopstate = false) {
 function closeReader(fromPopstate) {
   ttsStop();
   reader.hidden = true;
+  sheetHidden(reader);
   setTimeout(() => { if (reader.hidden) { readerBody.innerHTML = ''; heroImg.removeAttribute('src'); } }, 480); // erst leeren, wenn das Blatt verschwunden ist
   if (readSession) {
     const secs = (Date.now() - readSession.start) / 1000;
@@ -1339,7 +1496,7 @@ document.getElementById('reader-save').onclick = () => {
   const on = toggleSaved({ ...item, title: top.title });
   document.getElementById('reader-save').classList.toggle('on', on);
   syncSaveButtons();
-  toast(on ? T('Gemerkt · auch offline lesbar', 'Saved · readable offline') : T('Entfernt', 'Removed'));
+  toast(on ? T('Gemerkt · offline verfügbar', 'Saved · available offline') : T('Nicht mehr gemerkt', 'Removed from Saved'));
 };
 
 // ---------- Suche ----------
@@ -1356,6 +1513,7 @@ function listItem(it, sub) {
   if (it.thumb) th.style.backgroundImage = `url("${it.thumb}")`;
   const t = el('div', 't');
   t.append(el('b', null, it.title), el('small', null, sub || ''));
+  a11yOpen(t, it.title);
   li.append(th, t);
   li.onclick = () => openReader(it.title, it);
   return li;
@@ -1376,7 +1534,7 @@ async function runSearch() {
     if (seq !== searchSeq) return;
     searchList.innerHTML = '';
     searchHint.hidden = pages.length > 0;
-    searchHint.textContent = T('Nichts gefunden für „' + q + '“.', 'Nothing found for “' + q + '”.');
+    searchHint.textContent = T('Nichts gefunden für „' + q + '“. Prüfe die Schreibweise oder versuche ein anderes Wort.', 'Nothing found for “' + q + '”. Check the spelling or try another word.');
     for (const p of pages) {
       const it = { title: p.title, extract: p.extract || p.description || '', thumb: p.thumbnail?.source || null, topic: null };
       searchList.append(listItem(it, p.description || p.extract));
@@ -1385,7 +1543,9 @@ async function runSearch() {
     if (seq !== searchSeq) return;
     searchList.innerHTML = '';
     searchHint.hidden = false;
-    searchHint.textContent = navigator.onLine === false ? T('Du bist offline – die Suche braucht Internet.', 'You are offline – search needs a connection.') : T('Suche fehlgeschlagen (', 'Search failed (') + e.message + ').';
+    searchHint.textContent = navigator.onLine === false
+      ? T('Du bist offline. Die Suche braucht eine Internetverbindung.', 'You’re offline. Search needs an internet connection.')
+      : T('Die Suche hat nicht geklappt. Versuche es gleich noch einmal.', 'Search didn’t work. Try again in a moment.');
   }
 }
 function renderSearchHint() {
@@ -1481,15 +1641,15 @@ const KINDS = {
 };
 // Sammlungen mit Zwischenüberschriften (Konzept 3.10). Weitere Sammlungen erscheinen erst, wenn es Inhalte für sie gibt.
 const COLLECTIONS = [
-  { id: 'raetsel', sym: 'puzzle', title: T('Rätsel & Paradoxien', 'Puzzles & paradoxes'), sub: T('Knobeln, abstimmen, auflösen', 'Puzzle, decide, resolve'),
-    desc: T('Manche haben eine Lösung, manche nicht – bei allen entscheidest du erst und siehst dann die Auflösung.', 'Some have an answer, some do not – with all of them you decide first and then see the resolution.'),
+  { id: 'raetsel', sym: 'puzzle', title: T('Rätsel & Paradoxien', 'Puzzles & paradoxes'), sub: T('Knobeln, entscheiden, nachlesen', 'Think it through, decide, find out'),
+    desc: T('Manche haben eine Lösung, manche nicht. Bei allen entscheidest du erst und siehst dann die Auflösung.', 'Some have an answer, some don’t. Either way, you decide first, then see the explanation.'),
     groups: [
       { kind: 'raetsel', title: T('Mit Lösung', 'With an answer'), ids: ['ziege', 'geburtstag', 'hilbert', 'achilles', 'affen', 'galilei', 'aufzug', 'zwillinge', 'olbers', 'maxwell', 'molyneux'] },
       { kind: 'paradox', title: T('Offene Paradoxien', 'Open paradoxes'), ids: ['haufen', 'theseus', 'luegner', 'hinrichtung', 'dornroeschen', 'grossvater', 'fermi'] },
       { kind: 'wahl', title: T('Entscheiden & Spiele', 'Decisions & games'), ids: ['newcomb', 'gefangene', 'buridan', 'pascal', 'allmende', 'ultimatum', 'petersburg'] },
     ] },
-  { id: 'alltag', sym: 'home', fresh: true, title: T('Alltagsdilemmata', 'Everyday dilemmas'), sub: T('Was tust du, wenn …?', 'What would you do if …?'),
-    desc: T('Fälle aus dem echten Leben. Nach deiner Antwort siehst du denselben Fall aus drei Blickwinkeln: Ergebnis, Grundsätze und Haltung.', 'Cases from real life. After you answer, you see the same case from three angles: outcome, principles and character.'),
+  { id: 'alltag', sym: 'home', fresh: true, title: T('Alltagsdilemmata', 'Everyday dilemmas'), sub: T('Was tust du, wenn …?', 'What would you do if…?'),
+    desc: T('Fragen aus dem echten Leben. Nach deiner Antwort siehst du dieselbe Frage aus drei Blickwinkeln: Ergebnis, Grundsätze und Haltung.', 'Questions from real life. After you answer, you see the same question from three angles: outcome, principles and character.'),
     groups: [
       { kind: 'alltag', title: T('Geld, Arbeit & Einkauf', 'Money, work & shopping'), ids: ['a-wechselgeld', 'a-stempeluhr', 'a-butter'] },
       { kind: 'alltag', title: T('Nachbarn & unterwegs', 'Neighbours & out and about'), ids: ['a-kratzer', 'a-wlan', 'a-sitzplatz'] },
@@ -1503,14 +1663,14 @@ const COLLECTIONS = [
       { kind: 'philo', title: T('Ich und die anderen', 'Me and others'), ids: ['p-familie', 'p-mitleid', 'p-neid', 'p-tiere'] },
       { kind: 'philo', title: T('Mein Leben', 'My life'), ids: ['p-selbstschaden', 'p-selbstliebe', 'p-gutesleben', 'p-freierwille'] },
     ] },
-  { id: 'klassik', sym: 'book', title: T('Klassische Gedankenexperimente', 'Classic thought experiments'), sub: T('Die berühmten Fälle der Philosophie', 'The famous cases of philosophy'),
+  { id: 'klassik', sym: 'book', title: T('Klassische Gedankenexperimente', 'Classic thought experiments'), sub: T('Die berühmten Fälle der Philosophie', 'Philosophy’s most famous cases'),
     desc: T('Moral, Bewusstsein, das Ich und das Wissen – die Fälle, über die Philosophinnen und Philosophen bis heute streiten.', 'Morality, consciousness, the self and knowledge – the cases philosophers still argue about.'),
     groups: [
       { kind: 'klassik', title: T('Moral', 'Morality'), ids: ['trolley', 'teich', 'schleier', 'gyges', 'karneades', 'omelas', 'luege'] },
       { kind: 'klassik', title: T('Bewusstsein', 'Consciousness'), ids: ['mary', 'china', 'zombie', 'fledermaus', 'spektrum', 'turing'] },
       { kind: 'klassik', title: T('Ich & Identität', 'Self & identity'), ids: ['teleporter', 'sumpfmann'] },
       { kind: 'klassik', title: T('Wissen & Wirklichkeit', 'Knowledge & reality'), ids: ['tank', 'hoehle', 'simulation', 'erlebnis', 'gettier', 'teekanne'] },
-      { kind: 'klassik', title: T('Physik zum Staunen', 'Physics to marvel at'), ids: ['katze', 'laplace'] },
+      { kind: 'klassik', title: T('Physik, die verblüfft', 'Physics to marvel at'), ids: ['katze', 'laplace'] },
     ] },
 ];
 const THINK_BY_ID = new Map(THINK_ALL.map(t => [t.id, t]));
@@ -1571,9 +1731,10 @@ function levelSheet(sheet, scroller, key, render, onClose) {
   const L = { stack: [] };
   let pend = null, pendRes = null; // läuft gerade unser eigenes history.go() nach dem Schließen?
   const depth = st => { const v = st && st[key]; return typeof v === 'number' ? v : 0; };
-  const show = () => render(L.stack[L.stack.length - 1], L);
+  const show = () => { render(L.stack[L.stack.length - 1], L); if (!sheet.hidden) sheetShown(sheet); };
   const finish = () => {
     sheet.hidden = true;
+    sheetHidden(sheet);
     setTimeout(() => { if (sheet.hidden) sheet.querySelector('article').innerHTML = ''; }, 480); // erst leeren, wenn das Blatt verschwunden ist
     if (onClose) onClose();
   };
@@ -1693,14 +1854,14 @@ function cardRow(t) {
   else {
     const puzzle = t.correct != null, ok = !puzzle || rec.a === t.correct;
     st = el('span', 'th-state' + (puzzle ? (ok ? ' ok' : ' no') : ''));
-    st.append(symEl(ok ? 'checkc' : 'crossc'), el('span', 'vh', puzzle ? (ok ? T('richtig beantwortet', 'answered correctly') : T('beantwortet, nicht richtig', 'answered, not correct')) : T('beantwortet', 'answered')));
+    st.append(symEl(ok ? 'checkc' : 'crossc'), el('span', 'vh', puzzle ? (ok ? T('richtig beantwortet', 'answered correctly') : T('beantwortet, nicht richtig', 'answered incorrectly')) : T('beantwortet', 'answered')));
   }
   r.append(icBox(t.icon), rt, st);
   r.onclick = () => thinkL.push({ t: 'card', id: t.id });
   return r;
 }
 
-function optButtons(opts, chosen, correct, onPick) {
+function optButtons(opts, chosen, correct, onPick, mine = T('Deine Antwort', 'Your answer')) {
   const box = el('div', 'opts' + (chosen != null ? ' picked' : ''));
   // Rätsel mit Lösung: nach der Antwort gesperrt und eingefärbt – die Auflösung steht direkt darunter.
   const locked = correct != null && chosen != null;
@@ -1708,7 +1869,8 @@ function optButtons(opts, chosen, correct, onPick) {
     const b = el('button', 'opt');
     b.type = 'button';
     const right = locked && i === correct, wrong = locked && i === chosen && i !== correct;
-    if (chosen === i) { b.classList.add('chosen'); b.setAttribute('aria-pressed', 'true'); b.append(el('span', 'yours', T('Deine Wahl', 'Your choice'))); }
+    b.setAttribute('aria-pressed', chosen === i ? 'true' : 'false');
+    if (chosen === i) { b.classList.add('chosen'); b.append(el('span', 'yours', mine)); }
     b.append(el('span', 'txt', optLabel(o)));
     if (right) b.classList.add('right');
     if (wrong) b.classList.add('wrong');
@@ -1754,12 +1916,12 @@ function renderCard(t, fresh = false) {
   // Heikles Thema: zuerst nur der Hinweis. Die Frage erscheint erst auf Wunsch, Überspringen zählt nirgends.
   if (t.care && !rec && !(entry && entry.careOk)) {
     const box = el('section', 'think-care');
-    const show = el('button', 'btn', T('Frage zeigen', 'Show the question'));
+    const show = el('button', 'btn', T('Frage zeigen', 'Show question'));
     show.type = 'button';
     show.onclick = () => { if (entry) entry.careOk = true; renderCard(t); };
     box.append(icBox('info'), el('h2', null, careLabel(t)),
       el('p', null, T('Diese Frage berührt ein persönliches Thema. Lies nur weiter, wenn es für dich gerade passt. Wer überspringt, verpasst nichts, und nichts zählt dagegen.',
-        'This question touches on a personal topic. Only read on if it feels right for you just now. Skipping it costs you nothing, and nothing counts against you.')),
+        'This question touches on a personal topic. Only read on if it feels right for you right now. Skipping it costs you nothing, and nothing counts against you.')),
       show, skipButton(t, meta));
     b.append(box);
     return;
@@ -1773,10 +1935,13 @@ function renderCard(t, fresh = false) {
     const y = thinkScroll.scrollTop;
     renderCard(t, first);
     thinkScroll.scrollTop = y;
-    if (first) b.querySelector('.think-res > :first-child')?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+    say(t.correct != null ? (i === t.correct ? T('Richtig!', 'Correct!') : T('Nicht ganz. Richtig ist: ', 'Not quite. The answer is: ') + optLabel(t.opts[t.correct]))
+      : T('Deine Antwort: ', 'Your answer: ') + optLabel(t.opts[i]));
+    // Nach der Antwort sanft zum neuen Abschnitt, damit die Rückmeldung sichtbar wird
+    if (first) b.querySelector('.think-res > :first-child')?.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
   }));
   if (!rec) {
-    b.append(el('p', 'think-note', T('Erst entscheiden – dann kommt die Auflösung.', 'Decide first – then the resolution follows.')));
+    b.append(el('p', 'think-note', T('Erst entscheiden, dann kommt die Auflösung.', 'Decide first, then see the explanation.')));
     if (t.care) b.append(skipButton(t, meta, 'link'));
     return;
   }
@@ -1786,21 +1951,21 @@ function renderCard(t, fresh = false) {
   if (t.correct != null) {
     const ok = rec.a === t.correct;
     const v = el('p', 'think-verdict ' + (ok ? 'ok' : 'no'));
-    v.append(symEl(ok ? 'checkc' : 'crossc', 'in'), el('span', null, ok ? T('Richtig!', 'Correct!') : T('Nicht ganz – richtig ist: ', 'Not quite – the answer is: ') + optLabel(t.opts[t.correct])));
+    v.append(symEl(ok ? 'checkc' : 'crossc', 'in'), el('span', null, ok ? T('Richtig!', 'Correct!') : T('Nicht ganz. Richtig ist: ', 'Not quite. The answer is: ') + optLabel(t.opts[t.correct])));
     res.append(v);
   } else if (t.calm) {
-    res.append(el('p', 'think-note', T('Du kannst deine Wahl jederzeit ändern.', 'You can change your choice at any time.'))); // „keine falsche Antwort“ sagt calm
+    res.append(el('p', 'think-note', T('Du kannst deine Antwort jederzeit ändern.', 'You can change your answer at any time.'))); // „keine falsche Antwort“ sagt calm
   } else {
-    res.append(el('p', 'think-note', T('Hier gibt es keine „richtige“ Antwort. Du kannst deine Wahl jederzeit ändern.', 'There is no “right” answer here. You can change your choice at any time.')));
+    res.append(el('p', 'think-note', T('Hier gibt es keine „richtige“ Antwort. Du kannst deine Antwort jederzeit ändern.', 'There’s no “right” answer here. You can change your answer at any time.')));
   }
   if (t.kind === 'alltag') { if (!renderAlltagRes(t, rec, res, redraw)) return; }
   else if (t.kind === 'philo') renderPhiloRes(t, rec, res, redraw);
   else {
-    res.append(el('h3', null, T('Auflösung', 'Resolution')));
+    res.append(el('h3', null, T('Auflösung', 'Explanation')));
     for (const [head, txt] of t.args) res.append(el('h4', null, head), el('p', null, txt));
   }
   if (t.twist) {
-    res.append(el('h3', null, T('Und wenn …?', 'And what if …?')), el('p', null, t.twist.text), el('p', 'think-q2', t.twist.q));
+    res.append(el('h3', null, T('Und wenn …?', 'What if…?')), el('p', null, t.twist.text), el('p', 'think-q2', t.twist.q));
     res.append(optButtons(t.twist.opts, rec.t, null, i => { rec.t = i; saveThink(); redraw(); }));
     if (rec.t != null) res.append(el('p', 'think-twistnote', t.twist.note));
   }
@@ -1819,7 +1984,8 @@ function renderCard(t, fresh = false) {
     res.append(sh);
   }
   const nid = nextThinkId(t);
-  const next = el('button', 'btn', nid ? T('Nächste Frage →', 'Next question →') : T('Alle beantwortet – zur Sammlung', 'All answered – to the collection'));
+  if (!nid) res.append(el('p', 'think-note', T('Alle Fragen dieser Sammlung sind beantwortet.', 'All done: you’ve answered every question in this collection.')));
+  const next = el('button', 'btn', nid ? T('Nächste Frage ›', 'Next question ›') : T('Zurück zur Sammlung', 'Back to the collection'));
   next.type = 'button';
   next.onclick = () => nid ? thinkGoto(nid) : thinkToColl(meta.coll);
   res.append(next);
@@ -1851,7 +2017,7 @@ function renderAlltagRes(t, rec, res, redraw) {
   res.append(el('h3', null, T('Was gibt für dich den Ausschlag?', 'What tips the balance for you?')));
   res.append(el('p', 'think-lead', T('Wähle den Grund, der für dich am meisten zählt.', 'Pick the reason that matters most to you.')));
   const picked = rec.w ? order.indexOf(rec.w) : null;
-  res.append(optButtons(order.map(key => t.why[key]), picked, null, i => { rec.w = order[i]; saveThink(); redraw(); }));
+  res.append(optButtons(order.map(key => t.why[key]), picked, null, i => { rec.w = order[i]; saveThink(); redraw(); }, T('Dein Grund', 'Your reason')));
   if (rec.w == null) {
     const skip = el('button', 'think-skip', T('Überspringen', 'Skip'));
     skip.type = 'button';
@@ -1861,8 +2027,8 @@ function renderAlltagRes(t, rec, res, redraw) {
   }
   res.append(el('h3', null, T('Drei Blickwinkel', 'Three angles')));
   if (t.calm) res.append(el('p', 'think-calm', t.calm));
-  res.append(el('p', 'think-lead', T('Dieselbe Antwort kann man aus ganz verschiedenen Gründen geben. So sieht der Fall aus jedem Blickwinkel aus.',
-    'You can give the same answer for quite different reasons. This is how the case looks from each angle.')));
+  res.append(el('p', 'think-lead', T('Dieselbe Antwort kann man aus ganz verschiedenen Gründen geben. So sieht die Frage aus jedem Blickwinkel aus.',
+    'You can give the same answer for quite different reasons. This is how the question looks from each angle.')));
   const near = (t.opts[rec.a] || {}).l;
   const wrap = el('div', 'lenses');
   for (const key of ['F', 'R', 'C']) {
@@ -1882,7 +2048,7 @@ function renderAlltagRes(t, rec, res, redraw) {
   res.append(wrap);
   if (rec.w && near && rec.w !== near) res.append(el('p', 'think-note', T(
     `Deine Antwort liegt nahe am Blickwinkel „${LENSES[near].name}“, dein Grund beim Blickwinkel „${LENSES[rec.w].name}“. Das ist kein Widerspruch: Was man tut und warum man es tut, gehört nicht immer zur selben Denkweise.`,
-    `Your answer is close to the “${LENSES[near].name}” angle, your reason to “${LENSES[rec.w].name}”. That is no contradiction: what you do and why you do it don’t always belong to the same way of thinking.`)));
+    `Your answer is close to the “${LENSES[near].name}” angle, your reason to “${LENSES[rec.w].name}”. That isn’t a contradiction: what you do and why you do it don’t always belong to the same way of thinking.`)));
   if (t.fact) res.append(el('h3', null, T('Gut zu wissen', 'Good to know')), el('p', null, t.fact));
   if (t.help) { const h = el('p', 'think-help'); h.append(symEl('info', 'in'), el('span', null, t.help)); res.append(h); }
   return true;
@@ -1901,7 +2067,7 @@ function renderPhiloRes(t, rec, res, redraw) {
     'Summarised in plain words, not quoted. Many of these questions were never put to the thinkers in this form: their basic ideas are applied here.')));
   const sum = el('p', 'think-lead');
   if (near.length) sum.append(T('Deiner Antwort am nächsten: ', 'Closest to your answer: '), el('b', null, near.join(', ')));
-  else sum.textContent = T('Keine der Stimmen wählt genau deine Antwort. Auch das kommt vor.', 'None of the voices picks exactly your answer. That happens too.');
+  else sum.textContent = T('Keiner der Denker wählt genau deine Antwort. Auch das kommt vor.', 'None of the thinkers picks exactly your answer. That happens too.');
   res.append(sum);
   const list = el('div', 'voices');
   for (const v of t.voices) {
@@ -1923,7 +2089,7 @@ function renderPhiloRes(t, rec, res, redraw) {
     say.append(el('b', null, she ? T('So sähe sie es wohl: ', 'How she would probably see it: ') : T('So sähe er es wohl: ', 'How he would probably see it: ')), v.says);
     box.append(vh, idea, say);
     if (v.dispute) { const d = el('p', 'dispute'); d.append(el('b', null, T('Zur Einordnung: ', 'For context: ')), v.dispute); box.append(d); }
-    box.append(el('p', 'src', T('Nachlesen: ', 'Read more: ') + v.read));
+    box.append(el('p', 'src', T('Fundstelle: ', 'Source: ') + v.read));
     const fit = el('div', 'fit' + (fits ? ' yes' : ''));
     if (fits) fit.append(symEl('checkc', 'in'), el('span', null, T('Passt zu deiner Antwort', 'Fits your answer')));
     else if (!v.fit.length) fit.append(symEl('own', 'in'), el('span', null, T('Geht einen eigenen Weg', she ? 'Goes her own way' : 'Goes his own way')));
@@ -1948,7 +2114,7 @@ function renderPhiloRes(t, rec, res, redraw) {
   const top = Object.entries(count).sort((a, b) => b[1] - a[1]);
   if (top.length) {
     const baro = el('p', 'baro');
-    baro.append(T('Dein Philosophen-Barometer bisher: ', 'Your philosopher barometer so far: '), el('b', null, top.map(([w, n]) => personShort(w) + ' ' + n).join(' · ')));
+    baro.append(T('Dein Philosophen-Barometer bisher: ', 'Who you’ve agreed with so far: '), el('b', null, top.map(([w, n]) => personShort(w) + ' ' + n).join(' · ')));
     res.append(baro);
   }
   if (t.stats) res.append(el('h3', null, T('So sehen es Fachleute', 'What experts think')), el('p', null, t.stats.txt), el('p', 'src', T('Quelle: ', 'Source: ') + t.stats.src));
@@ -2017,10 +2183,10 @@ async function shareCardImage(t, kind) {
   g.fillText(T('WikiFeed · Was meinst du?', 'WikiFeed · What do you think?'), P, H - P - 32);
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   cv.width = cv.height = 0; cv = null; // Speicher sofort freigeben
-  if (!blob) { toast(T('Das Bild ließ sich nicht erzeugen', 'The image could not be created')); return; }
+  if (!blob) { toast(T('Das Bild ließ sich nicht erzeugen. Versuche es noch einmal.', 'The image couldn’t be created. Try again.')); return; }
   const file = new File([blob], `wikifeed-${t.id}.png`, { type: 'image/png' });
   try { await navigator.share({ files: [file], title: t.title }); }
-  catch (e) { if (e && e.name !== 'AbortError') toast(T('Teilen hat nicht geklappt', 'Sharing did not work')); }
+  catch (e) { if (e && e.name !== 'AbortError') toast(T('Teilen hat nicht geklappt. Versuche es noch einmal.', 'Couldn’t share. Try again.')); }
 }
 
 // „Deine Standpunkte“ (vorläufig, bis das Denkprofil kommt): die bisherigen Achsen, verständlich benannt und mit Anzahl.
@@ -2054,8 +2220,8 @@ function renderStandpoints(box) {
   box.append(head);
   const shown = thinkAxes().filter(a => a.vals.length >= AXIS_MIN);
   if (!shown.length) {
-    box.append(el('p', 'th-hint', T(`Ab ${AXIS_MIN} Antworten zu Moral, Bewusstsein oder dem Ich siehst du hier, wohin du neigst. Die Fragen dazu stehen unter „Klassische Gedankenexperimente“.`,
-      `After ${AXIS_MIN} answers on morality, consciousness or the self you will see here where you lean. You will find these questions under “Classic thought experiments”.`)));
+    box.append(el('p', 'th-hint', T(`Ab ${AXIS_MIN} Antworten zu Moral, Bewusstsein oder dazu, was dich ausmacht, siehst du hier, wohin du neigst. Die Fragen dazu stehen unter „Klassische Gedankenexperimente“, eine auch unter „Rätsel & Paradoxien“.`,
+      `After ${AXIS_MIN} answers on morality, consciousness or what makes you you, you’ll see here where you lean. You’ll find these questions under “Classic thought experiments”, and one under “Puzzles & paradoxes”.`)));
     return;
   }
   const wrap = el('div', 'th-axes');
@@ -2115,6 +2281,7 @@ function buildDenken() {
   const box = $('think-decide');
   box.innerHTML = '';
   dk.daily = el('section', 'th-daily');
+  dk.daily.setAttribute('aria-label', T('Frage des Tages', 'Question of the day'));
   dk.daily.onclick = () => thinkL.open({ t: 'card', id: dailyThought().id });
   box.append(dk.daily, el('h2', 'th-sec', T('Entdecken', 'Discover')));
   const g = el('div', 'th-group');
@@ -2140,7 +2307,7 @@ function buildDenken() {
     const tb = el('button', 'th-trolley');
     tb.type = 'button';
     const rt = el('span', 'th-rt');
-    rt.append(el('b', null, T('Das Trolley-Spiel', 'The Trolley Game')),
+    rt.append(el('b', null, T('Das Trolley-Spiel', 'The trolley game')),
       el('span', 'th-q', T(`Weiche, Brücke & Co.: ${TROLLEY_CLASSICS.length} Klassiker, Zufallsrunden und ${TROLLEY_STACK.length} Fälle aus der Forschung`, `Switch, footbridge & co.: ${TROLLEY_CLASSICS.length} classics, random rounds and ${TROLLEY_STACK.length} cases from research`)));
     tb.append(icBox('tram'), rt, chevEl());
     tb.onclick = () => openTrolley();
@@ -2159,7 +2326,7 @@ function updateDenken() {
   s.style.setProperty('--kc', kind.c);
   const k = el('span', 'th-kind');
   k.append(el('span', 'caps', T('Frage des Tages', 'Question of the day')), document.createTextNode('· ' + kind.short));
-  s.append(k, icBox(d.icon), el('h3', null, d.title));
+  s.append(k, icBox(d.icon), el('h2', null, d.title));
   if (!rec) {
     s.append(el('p', 'th-dtext', d.text), el('p', 'th-dq', d.q));
     const go = el('button', 'btn th-wide', T('Jetzt entscheiden ›', 'Decide now ›'));
@@ -2167,10 +2334,10 @@ function updateDenken() {
     s.append(go);
   } else {
     const ch = el('p', 'th-dq');
-    ch.append(T('Deine Wahl: ', 'Your choice: '), el('b', null, optLabel(d.opts[rec.a])));
-    const go = el('button', 'btn ghost2 th-wide', T('Auflösung ansehen ›', 'See the resolution ›'));
+    ch.append(T('Deine Antwort: ', 'Your answer: '), el('b', null, optLabel(d.opts[rec.a])));
+    const go = el('button', 'btn ghost2 th-wide', T('Auflösung ansehen ›', 'See the explanation ›'));
     go.type = 'button';
-    s.append(el('p', 'th-dtext', d.q), ch, go, el('p', 'th-later', T('Morgen gibt es eine neue Frage.', 'Tomorrow there will be a new question.')));
+    s.append(el('p', 'th-dtext', d.q), ch, go, el('p', 'th-later', T('Morgen gibt es eine neue Frage.', 'A new question tomorrow.')));
   }
   // Sammlungen: Fortschritt je Zeile
   for (const r of dk.rows) {
@@ -2329,7 +2496,7 @@ function renderDykSheet() {
     for (const it of d.items) g.append(dykButton(it));
     b.append(g);
   }
-  b.append(el('p', 'th-foot dyk-src', T('Quelle: Rubrik „Schon gewusst?“ der Wikipedia-Hauptseite, Text unter CC BY-SA 4.0.', 'Source: the “Did you know …” section of the Wikipedia main page, text under CC BY-SA 4.0.')));
+  b.append(el('p', 'th-foot dyk-src', T('Quelle: Rubrik „Schon gewusst?“ der Wikipedia-Hauptseite, Text unter CC BY-SA 4.0.', 'Source: the “Did you know” section of the Wikipedia main page, text under CC BY-SA 4.0.')));
 }
 
 // ---------- Staunen: Fundstücke ----------
@@ -2366,7 +2533,7 @@ function fundOpen(f, i) {
 const stepsLabel = f => T(`${f.steps.length} Schritte`, `${f.steps.length} steps`);
 const progLabel = p => p.read.size ? T(`${p.read.size} von ${p.n} gelesen`, `${p.read.size} of ${p.n} read`) : null;
 function fundGoLabel(p) {
-  if (p.done) return T('Noch einmal von vorn', 'Start again');
+  if (p.done) return T('Neu beginnen', 'Start over');
   if (!p.read.size && !p.next) return T('Mit Schritt 1 beginnen', 'Start with step 1');
   return T(`Weiterlesen bei Schritt ${p.next + 1}`, `Continue with step ${p.next + 1}`);
 }
@@ -2502,6 +2669,7 @@ function buildStaunen() {
   const box = $('think-wonder');
   box.innerHTML = '';
   sn.today = el('section', 'th-daily st-today');
+  sn.today.setAttribute('aria-label', T('Heute', 'Today'));
   sn.dyk = el('div');
   box.append(sn.today, sn.dyk);
   sn.rows = [];
@@ -2543,8 +2711,8 @@ function updateStaunen() {
     // Das Bild nur einmal laden, solange es dasselbe Fundstück ist
     if (!sn.fig || sn.figFor !== f.id) { sn.fig = fundFigure(f, 640); sn.figFor = f.id; }
     const part = el('div', 'st-fund' + (d0 ? ' sep' : ''));
-    part.append(el('p', 'st-label', T('Fundstück', 'Curiosity')), el('h3', null, f.object), el('p', 'th-dtext', f.teaser || f.q || T('Was steckt dahinter?', 'What’s behind it?')));
-    const go = el('button', 'btn th-wide', p.read.size ? fundGoLabel(p) + ' ›' : T('Ansehen ›', 'Take a look ›'));
+    part.append(el('p', 'st-label', T('Fundstück', 'Curiosity')), el('h2', null, f.object), el('p', 'th-dtext', f.teaser || f.q || T('Was steckt dahinter?', 'What’s behind it?')));
+    const go = el('button', 'btn th-wide', p.read.size ? fundGoLabel(p) + ' ›' : T('Ansehen ›', 'Explore ›'));
     go.type = 'button';
     go.onclick = () => thinkL.open({ t: 'fund', id: f.id });
     part.append(go);
@@ -2560,7 +2728,7 @@ function updateStaunen() {
     const r = el('button', 'th-row');
     r.type = 'button';
     const rt = el('span', 'th-rt'), meta = el('span', 'th-meta');
-    meta.append(el('span', null, d0 && n > d0.items.length ? T(`${d0.items.length} von heute · ${n} insgesamt`, `${d0.items.length} from today · ${n} in all`) : T(`${n} Fakten`, `${n} facts`)));
+    meta.append(el('span', null, d0 && n > d0.items.length ? T(`${d0.items.length} von heute · ${n} insgesamt`, `${d0.items.length} from today · ${n} total`) : T(`${n} Fakten`, `${n} facts`)));
     rt.append(el('b', null, T('Alle Fakten', 'All facts')), el('span', 'th-q', days.length > 2 ? T(`Von heute und ${days.length - 1} Tagen davor`, `From today and ${days.length - 1} earlier days`) : days.length === 2 ? T('Von heute und einem Tag davor', 'From today and one earlier day') : T('Von heute', 'From today')), meta);
     if (!d0) rt.querySelector('.th-q').textContent = T('Aus den letzten Tagen', 'From the last few days');
     r.append(icBox('spark'), rt, chevEl());
@@ -2669,12 +2837,12 @@ function holeBox(title) {
   s.dataset.t = title;
   return s;
 }
-const HOLE_HEAD = [[T('Eine Abzweigung', 'One detour')], [T('Zwei Abzweigungen', 'Two detours')], [T('Drei Abzweigungen', 'Three detours')]];
+
 async function fillHole(sec) {
   let res = null;
   try { res = await holeFor(sec.dataset.t, holeLinks(readerBody)); } catch {}
   if (!res?.length) { sec.remove(); return; }
-  sec.append(el('h2', 'rh-h', HOLE_HEAD[res.length - 1][0]), el('p', 'rh-sub', T('Verwandte Artikel zum Weiterlesen.', 'Related articles to read next.')));
+  sec.append(el('h2', 'rh-h', T('Weiterlesen', 'Read next')), el('p', 'rh-sub', T('Verwandte Artikel aus der Wikipedia.', 'Related Wikipedia articles.')));
   const list = el('div', 'rh-list');
   for (const r of res) {
     const b = el('button', 'rh-item');
@@ -2713,7 +2881,7 @@ function trailBox() {
   });
   const share = el('button', 'rt-share');
   share.type = 'button';
-  share.append(symEl('share'), el('span', null, T('Spur teilen', 'Share trail')));
+  share.append(symEl('share'), el('span', null, T('Spur teilen', 'Share your path')));
   share.onclick = () => shareTrail(list.map(e => e.title));
   box.append(path, share);
   return box;
@@ -2729,11 +2897,11 @@ async function shareTrail(titles) {
   const url = t => 'https://' + WIKI.host + '/wiki/' + encodeURIComponent(t.replace(/ /g, '_'));
   const text = titles.join(' › ') + '\n\n' + titles.map(t => t + '\n' + url(t)).join('\n\n');
   if (navigator.share) {
-    try { await navigator.share({ title: T('Meine Spur durch die Wikipedia', 'My trail through Wikipedia'), text }); return; }
+    try { await navigator.share({ title: T('Meine Spur durch die Wikipedia', 'My path through Wikipedia'), text }); return; }
     catch (e) { if (e?.name === 'AbortError') return; }
   }
-  try { await navigator.clipboard.writeText(text); toast(T('Spur kopiert', 'Trail copied')); }
-  catch { toast(T('Teilen hat nicht geklappt', 'Couldn’t share')); }
+  try { await navigator.clipboard.writeText(text); toast(T('Spur kopiert', 'Path copied')); }
+  catch { toast(T('Teilen hat nicht geklappt. Versuche es noch einmal.', 'Couldn’t share. Try again.')); }
 }
 // Beobachter am Ende des Artikels: Abzweigungen kurz vorher laden, einen Fundstück-Schritt als gelesen zählen, wenn das Ende sichtbar ist
 let holeObs = null, readEndObs = null;
@@ -2765,11 +2933,14 @@ function renderTopics() {
   box.innerHTML = '';
   for (const t of TOPICS) {
     const b = el('button', 'tchip' + (state.enabled.includes(t.id) ? ' on' : ''), t.label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', state.enabled.includes(t.id) ? 'true' : 'false');
     b.onclick = () => {
       state.enabled = state.enabled.includes(t.id) ? state.enabled.filter(x => x !== t.id) : [...state.enabled, t.id];
       store.set('enabled', state.enabled);
       topicsDirty = true;
       renderTopics();
+      box.querySelectorAll('.tchip')[TOPICS.indexOf(t)]?.focus({ preventScroll: true }); // Fokus bleibt auf dem Chip
     };
     box.append(b);
   }
@@ -2787,22 +2958,13 @@ function renderTopics() {
     r.append(el('span', null, topicLabel(id)), bar, el('span', null, Math.round(val * 100) + '%'));
     wb.append(r);
   }
-  // Bildschirm-Messwerte, um Layout-Probleme auf dem iPhone aus der Ferne zu erkennen.
-  const probe = el('div');
-  probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
-  document.body.append(probe);
-  const cs = getComputedStyle(probe);
-  const app = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  $('dims').textContent = `${T('Maße', 'Size')}: ${screen.height} · ${window.innerHeight} · ${document.documentElement.clientHeight} · ${parseFloat(cs.paddingTop) || 0} · ${parseFloat(cs.paddingBottom) || 0} · ${app ? 'App' : 'Browser'}`;
-  probe.remove();
-
   const s = state.stats;
   const readToday = s.day === today() ? s.read : 0;
-  document.getElementById('stats').textContent = T(`Heute gelesen: ${readToday} · insgesamt: ${s.total || 0}`, `Read today: ${readToday} · total: ${s.total || 0}`);
+  document.getElementById('stats').textContent = T(`Heute gelesen: ${readToday} · Insgesamt: ${s.total || 0}`, `Read today: ${readToday} · Total: ${s.total || 0}`);
 }
 document.getElementById('quality').onchange = e => { state.quality = e.target.checked; store.set('quality', state.quality); topicsDirty = true; };
 document.getElementById('reset').onclick = () => {
-  if (!confirm(T('Alles Gelernte zurücksetzen? Deine Themenauswahl und gemerkten Artikel bleiben.', 'Reset everything the app has learned? Your topic selection and saved articles are kept.'))) return;
+  if (!confirm(T('Gelerntes zurücksetzen? Deine Themenauswahl und deine gemerkten Artikel bleiben.', 'Reset what the app has learned? Your topic selection and saved articles are kept.'))) return;
   state.weights = {}; store.set('weights', {});
   renderTopics(); topicsDirty = true;
   toast(T('Zurückgesetzt', 'Reset'));
@@ -2926,7 +3088,7 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+  toastTimer = setTimeout(() => t.classList.remove('show'), Math.min(5000, 1400 + Math.max(0, msg.length - 30) * 45));
 }
 
 // ---------- Farbschemata ----------
@@ -2941,7 +3103,12 @@ function applyTheme(id) {
   const th = THEMES.find(t => t.id === id) || THEMES[0];
   document.documentElement.dataset.theme = th.id;
   document.querySelector('meta[name="theme-color"]').content = th.bg;
-  document.querySelectorAll('.tpick').forEach(b => b.classList.toggle('on', b.dataset.theme === th.id));
+  document.querySelectorAll('.tpick').forEach(b => {
+    const on = b.dataset.theme === th.id;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', on);
+    b.tabIndex = on ? 0 : -1; // ein Tab-Stopp pro Gruppe, Pfeiltasten wechseln
+  });
 }
 function renderThemePicks() {
   const box = $('theme-picks');
@@ -2949,6 +3116,7 @@ function renderThemePicks() {
   for (const th of THEMES) {
     const b = el('button', 'tpick');
     b.type = 'button';
+    b.setAttribute('role', 'radio');
     b.dataset.theme = th.id;
     const sw = el('i'); sw.style.background = th.sw;
     b.append(sw, el('span', null, th.name));
@@ -2968,6 +3136,7 @@ function setPanel(v) {
     const on = Number(b.dataset.v) === v;
     b.classList.toggle('on', on);
     b.setAttribute('aria-checked', on);
+    b.tabIndex = on ? 0 : -1;
   });
 }
 setPanel(snapPanel(Number(store.get('panel', 50))));
@@ -2989,8 +3158,8 @@ tabInput.oninput = () => {
 
 // ---------- Alle Daten auf diesem Gerät löschen ----------
 $('wipe').onclick = async () => {
-  if (!confirm(T('Wirklich alles löschen? Gemerkte Artikel, Antworten, Einstellungen und Gelerntes sind danach weg. Das lässt sich nicht rückgängig machen.',
-    'Really delete everything? Saved articles, answers, settings and what the app has learned will be gone. This cannot be undone.'))) return;
+  if (!confirm(T('Alle Daten löschen? Gemerkte Artikel, Antworten, Einstellungen und Gelerntes sind danach weg. Das lässt sich nicht rückgängig machen.',
+    'Delete all data? Saved articles, answers, settings and what the app has learned will be gone. This can’t be undone.'))) return;
   try { Object.keys(localStorage).filter(k => k.startsWith('wf.')).forEach(k => localStorage.removeItem(k)); } catch {}
   try { if ('caches' in window) await caches.delete(ART_CACHE); } catch {}
   location.reload();
@@ -3020,7 +3189,7 @@ document.querySelectorAll('.view').forEach(v => {
 });
 function setRsize(v) {
   document.documentElement.style.setProperty('--reader-size', v + 'px');
-  document.querySelectorAll('#rsize-seg button').forEach(b => { const on = Number(b.dataset.v) === v; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  document.querySelectorAll('#rsize-seg button').forEach(b => { const on = Number(b.dataset.v) === v; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; });
 }
 setRsize([16, 18, 21].includes(store.get('rsize', 18)) ? store.get('rsize', 18) : 18);
 document.querySelectorAll('#rsize-seg button').forEach(b => {
@@ -3036,7 +3205,7 @@ tiltBox.onchange = async () => {
   const ok = await gyroStart();
   store.set('tilt', ok);
   tiltBox.checked = ok;
-  toast(ok ? T('3D-Effekt an – neig das Handy im Feed', '3D effect on – tilt your phone in the feed') : T('Lagesensor nicht verfügbar oder nicht erlaubt', 'Motion sensor unavailable or not allowed'));
+  toast(ok ? T('3D-Effekt an. Neig das Handy im Feed.', '3D effect on. Tilt your phone in the feed.') : T('Der 3D-Effekt braucht Zugriff auf den Bewegungssensor. Erlaube ihn, wenn das Gerät danach fragt.', 'The 3D effect needs access to the motion sensor. Allow it when your device asks.'));
 };
 // War der Effekt an, braucht das iPhone nach jedem Start einen Fingertipp, bevor der Sensor wieder liefern darf.
 if (tiltBox.checked && !reduceMotion) {

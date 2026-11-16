@@ -12,7 +12,7 @@ const gameBody = $('game-body');
 const gameScroll = $('game-scroll');
 
 // Zahlen: Awad u. a. (2020), PNAS – 70 000 Menschen in 42 Ländern, Durchschnitt über die Länder.
-const STAT_SOURCE = T('Studie mit 70 000 Menschen in 42 Ländern (Awad u. a., PNAS 2020)', 'Study with 70,000 people in 42 countries (Awad et al., PNAS 2020)');
+const STAT_SOURCE = T('Studie mit 70\u00a0000 Menschen in 42 Ländern (Awad u. a., PNAS 2020)', 'Study with 70,000 people in 42 countries (Awad et al., PNAS 2020)');
 
 const TROLLEY_CLASSICS = [
   { id: 'weiche', title: 'Die Weiche', scene: 'switch', main: ['worker', 5], side: ['worker', 1], stat: 81,
@@ -59,34 +59,34 @@ const TROLLEY_CLASSICS = [
 
 // English texts for the classics (same ids as above).
 const TROLLEY_CLASSICS_EN = {
-  weiche: { title: 'The Switch', q: 'Do you pull the lever?', yes: 'Pull the lever', no: 'Do nothing',
-    text: 'A runaway tram is hurtling towards five track workers. You are standing at the switch. If you pull the lever, the tram turns onto the side track and kills a single worker there.',
+  weiche: { title: 'The switch', q: 'Do you pull the lever?', yes: 'Pull the lever', no: 'Do nothing',
+    text: 'A runaway trolley is hurtling towards five track workers. You are standing at the switch. If you pull the lever, the trolley turns onto the side track and kills a single worker there.',
     note: 'The original case, devised by Philippa Foot in 1967. Most people consider pulling the lever permissible: the death of the one is a foreseen but unintended side effect.' },
-  bruecke: { title: 'The Footbridge', q: 'Do you push the man off?', yes: 'Push him', no: 'Do nothing',
-    text: 'This time there is no switch. You are standing on a footbridge over the track, next to a very heavy man. If you push him off, his body stops the tram. He dies, the five survive.',
-    note: 'Judith Jarvis Thomson’s famous variant. The sum is the same as with the switch. But here you use a person as a means and do it with your own hands – for many that makes the difference.' },
-  schleife: { title: 'The Loop', q: 'Do you pull the lever?', yes: 'Pull the lever', no: 'Do nothing',
-    text: 'A switch again. But the side track loops back onto the main track. A heavy man is standing on the loop. Only because his body stops the tram does it no longer reach the five.',
-    note: 'Thomson’s “Loop” from 1985. The tricky part: as on the footbridge, you need the man’s body as a brake. Yet far more people agree than with pushing. So it seems to be less about “means to an end” than about whether you lay hands on someone yourself.' },
-  falltuer: { title: 'The Trapdoor', q: 'Do you open the trapdoor?', yes: 'Open the trapdoor', no: 'Do nothing',
-    text: 'Again a heavy man is standing on the footbridge. This time you do not have to touch him: he is standing on a trapdoor, and you have a lever for it at a safe distance. If you open it, he falls onto the track and stops the tram.',
-    note: 'In experiments by the psychologist Joshua Greene, clearly more people agree here than with pushing by hand. Physical closeness and your own muscle power make an act seem worse, although the result is the same.' },
-  saboteur: { title: 'The Saboteur', q: 'Do you push the saboteur off?', yes: 'Push him', no: 'Do nothing',
-    text: 'The man on the footbridge is no bystander: he deliberately destroyed the tram’s brakes in order to kill the five. If you push him off, his body stops the tram.',
-    note: 'In the literature the case is called the “Fat Villain”. Many who hesitate with an innocent man push here. Guilt changes what we may impose on someone – much as in self-defence.' },
-  chirurg: { title: 'The Surgeon', q: 'Do you sacrifice the visitor for the five?', yes: 'Yes, save the five', no: 'No',
+  bruecke: { title: 'The footbridge', q: 'Do you push the man off?', yes: 'Push him', no: 'Do nothing',
+    text: 'This time there is no switch. You are standing on a footbridge over the track, next to a very heavy man. If you push him off, his body stops the trolley. He dies, the five survive.',
+    note: 'Judith Jarvis Thomson’s famous variant. The numbers are the same as with the switch. But here you use a person as a means and do it with your own hands – for many that makes the difference.' },
+  schleife: { title: 'The loop', q: 'Do you pull the lever?', yes: 'Pull the lever', no: 'Do nothing',
+    text: 'A switch again. But the side track loops back onto the main track. A heavy man is standing on the loop. Only because his body stops the trolley does it no longer reach the five.',
+    note: 'Thomson’s “Loop” from 1985. The tricky part: as on the footbridge, you need the man’s body as a brake. Yet far more people agree to this than to pushing. So it seems to be less about “means to an end” than about whether you lay hands on someone yourself.' },
+  falltuer: { title: 'The trapdoor', q: 'Do you open the trapdoor?', yes: 'Open the trapdoor', no: 'Do nothing',
+    text: 'Again a heavy man is standing on the footbridge. This time you don’t have to touch him: he is standing on a trapdoor, and you have a lever for it at a safe distance. If you open it, he falls onto the track and stops the trolley.',
+    note: 'In experiments by the psychologist Joshua Greene, clearly more people agree to this than to pushing by hand. Physical closeness and your own muscle power make an act seem worse, although the result is the same.' },
+  saboteur: { title: 'The saboteur', q: 'Do you push the saboteur off?', yes: 'Push him', no: 'Do nothing',
+    text: 'The man on the footbridge is no bystander: he deliberately destroyed the trolley’s brakes in order to kill the five. If you push him off, his body stops the trolley.',
+    note: 'In the literature the case is called the “Fat Villain”. Many who would hesitate with an innocent man do push here. Guilt changes what we may impose on someone – much as in self-defence.' },
+  chirurg: { title: 'The surgeon', q: 'Do you sacrifice the visitor for the five?', yes: 'Yes, save the five', no: 'No',
     text: 'You are a surgeon. Five of your patients will die today unless they receive a donor organ. In the waiting room sits a perfectly healthy visitor whose organs match all five. Nobody would ever find out.',
     note: 'Five against one again, and yet almost everyone says no here. Philippa Foot and Judith Thomson used this to show: redirecting an existing danger is different from creating a new one for a bystander.' },
-  garten: { title: 'The Man in the Yard', q: 'Do you derail the tram?', yes: 'Derail it', no: 'Do nothing',
-    text: 'You can only stop the tram by derailing it with the switch. It will then plunge down a slope into a garden where a man is asleep in his hammock. He has nothing to do with the track.',
+  garten: { title: 'The man in the garden', q: 'Do you derail the trolley?', yes: 'Derail it', no: 'Do nothing',
+    text: 'You can only stop the trolley by derailing it with the switch. It will then plunge down a slope into a garden where a man is asleep in his hammock. He has nothing to do with the track.',
     note: 'The case comes from the philosopher Peter Unger. A track worker knows the risks of his job; the man in the garden is at home. Some think: whoever has not put himself in danger has a stronger right to be spared.' },
-  selbst: { title: 'You Yourself', q: 'Do you turn the tram onto yourself?', yes: 'Turn it onto me', no: 'Do nothing',
-    text: 'This time no stranger is standing on the side track. You yourself are stuck there by the foot, with the lever within reach. If you pull it, the tram hits you instead of the five.',
+  selbst: { title: 'Yourself', q: 'Do you turn the trolley onto yourself?', yes: 'Turn it onto me', no: 'Do nothing',
+    text: 'This time no stranger is standing on the side track. You yourself are stuck there by the foot, with the lever within reach. If you pull it, the trolley hits you instead of the five.',
     note: 'Judith Thomson asked this question in 2008 and changed her own mind with it: whoever would not be willing to sacrifice himself may not force that sacrifice on a stranger either. On that view even pulling the lever in the original case would not be permitted.' },
-  liebe: { title: 'The One You Love', q: 'Do you pull the lever to save your person?', yes: 'Pull the lever', no: 'Do nothing',
-    text: 'This time only one person is on the main track: the person closest to you. Five strangers are working on the side track. If you do nothing, your person dies. If you pull the lever, the five die.',
+  liebe: { title: 'The one you love', q: 'Do you pull the lever to save the one you love?', yes: 'Pull the lever', no: 'Do nothing',
+    text: 'This time only one person is on the main track: the person closest to you. Five strangers are working on the side track. If you do nothing, the person you love dies. If you pull the lever, the five die.',
     note: 'Strict utilitarians say: every life counts the same, so no. The philosopher Bernard Williams objected: anyone who first calculates, in such a moment, whether he may save his own partner has “one thought too many”.' },
-  auto: { title: 'The Self-Driving Car', q: 'Should your car swerve and sacrifice you?', yes: 'Yes, swerve', no: 'No, protect me',
+  auto: { title: 'The self-driving car', q: 'Should your car swerve and sacrifice you?', yes: 'Yes, swerve', no: 'No, protect me',
     text: 'You are alone in a self-driving car. Suddenly five people run into the road; braking is no longer possible. The car can go straight on and kill the five, or swerve into a concrete wall, which kills you. You decide beforehand how it is programmed.',
     note: 'A study in “Science” (2016) found a dilemma right here: most people approve of cars that save as many lives as possible – but would rather buy one that protects its passengers.' },
 };
@@ -271,25 +271,28 @@ function bar(label, value, hint) {
 function choiceButtons(yes, no, onPick) {
   const box = el('div', 'gchoice');
   const a = el('button', 'btn gyes', yes), b = el('button', 'btn gno', no);
-  a.onclick = () => { a.disabled = b.disabled = true; a.classList.add('picked'); onPick(true); };
-  b.onclick = () => { a.disabled = b.disabled = true; b.classList.add('picked'); onPick(false); };
+  a.type = b.type = 'button';
+  a.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-pressed', 'false');
+  const choose = (btn, yes) => { a.disabled = b.disabled = true; btn.classList.add('picked'); btn.setAttribute('aria-pressed', 'true'); onPick(yes); };
+  a.onclick = () => choose(a, true);
+  b.onclick = () => choose(b, false);
   box.append(a, b);
   return box;
 }
 
 function renderGameMenu() {
-  const b = gameScreen(T('Das Trolley-Spiel', 'The Trolley Game'));
-  const kick = el('span', 'th-kind');
-  kick.append(symEl('tram', 'in'), el('span', null, T('Weichensteller', 'Pull the Lever')));
+  const b = gameScreen(T('Das Trolley-Spiel', 'The trolley game'));
+  const kick = el('span', 'th-kind'); // nur ein Symbol pro Kopf: das große Tram-Symbol darüber
+  kick.append(el('span', null, T('Weichensteller', 'Pull the lever')));
   $('game-back').setAttribute('aria-label', T('Spiel schließen', 'Close the game'));
-  b.append(icBox('tram', 'big'), kick, el('h1', null, T('Das Trolley-Spiel', 'The Trolley Game')),
-    el('p', 'gintro', T('Eine Bahn rast heran, und du stehst am Hebel. Jede Entscheidung kostet jemanden das Leben – auch die, nichts zu tun.', 'A tram is hurtling closer, and you are at the lever. Every decision costs someone their life – including the decision to do nothing.')));
+  b.append(icBox('tram', 'big'), kick, el('h1', null, T('Das Trolley-Spiel', 'The trolley game')),
+    el('p', 'gintro', T('Eine Bahn rast heran, und du stehst am Hebel. Jede Entscheidung kostet jemanden das Leben – auch die, nichts zu tun.', 'A trolley is hurtling closer, and you’re at the lever. Every decision costs someone their life, including the decision to do nothing.')));
   const cDone = TROLLEY_CLASSICS.filter(c => tg.classics[c.id] != null).length;
   const sDone = TROLLEY_STACK.filter(d => tg.stack[d.n] != null).length;
   const modes = [
-    ['book', T('Klassiker', 'Classics'), T(`${TROLLEY_CLASSICS.length} berühmte Fälle der Philosophie, bei einigen mit Zahlen aus einer Studie mit 70 000 Menschen.`, `${TROLLEY_CLASSICS.length} famous cases from philosophy, some with figures from a study with 70,000 people.`), T(`${cDone} von ${TROLLEY_CLASSICS.length} beantwortet`, `${cDone} of ${TROLLEY_CLASSICS.length} answered`), 'classics'],
-    ['dice', T('Zufallsrunde', 'Random round'), T('10 gewürfelte Fälle – danach siehst du dein Muster.', '10 randomly rolled cases – then you see your pattern.'), T(`${tg.endless.n} Fälle gespielt`, `${tg.endless.n} cases played`), 'endless'],
-    ['stack', T('Forschungs-Stapel', 'Research stack'), T(`${TROLLEY_STACK.length} harte Fälle aus der Psychologie, ganz ohne Gleise.`, `${TROLLEY_STACK.length} hard cases from psychology, no tracks at all.`), T(`${sDone} von ${TROLLEY_STACK.length} beantwortet`, `${sDone} of ${TROLLEY_STACK.length} answered`), 'stack'],
+    ['book', T('Klassiker', 'Classics'), T(`${TROLLEY_CLASSICS.length} berühmte Fälle der Philosophie, bei einigen mit Zahlen aus einer Studie mit 70\u00a0000 Menschen.`, `${TROLLEY_CLASSICS.length} famous cases from philosophy, some with figures from a study with 70,000 people.`), T(`${cDone} von ${TROLLEY_CLASSICS.length} beantwortet`, `${cDone} of ${TROLLEY_CLASSICS.length} answered`), 'classics'],
+    ['dice', T('Zufallsrunde', 'Random round'), T('10 gewürfelte Fälle. Danach siehst du dein Muster.', '10 random cases. Then see your pattern.'), T(`${tg.endless.n} Fälle gespielt`, `${tg.endless.n} cases played`), 'endless'],
+    ['stack', T('Fälle aus der Forschung', 'Research cases'), T(`${TROLLEY_STACK.length} harte Fälle aus der Psychologie, ganz ohne Gleise.`, `${TROLLEY_STACK.length} hard cases from psychology, no tracks at all.`), T(`${sDone} von ${TROLLEY_STACK.length} beantwortet`, `${sDone} of ${TROLLEY_STACK.length} answered`), 'stack'],
   ];
   for (const [sym, name, text, prog, mode] of modes) {
     const c = el('button', 'gmode');
@@ -302,15 +305,15 @@ function renderGameMenu() {
   }
   const pat = patternBlock();
   if (pat) b.append(el('h3', null, T('Dein Muster', 'Your pattern')), pat);
-  b.append(el('p', 'gsource', T('Zahlen der Klassiker: ', 'Figures for the classics: ') + STAT_SOURCE + T('. Forschungs-Stapel: Christensen u. a. (2014), Frontiers in Psychology 5:607, CC BY.', '. Research stack: Christensen et al. (2014), Frontiers in Psychology 5:607, CC BY.')));
+  b.append(el('p', 'gsource', T('Zahlen der Klassiker: ', 'Figures for the classics: ') + STAT_SOURCE + T('. Fälle aus der Forschung: Christensen u. a. (2014), Frontiers in Psychology 5:607, CC BY.', '. Research cases: Christensen et al. (2014), Frontiers in Psychology 5:607, CC BY.')));
 }
 
 // ---------- Auswertung ----------
 const DIM_LABEL = {
-  anzahl: [T('Viele vor wenigen', 'Many before few'), T('So oft hast du die größere Gruppe gerettet.', 'How often you saved the larger group.')],
-  alter: [T('Jung vor alt', 'Young before old'), T('So oft hast du die Jüngeren gerettet.', 'How often you saved the younger ones.')],
-  art: [T('Mensch vor Tier', 'Humans before animals'), T('So oft hast du Menschen statt Tiere gerettet.', 'How often you saved humans rather than animals.')],
-  status: [T('Ärztin vor Bankräuber', 'Doctor before bank robber'), T('So oft zählte für dich, wer jemand ist.', 'How often it mattered to you who someone is.')],
+  anzahl: [T('Viele vor wenigen', 'Many over few'), T('So oft hast du die größere Gruppe gerettet.', 'How often you saved the larger group.')],
+  alter: [T('Jung vor alt', 'Young over old'), T('So oft hast du die Jüngeren gerettet.', 'How often you saved the younger ones.')],
+  art: [T('Mensch vor Tier', 'Humans over animals'), T('So oft hast du Menschen statt Tiere gerettet.', 'How often you saved humans rather than animals.')],
+  status: [T('Ärztin vor Bankräuber', 'Doctor over bank robber'), T('So oft zählte für dich, wer jemand ist.', 'How often it mattered to you who someone is.')],
   regel: [T('Wer sich an Regeln hält', 'Those who follow the rules'), T('So oft hast du die verschont, die nichts falsch gemacht haben.', 'How often you spared those who had done nothing wrong.')],
 };
 function patternBlock() {
@@ -332,7 +335,7 @@ function patternBlock() {
     const c = dl.i ? st.i : st.a; c[1]++; c[0] += v;
   }
   if (st.p[1] >= 4 && st.d[1] >= 4) {
-    box.append(el('h4', null, T('Forschungs-Stapel: Wann sagst du Ja?', 'Research stack: when do you say yes?')),
+    box.append(el('h4', null, T('Fälle aus der Forschung: Wann sagst du Ja?', 'Research cases: when do you say yes?')),
       bar(T('Eigenhändig töten', 'Killing with your own hands'), pct(st.p[0], st.p[1]), T(`Ja in ${st.p[0]} von ${st.p[1]} Fällen`, `Yes in ${st.p[0]} of ${st.p[1]} cases`)),
       bar(T('Aus der Distanz', 'From a distance'), pct(st.d[0], st.d[1]), T(`Ja in ${st.d[0]} von ${st.d[1]} Fällen`, `Yes in ${st.d[0]} of ${st.d[1]} cases`)));
     if (st.i[1] >= 4 && st.a[1] >= 4) box.append(
@@ -360,10 +363,10 @@ function showClassic(i) {
     saveTg();
     await sc.play(yes);
     const r = el('div', 'gresult');
-    if (c.stat != null) r.append(bar(T('So viele würden hier eingreifen', 'Share who would intervene here'), c.stat, STAT_SOURCE));
+    if (c.stat != null) r.append(bar(T('So viele würden hier eingreifen', 'People who would intervene'), c.stat, STAT_SOURCE));
     r.append(el('p', null, c.note));
     const last = i === TROLLEY_CLASSICS.length - 1;
-    const next = el('button', 'btn gnext', last ? T('Fertig – zum Menü', 'Done – back to the menu') : T('Nächster Fall →', 'Next case →'));
+    const next = el('button', 'btn gnext', last ? T('Zurück zum Menü', 'Back to the menu') : T('Nächster Fall ›', 'Next case ›'));
     next.onclick = () => last ? toMenu() : showClassic(i + 1);
     r.append(next);
     b.append(r);
@@ -418,7 +421,7 @@ function showEndless() {
   $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
   const sc = makeScene({ scene: 'switch', main: grpFigs(cs.main), side: grpFigs(cs.side) });
   const line = (label, g, note) => { const p = el('p', 'gline'); p.append(el('b', null, label + ': '), grpText(g) + (note ? ` (${note})` : '')); return p; };
-  b.append(el('p', 'gstep', T(`Fall ${endlessRun + 1} von 10`, `Case ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the tram hits the main track.')));
+  b.append(el('p', 'gstep', T(`Fall ${endlessRun + 1} von 10`, `Case ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the trolley hits the main track.')));
   b.append(choiceButtons(T('Weiche umlegen', 'Pull the lever'), T('Nichts tun', 'Do nothing'), async yes => {
     const e = tg.endless;
     e.n++; if (yes) e.sw++;
@@ -433,7 +436,7 @@ function showEndless() {
     const r = el('div', 'gresult');
     const dead = yes ? cs.side : cs.main, alive = yes ? cs.main : cs.side;
     r.append(el('p', null, T(`Gerettet: ${grpText(alive)}. Gestorben: ${grpText(dead)}.`, `Saved: ${grpText(alive)}. Died: ${grpText(dead)}.`)));
-    const next = el('button', 'btn gnext', endlessRun >= 10 ? T('Auswertung ansehen →', 'See the results →') : T('Nächster Fall →', 'Next case →'));
+    const next = el('button', 'btn gnext', endlessRun >= 10 ? T('Auswertung ansehen ›', 'See the results ›') : T('Nächster Fall ›', 'Next case ›'));
     next.onclick = () => endlessRun >= 10 ? showEndlessSummary() : showEndless();
     r.append(next);
     b.append(r);
@@ -445,9 +448,9 @@ function showEndlessSummary() {
   b.append(icBox('chart', 'big'), el('h2', null, T('Dein Muster', 'Your pattern')), el('p', 'gintro', T(`Ausgewertet sind alle ${tg.endless.n} Fälle, die du bisher in Zufallsrunden gespielt hast.`, `This covers all ${tg.endless.n} cases you have played in random rounds so far.`)));
   const pat = patternBlock();
   if (pat) b.append(pat);
-  const more = el('button', 'btn gnext', T('Noch eine Zufallsrunde →', 'Another random round →'));
+  const more = el('button', 'btn gnext', T('Noch eine Zufallsrunde ›', 'Another random round ›'));
   more.onclick = startEndless;
-  const menu = el('button', 'btn ghost2 gnext', T('Zum Menü', 'Back to the menu'));
+  const menu = el('button', 'btn ghost2 gnext', T('Zurück zum Menü', 'Back to the menu'));
   menu.onclick = toMenu;
   b.append(more, menu);
 }
@@ -470,14 +473,14 @@ function startStack() {
   $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
   const done = TROLLEY_STACK.filter(d => tg.stack[d.n] != null).length;
   if (done > 0 && done < TROLLEY_STACK.length) return showStack();
-  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
-  b.append(icBox('stack', 'big'), el('h2', null, T('Forschungs-Stapel', 'Research stack')),
+  const b = gameScreen(T('Fälle aus der Forschung', 'Research cases'));
+  b.append(icBox('stack', 'big'), el('h2', null, T('Fälle aus der Forschung', 'Research cases')),
     el('p', null, T('Diese 46 Fälle stammen aus der psychologischen Forschung. Jedes Szenario kommt zweimal vor, in zwei Varianten, die sich in einem entscheidenden Detail unterscheiden.', 'These 46 cases come from psychological research. Each scenario appears twice, in two variants that differ in one decisive detail.')),
-    el('p', null, T('Sie sind bewusst hart: Es geht immer um Leben und Tod, manchmal um Kinder. Du kannst jederzeit aufhören, dein Stand bleibt gespeichert.', 'They are deliberately tough: it is always about life and death, sometimes about children. You can stop at any time; your progress is saved.')));
-  if (done === TROLLEY_STACK.length) b.append(el('p', 'gnote', T('Du hast alle 46 Fälle beantwortet. Wenn du neu startest, werden deine Antworten gelöscht.', 'You have answered all 46 cases. If you start again, your answers will be deleted.')));
-  const go = el('button', 'btn gnext', done === TROLLEY_STACK.length ? T('Von vorn beginnen', 'Start over') : T('Starten →', 'Start →'));
+    el('p', null, T('Sie sind bewusst hart: Es geht immer um Leben und Tod, manchmal um Kinder. Du kannst jederzeit aufhören, dein Stand bleibt gespeichert.', 'They’re deliberately tough: it’s always about life and death, sometimes about children. You can stop at any time; your progress is saved.')));
+  if (done === TROLLEY_STACK.length) b.append(el('p', 'gnote', T('Du hast alle 46 Fälle beantwortet. Wenn du neu startest, werden deine Antworten gelöscht.', 'You’ve answered all 46 cases. If you start over, your answers will be deleted.')));
+  const go = el('button', 'btn gnext', done === TROLLEY_STACK.length ? T('Neu beginnen', 'Start over') : T('Starten ›', 'Start ›'));
   go.onclick = () => { if (done === TROLLEY_STACK.length) { tg.stack = {}; tg.order = null; saveTg(); } showStack(); };
-  b.append(go, el('p', 'gsource', T('Quelle: Christensen, Flexas, Calabrese, Gut & Gomila (2014): „Moral judgment reloaded: a moral dilemma validation study“. Frontiers in Psychology 5:607. Lizenz CC BY. Deutsche Fassung der Autoren.', 'Source: Christensen, Flexas, Calabrese, Gut & Gomila (2014): “Moral judgment reloaded: a moral dilemma validation study”. Frontiers in Psychology 5:607. Licence CC BY. English version by the authors.')));
+  b.append(go, el('p', 'gsource', T('Quelle: Christensen, Flexas, Calabrese, Gut & Gomila (2014): „Moral judgment reloaded: a moral dilemma validation study“. Frontiers in Psychology 5:607. Lizenz CC BY. Deutsche Fassung der Autoren, leicht angepasst.', 'Source: Christensen, Flexas, Calabrese, Gut & Gomila (2014): “Moral judgment reloaded: a moral dilemma validation study”. Frontiers in Psychology 5:607. Licence CC BY. English version by the authors, lightly adapted.')));
 }
 function showStack() {
   const order = stackOrder();
@@ -487,7 +490,7 @@ function showStack() {
   const tt = TROLLEY_STACK_TITLES[d.s];
   const title = Array.isArray(tt) ? tt[1] : tt;
   const done = order.filter(x => tg.stack[x] != null).length;
-  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
+  const b = gameScreen(T('Fälle aus der Forschung', 'Research cases'));
   b.append(el('p', 'gstep', T(`Fall ${done + 1} von ${order.length}`, `Case ${done + 1} of ${order.length}`)), el('h2', null, title), el('p', null, d.text), el('p', null, d.act), el('p', 'gq', d.q));
   b.append(choiceButtons(T('Ja', 'Yes'), T('Nein', 'No'), yes => {
     tg.stack[d.n] = yes ? 1 : 0;
@@ -496,7 +499,7 @@ function showStack() {
     const chips = el('div', 'meta');
     chips.append(el('span', 'chip', d.p ? T('Eigenhändig', 'With your own hands') : T('Aus der Distanz', 'From a distance')), el('span', 'chip', d.i ? T('Tod als Mittel', 'Death as a means') : T('Tod als Nebenfolge', 'Death as a side effect')));
     r.append(chips, el('p', 'gnote', (d.p ? T('Hier müsstest du selbst Hand anlegen. ', 'Here you would have to do it with your own hands. ') : T('Hier löst du den Tod nur aus der Ferne aus. ', 'Here you only trigger the death from afar. ')) + (d.i ? T('Der Tod des Opfers ist das Mittel, das die anderen rettet.', 'The victim’s death is the means that saves the others.') : T('Der Tod des Opfers ist eine Nebenfolge der Rettung.', 'The victim’s death is a side effect of the rescue.'))));
-    const next = el('button', 'btn gnext', T('Weiter →', 'Next →'));
+    const next = el('button', 'btn gnext', T('Weiter ›', 'Next ›'));
     next.onclick = showStack;
     r.append(next);
     b.append(r);
@@ -504,11 +507,11 @@ function showStack() {
   }));
 }
 function showStackEnd() {
-  const b = gameScreen(T('Forschungs-Stapel', 'Research stack'));
+  const b = gameScreen(T('Fälle aus der Forschung', 'Research cases'));
   b.append(icBox('flag', 'big'), el('h2', null, T(`Alle ${TROLLEY_STACK.length} Fälle beantwortet`, `All ${TROLLEY_STACK.length} cases answered`)));
   const pat = patternBlock();
   if (pat) b.append(pat);
-  const menu = el('button', 'btn gnext', T('Zum Menü', 'Back to the menu'));
+  const menu = el('button', 'btn gnext', T('Zurück zum Menü', 'Back to the menu'));
   menu.onclick = toMenu;
   b.append(menu);
 }

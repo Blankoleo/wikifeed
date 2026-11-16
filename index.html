@@ -20,6 +20,7 @@
 <body>
   <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
   <main id="view-feed" class="view active">
+    <h1 class="vh">Feed</h1>
     <div id="feed" class="feed"></div>
   </main>
 
@@ -27,7 +28,7 @@
     <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head"><h1 data-en="Search">Suche</h1></header>
     <form id="search-form" class="search-box" action="#" role="search">
-      <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" data-en-ph="Search Wikipedia …" data-en-aria="Search Wikipedia" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
+      <input id="search-input" type="search" placeholder="Wikipedia durchsuchen …" data-en-ph="Search Wikipedia…" data-en-aria="Search Wikipedia" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Wikipedia durchsuchen">
     </form>
     <p id="search-hint" class="empty"></p>
     <ul id="search-list" class="list"></ul>
@@ -54,12 +55,12 @@
     <div class="navbar" aria-hidden="true"><div class="navbar-in"><span></span></div></div>
     <header class="page-head"><h1 data-en="Saved">Gemerkt</h1></header>
     <form id="saved-tools" class="search-box saved-tools" action="#" role="search" hidden>
-      <input id="saved-search" type="search" placeholder="Suchen …" data-en-ph="Search …" aria-label="Gemerkte Artikel durchsuchen" data-en-aria="Search saved articles" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+      <input id="saved-search" type="search" placeholder="Suchen …" data-en-ph="Search…" aria-label="Gemerkte Artikel durchsuchen" data-en-aria="Search saved articles" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
       <label class="saved-sort">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg>
         <select id="saved-sort" aria-label="Sortieren" data-en-aria="Sort">
-          <option value="newest" data-en="Recently saved">Zuletzt gemerkt</option>
-          <option value="oldest" data-en="First saved">Zuerst gemerkt</option>
+          <option value="newest" data-en="Newest first">Neueste zuerst</option>
+          <option value="oldest" data-en="Oldest first">Älteste zuerst</option>
           <option value="az" data-en="Title A–Z">Titel A–Z</option>
           <option value="za" data-en="Title Z–A">Titel Z–A</option>
         </select>
@@ -68,7 +69,7 @@
     <p id="saved-status" class="saved-status" role="status" hidden></p>
     <ul id="saved-list" class="list"></ul>
     <p id="saved-none" class="empty" hidden></p>
-    <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap “Save” on a card to keep an article for later – it can then be read without an internet connection too.">Noch nichts gemerkt. Tippe auf einer Karte auf „Merken“, um einen Artikel für später aufzuheben – er ist dann auch ohne Internet lesbar.</p>
+    <p id="saved-empty" class="empty" data-en="Nothing saved yet. Tap “Save” on a card to keep an article for later. Saved articles are available offline.">Noch nichts gemerkt. Tippe auf einer Karte auf „Merken“, um einen Artikel für später zu behalten. Gemerkte Artikel sind offline verfügbar.</p>
   </section>
 
   <section id="view-topics" class="view">
@@ -82,11 +83,11 @@
       <div class="set-group">
         <div class="set-block">
           <div class="set-label" data-en="Colour">Farbe</div>
-          <div id="theme-picks" class="theme-picks"></div>
+          <div id="theme-picks" class="theme-picks" role="radiogroup" aria-label="Farbe" data-en-aria="Colour"></div>
         </div>
         <div class="set-block">
-          <div class="set-label" data-en="Size of the text box">Größe der Textbox</div>
-          <div id="panel-seg" class="seg" role="radiogroup" aria-label="Größe der Textbox" data-en-aria="Size of the text box">
+          <div class="set-label" data-en="Text panel on cards">Textfeld auf Karten</div>
+          <div id="panel-seg" class="seg" role="radiogroup" aria-label="Textfeld auf Karten" data-en-aria="Text panel on cards">
             <button type="button" data-v="38" data-en="Small">Klein</button>
             <button type="button" data-v="50" data-en="Medium">Mittel</button>
             <button type="button" data-v="64" data-en="Large">Groß</button>
@@ -101,8 +102,8 @@
           </div>
         </div>
         <div class="set-block">
-          <div class="set-label set-label-row"><span data-en="Size of the bottom bar">Größe der Leiste unten</span><output id="tabscale-val"></output></div>
-          <input type="range" id="tabscale" class="slider" min="80" max="140" step="5" aria-label="Größe der Leiste unten" data-en-aria="Size of the bottom bar">
+          <div class="set-label set-label-row"><span data-en="Tab bar size">Größe der Tab-Leiste</span><output id="tabscale-val"></output></div>
+          <input type="range" id="tabscale" class="slider" min="80" max="140" step="5" aria-label="Größe der Tab-Leiste" data-en-aria="Tab bar size">
           <div class="slider-ends"><span data-en="Smaller">Kleiner</span><span data-en="Larger">Größer</span></div>
         </div>
         <label class="set-row">
@@ -114,11 +115,11 @@
       <h3 class="set-h" data-en="Feed">Feed</h3>
       <div class="set-group">
         <div class="set-block">
-          <div class="set-label"><span data-en="Topics">Themen</span><small data-en="Tap to switch on or off">Antippen zum An- und Abwählen</small></div>
+          <div class="set-label"><span data-en="Topics">Themen</span><small data-en="Tap to turn on or off">Zum Ein- und Ausschalten antippen</small></div>
           <div id="topic-chips" class="chips"></div>
         </div>
         <label class="set-row">
-          <span class="set-text"><b data-en="Top articles only">Nur Top-Artikel</b><small data-en="Prefers featured articles, no short stubs.">Ausgezeichnete Artikel bevorzugen, keine kurzen Stummel.</small></span>
+          <span class="set-text"><b data-en="Prefer featured articles">Ausgezeichnete Artikel bevorzugen</b><small data-en="Shows mostly featured, in-depth articles.">Zeigt vor allem ausgezeichnete, ausführliche Artikel.</small></span>
           <input type="checkbox" id="quality" class="switch">
         </label>
       </div>
@@ -156,11 +157,11 @@
         </div>
       </div>
 
-      <h3 class="set-h" data-en="Learned">Gelerntes</h3>
+      <h3 class="set-h" data-en="Personalisation">Gelerntes</h3>
       <div class="set-group">
         <details class="set-more">
           <summary data-en="What the app has learned about you">Was die App über dich gelernt hat</summary>
-          <p data-en="“Like” and long reading make a topic more frequent, “Less” makes it rarer.">„Gefällt mir“ und langes Lesen machen ein Thema häufiger, „Weniger“ seltener.</p>
+          <p data-en="“Like” and reading for a long time make a topic appear more often, “Show less” makes it rarer.">„Gefällt mir“ und langes Lesen machen ein Thema häufiger, „Weniger“ seltener.</p>
           <div id="weights" class="weights"></div>
           <button id="reset" class="btn ghost" data-en="Reset what the app has learned">Gelerntes zurücksetzen</button>
         </details>
@@ -170,20 +171,20 @@
         <details class="set-more">
           <summary data-en="Sources &amp; licences">Quellen &amp; Lizenzen</summary>
           <p data-en="Article texts come from Wikipedia and are licensed under CC BY-SA 4.0; the authors are listed in each article’s version history (↗ in the reader opens the original). Pictures come from Wikimedia Commons or Wikipedia, each under its own licence – author and licence are shown on the picture.">Artikeltexte stammen aus der Wikipedia und stehen unter der Lizenz CC BY-SA 4.0; die Autorinnen und Autoren stehen in der Versionsgeschichte des jeweiligen Artikels (↗ im Leser öffnet das Original). Bilder stammen von Wikimedia Commons bzw. Wikipedia, jeweils unter eigener Lizenz – Urheber und Lizenz stehen auf dem Bild.</p>
-          <p data-en="Questions under “Think” and the trolley classics: own texts by WikiFeed. Research stack: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Survey figures: Awad et al. (2020), PNAS 117(5).">Fragen unter „Denken“ und Trolley-Klassiker: eigene Texte von WikiFeed. Forschungs-Stapel: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Umfragezahlen: Awad u. a. (2020), PNAS 117(5).</p>
-          <p data-en="“Did you know?” under “Think”: short facts from the “Did you know …” section of the Wikipedia main page, CC BY-SA 4.0. Curiosities: own texts by WikiFeed, based on the linked Wikipedia articles.">„Schon gewusst?“ unter „Denken“: kurze Fakten aus der Rubrik „Schon gewusst?“ der Wikipedia-Hauptseite, CC BY-SA 4.0. Fundstücke: eigene Texte von WikiFeed auf Grundlage der verlinkten Wikipedia-Artikel.</p>
+          <p data-en="Questions under “Think” and the classics of the trolley game: own texts by WikiFeed. Research cases: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Survey figures: Awad et al. (2020), PNAS 117(5).">Fragen unter „Denken“ und Klassiker des Trolley-Spiels: eigene Texte von WikiFeed. Fälle aus der Forschung: Christensen, Flexas, Calabrese, Gut &amp; Gomila (2014), Frontiers in Psychology 5:607, CC BY. Umfragezahlen: Awad u. a. (2020), PNAS 117(5).</p>
+          <p data-en="“Did you know?” under “Think”: short facts from the “Did you know” section of the Wikipedia main page, CC BY-SA 4.0. Curiosities: own texts by WikiFeed, based on the linked Wikipedia articles.">„Schon gewusst?“ unter „Denken“: kurze Fakten aus der Rubrik „Schon gewusst?“ der Wikipedia-Hauptseite, CC BY-SA 4.0. Fundstücke: eigene Texte von WikiFeed auf Grundlage der verlinkten Wikipedia-Artikel.</p>
           <p data-en="WikiFeed is not affiliated with Wikipedia or the Wikimedia Foundation.">WikiFeed ist kein Angebot der Wikipedia oder der Wikimedia Foundation.</p>
         </details>
         <details class="set-more">
           <summary data-en="Privacy">Datenschutz</summary>
           <p data-en="WikiFeed has no accounts, no advertising, no tracking and no server of its own. Everything you save, like or answer stays on this device only (browser storage) and is never sent anywhere.">WikiFeed hat keine Konten, keine Werbung, kein Tracking und keinen eigenen Server. Alles, was du merkst, magst oder beantwortest, bleibt nur auf diesem Gerät (Browser-Speicher) und wird nirgendwohin geschickt.</p>
           <p data-en="To show articles and pictures, your device loads them directly from Wikipedia/Wikimedia (Wikimedia Foundation, USA). The app itself is delivered by GitHub Pages (GitHub Inc., USA). Both technically receive your IP address and browser details, as with any website, and process them under their own privacy policies.">Um Artikel und Bilder anzuzeigen, lädt dein Gerät sie direkt bei Wikipedia/Wikimedia (Wikimedia Foundation, USA). Die App selbst wird von GitHub Pages (GitHub Inc., USA) ausgeliefert. Beide erhalten dabei technisch – wie bei jeder Website – deine IP-Adresse und Browserangaben und verarbeiten sie nach ihren eigenen Datenschutzerklärungen.</p>
-          <p data-en="Reading aloud uses your device’s built-in voice; the tilt effect reads the motion sensor only on the device.">Vorlesen nutzt die eingebaute Stimme deines Geräts, der Neige-Effekt liest den Lagesensor nur auf dem Gerät.</p>
+          <p data-en="Reading aloud uses your device’s built-in voice. The 3D effect uses the motion sensor on your device only.">Vorlesen nutzt die eingebaute Stimme deines Geräts. Der 3D-Effekt liest den Bewegungssensor nur auf dem Gerät aus.</p>
           <p><a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" target="_blank" rel="noopener" data-en="Wikimedia privacy policy ↗">Datenschutz Wikimedia ↗</a> · <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener" data-en="GitHub privacy statement ↗">Datenschutz GitHub ↗</a></p>
         </details>
         <button id="wipe" class="set-row" type="button"><span class="set-text"><b class="danger" data-en="Delete all data on this device">Alle Daten auf diesem Gerät löschen</b><small data-en="Saved articles, answers, settings and what the app has learned.">Gemerktes, Antworten, Einstellungen und Gelerntes.</small></span></button>
       </div>
-      <p class="version">WikiFeed · Version 2.6<br><span id="dims"></span></p>
+      <p class="version">WikiFeed · Version 2.61</p>
     </div>
   </section>
 
@@ -196,7 +197,7 @@
     <button data-view="topics"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.4"/><circle cx="8" cy="17" r="2.4"/></svg></span><em data-en="Settings">Einstellungen</em></button>
   </nav>
 
-  <div id="think" class="think-sheet" hidden>
+  <div id="think" class="think-sheet" role="dialog" aria-modal="true" aria-label="Denken" data-en-aria="Think" hidden>
     <header class="think-head">
       <button id="think-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="think-title" class="reader-title"></div>
@@ -207,7 +208,7 @@
     </div>
   </div>
 
-  <div id="game" class="game-sheet" hidden>
+  <div id="game" class="game-sheet" role="dialog" aria-modal="true" aria-label="Trolley-Spiel" data-en-aria="Trolley game" hidden>
     <header class="think-head">
       <button id="game-back" class="icon-btn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="game-title" class="reader-title"></div>
@@ -218,7 +219,7 @@
     </div>
   </div>
 
-  <div id="reader" class="reader" hidden>
+  <div id="reader" class="reader" role="dialog" aria-modal="true" aria-label="Artikel" data-en-aria="Article" hidden>
     <header class="reader-head">
       <button id="reader-back" class="rbtn" aria-label="Zurück" data-en-aria="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div id="reader-title" class="reader-title"></div>
@@ -233,9 +234,10 @@
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <p id="sr-live" class="vh" aria-live="polite"></p>
 
-  <!-- i18n.js lädt die Inhalte (Fragen, Forschungs-Stapel) nur in der gewählten Sprache nach. -->
+  <!-- i18n.js lädt die Inhalte (Fragen, Fälle aus der Forschung) nur in der gewählten Sprache nach. -->
   <script src="i18n.js"></script>
   <script src="app.js"></script>
   <script src="trolley.js"></script>

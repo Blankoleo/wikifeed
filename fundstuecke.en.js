@@ -44,7 +44,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Cavity magnetron",
-    "link": "During the Second World War, Spencer ran Raytheon's power tube division. One of those tubes, the cavity magnetron, still produces the microwaves in most ovens."
+    "link": "During the Second World War, Spencer ran Raytheon’s power tube division. One of those tubes, the cavity magnetron, still produces the microwaves in most ovens."
    },
    {
     "title": "Radar",
@@ -65,7 +65,7 @@ const FUNDSTUECKE_EN = [
   "steps": [
    {
     "title": "Cork (material)",
-    "link": "Cork comes mainly from the bark of the cork oak, and its best-known use is wine stoppers. Portugal produces about half of the world's supply."
+    "link": "Cork comes mainly from the bark of the cork oak, and its best-known use is wine stoppers. Portugal produces about half of the world’s supply."
    },
    {
     "title": "Cell (biology)",
@@ -73,7 +73,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Robert Hooke",
-    "link": "Hooke was a polymath who has been called England's Leonardo. He also argued that fossils were the remains of living things, some of them extinct."
+    "link": "Hooke was a polymath who has been called England’s Leonardo. He also argued that fossils were the remains of living things, some of them extinct."
    },
    {
     "title": "Great Fire of London",
@@ -98,7 +98,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Phosphorus",
-    "link": "The key ingredient is phosphorus. Its name means 'light-bearer' in Greek, after the faint glow of white phosphorus, but matches use the less dangerous red kind."
+    "link": "The key ingredient is phosphorus. Its name means “light-bearer” in Greek, after the faint glow of white phosphorus, but matches use the less dangerous red kind."
    },
    {
     "title": "Hennig Brand",
@@ -106,7 +106,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Philosopher's stone",
-    "link": "What Brand was really after was the philosopher's stone, a mythical substance said to turn lead into gold."
+    "link": "What Brand was really after was the philosopher’s stone, a mythical substance said to turn lead into gold."
    }
   ]
  },
@@ -119,7 +119,7 @@ const FUNDSTUECKE_EN = [
   "steps": [
    {
     "title": "Vanilla",
-    "link": "Vanilla comes from the seed pods of orchids. By weight, it is the world's second most expensive spice after saffron."
+    "link": "Vanilla comes from the seed pods of orchids. By weight, it is the world’s second most expensive spice after saffron."
    },
    {
     "title": "Vanilla planifolia",
@@ -127,7 +127,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Pollination",
-    "link": "Vanilla can't pollinate itself, so a pod only forms if pollen reaches the flower. A Belgian botanist worked out an artificial method in 1837, but it didn't pay."
+    "link": "Vanilla can’t pollinate itself, so a pod only forms if pollen reaches the flower. A Belgian botanist worked out an artificial method in 1837, but it didn’t pay."
    },
    {
     "title": "Edmond Albius",
@@ -135,7 +135,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Réunion",
-    "link": "The island's old name lives on in the shops: Réunion used to be called Île Bourbon, hence Bourbon vanilla."
+    "link": "The island’s old name lives on in the shops: Réunion used to be called Île Bourbon, hence Bourbon vanilla."
    }
   ]
  },
@@ -144,7 +144,7 @@ const FUNDSTUECKE_EN = [
   "object": "The robot",
   "image": "R.U.R.",
   "q": "What’s behind it?",
-  "teaser": "The word robot comes from a play, and really from the playwright's brother.",
+  "teaser": "The word robot comes from a play, and really from the playwright’s brother.",
   "steps": [
    {
     "title": "Robot",
@@ -160,7 +160,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "R.U.R.",
-    "link": "The play was R.U.R., short for Rossum's Universal Robots, in which artificial workers end up wiping out humanity. By 1923 it had been translated into thirty languages."
+    "link": "The play was R.U.R., short for Rossum’s Universal Robots, in which artificial workers end up wiping out humanity. By 1923 it had been translated into thirty languages."
    },
    {
     "title": "Golem",
@@ -173,7 +173,7 @@ const FUNDSTUECKE_EN = [
   "object": "The fingerprint",
   "image": "Fingerprint",
   "q": "What’s behind it?",
-  "teaser": "From your fingertip, it's a short trip to the most famous curve in statistics.",
+  "teaser": "From your fingertip, it’s a short trip to the most famous curve in statistics.",
   "steps": [
    {
     "title": "Fingerprint",
@@ -252,11 +252,11 @@ const FUNDSTUECKE_EN = [
   "steps": [
    {
     "title": "Pencil",
-    "link": "Most pencil cores are graphite powder mixed with clay. The old name 'lead pencil' has stuck anyway."
+    "link": "Most pencil cores are graphite powder mixed with clay. The old name “lead pencil” has stuck anyway."
    },
    {
     "title": "Graphite",
-    "link": "Graphite consists of many stacked layers of carbon, often hundreds of them. Its name comes from the Greek word for 'to write'."
+    "link": "Graphite consists of many stacked layers of carbon, often hundreds of them. Its name comes from the Greek word for “to write”."
    },
    {
     "title": "Carbon",
@@ -281,7 +281,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Quartz",
-    "link": "Quartz is the second most common mineral in the Earth's crust. It is also the yardstick for 7 on the Mohs hardness scale."
+    "link": "Quartz is the second most common mineral in the Earth’s crust. It is also the yardstick for 7 on the Mohs hardness scale."
    },
    {
     "title": "Piezoelectricity",
@@ -302,11 +302,11 @@ const FUNDSTUECKE_EN = [
   "object": "The ampersand &",
   "image": "Ligature (writing)",
   "q": "What’s behind it?",
-  "teaser": "Hidden in the & are two Latin letters, and the trail leads to Cicero's secretary.",
+  "teaser": "Hidden in the & are two Latin letters, and the trail leads to Cicero’s secretary.",
   "steps": [
    {
     "title": "Ampersand",
-    "link": "The ampersand is a sign for 'and'. Its shape began as the Latin word et."
+    "link": "The ampersand is a sign for “and”. Its shape began as the Latin word et."
    },
    {
     "title": "Ligature (writing)",
@@ -322,20 +322,20 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Cicero",
-    "link": "Cicero is considered one of Rome's greatest orators. After his death, Tiro published his former master's letters and speeches."
+    "link": "Cicero is considered one of Rome’s greatest orators. After his death, Tiro published his former master’s letters and speeches."
    }
   ]
  },
  {
   "id": "gaensehaut",
-  "object": "Goose bumps",
+  "object": "Goosebumps",
   "image": "Goose bumps",
   "q": "What’s behind it?",
   "teaser": "When the hairs on your arm stand up, your body is doing what a porcupine does in danger.",
   "steps": [
    {
     "title": "Goose bumps",
-    "link": "Goose bumps pop up at the base of body hairs when we're cold, tickled or gripped by strong emotions like fear or euphoria."
+    "link": "Goosebumps pop up at the base of body hairs when we’re cold, tickled or gripped by strong emotions like fear or euphoria."
    },
    {
     "title": "Old World porcupine",
@@ -372,7 +372,7 @@ const FUNDSTUECKE_EN = [
    },
    {
     "title": "Samuel Morse",
-    "link": "Morse code is named after Samuel Morse, though his own first draft was replaced by others' work. Before turning to the telegraph in middle age, Morse was a well-known portrait painter."
+    "link": "Morse code is named after Samuel Morse, though his own first draft was replaced by others’ work. Before turning to the telegraph in middle age, Morse was a well-known portrait painter."
    }
   ]
  },
@@ -385,11 +385,11 @@ const FUNDSTUECKE_EN = [
   "steps": [
    {
     "title": "Gros Michel",
-    "link": "Until the 1950s, the Gros Michel, or 'Big Mike', was the world's main banana. Its thick peel and dense bunches made it ideal for shipping."
+    "link": "Until the 1950s, the Gros Michel, or “Big Mike”, was the world’s main banana. Its thick peel and dense bunches made it ideal for shipping."
    },
    {
     "title": "Panama disease",
-    "link": "Then a fungus struck. Panama disease, a wilt that fungicides can't stop, almost wiped out commercial Gros Michel growing in the 1950s."
+    "link": "Then a fungus struck. Panama disease, a wilt that fungicides can’t stop, almost wiped out commercial Gros Michel growing in the 1950s."
    },
    {
     "title": "Cavendish banana",

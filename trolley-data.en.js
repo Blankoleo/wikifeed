@@ -22,7 +22,7 @@ const TROLLEY_STACK = [
 "i": 0,
 "text": "You and five other people are trapped in a burning building. There is only one emergency exit through which all of you could escape, but it is blocked by burning debris. Another injured person is about to crawl through a hole at the bottom of the exit door. You and the five people behind you do not have time to do the same.",
 "act": "If you activate the emergency system it will eliminate oxygen from the hallway which will put out the fire. However, it will leave the injured person without air. This will kill him, but you and the five people behind you will be saved.",
-"q": "Do you put out the fire by activating the emergency system, which will leave the injured without air, so you and the five other people can escape?"
+"q": "Do you put out the fire by activating the emergency system, which will leave the injured person without air, so you and the five other people can escape?"
 },
   {
 "n": 3,
@@ -30,8 +30,8 @@ const TROLLEY_STACK = [
 "p": 1,
 "i": 0,
 "text": "Enemy soldiers have taken over your village and will kill all civilians above the age of two. You and ten neighbors are hiding in two rooms of the cellar of a large house. You can hear the voices of soldiers who have come to search the house for valuables. Your baby begins to cry loudly. The crying will attract the attention of the soldiers, who will spare your baby’s life, but will kill you and the other refugees in both rooms.",
-"act": "If you put your hand over its mouth the crying will be absorbed, but your baby will not be able to breathe. This will kill it, but it will save you and the other ten neighbors.",
-"q": "Do you absorb the crying by putting your hand over your baby’s mouth, which will leave it without air, so the soldiers won’t find you and the ten neighbors?"
+"act": "If you put your hand over its mouth, it will muffle the crying, but your baby won’t be able to breathe. This will kill it, but it will save you and the other ten neighbors.",
+"q": "Do you muffle the crying by putting your hand over your baby’s mouth, which will leave it without air, so the soldiers won’t find you and the ten neighbors?"
 },
   {
 "n": 4,
@@ -39,8 +39,8 @@ const TROLLEY_STACK = [
 "p": 0,
 "i": 0,
 "text": "Enemy soldiers have taken over your village and will kill all civilians above the age of two. You and ten neighbors are hiding in two rooms of the cellar of a large house. You can hear the voices of soldiers who have come to search the house for valuables. Your baby begins to cry loudly. The crying will attract the attention of the soldiers, who will spare your baby’s life, but will kill you and the other refugees in both rooms.",
-"act": "If you activate a noisy boiler it will cushion the crying, but it will become uncomfortably hot. The heat will be mortal for your baby, but it will save you and the ten neighbors.",
-"q": "Do you cushion the crying by activating the noisy boiler which will asphyxiate the baby, so they won’t find you and the ten neighbors?"
+"act": "If you activate a noisy boiler it will muffle the crying, but it will become uncomfortably hot. The heat will kill your baby, but it will save you and the ten neighbors.",
+"q": "Do you muffle the crying by activating the noisy boiler which will asphyxiate the baby, so they won’t find you and the ten neighbors?"
 },
   {
 "n": 5,
