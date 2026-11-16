@@ -21,7 +21,7 @@ const DENKEN_EN = {
   alltag: [
     // ---------------- Money, work & shopping ----------------
     { id: 'a-wechselgeld', kind: 'alltag', icon: 'coin', title: 'Too much change',
-      text: 'At the supermarket you pay with a 50 note. At home you notice you were given 20 too much in change. The shop is ten minutes away.',
+      text: 'At the supermarket you pay with a €50 note. At home you notice you were given €20 too much in change. The shop is ten minutes away.',
       q: 'Do you take the money back?',
       opts: [{ t: 'Yes, today.', l: 'R' }, { t: 'Next time I shop there.', l: 'C' }, { t: 'No, a big chain will hardly notice.', l: 'F' }],
       why: { F: 'Who it actually hurts', R: 'It isn’t mine', C: 'I want to be someone who gives things like this back' },
@@ -48,7 +48,7 @@ const DENKEN_EN = {
     { id: 'a-butter', kind: 'alltag', icon: 'cart', title: 'The butter', pair: ['a-stempeluhr'],
       text: 'In the supermarket you see an elderly woman slip a pack of butter into her coat pocket. Her coat is worn, and all she has in her basket is a loaf of bread.',
       q: 'What do you do?',
-      opts: [{ t: 'Nothing, it’s not my business.', l: 'F' }, { t: 'I tell the staff.', l: 'R' }, { t: 'I quietly offer to pay for the butter.', l: 'C' }],
+      opts: [{ t: 'Nothing, it’s none of my business.', l: 'F' }, { t: 'I tell the staff.', l: 'R' }, { t: 'I quietly offer to pay for the butter.', l: 'C' }],
       why: { F: 'Who it harms and who it helps', R: 'The law applies to everyone', C: 'What a compassionate person would do' },
       lenses: {
         F: 'If you look at the outcome, you see that the loss to the shop is tiny and her need is probably great. If she were caught, the shame and the penalty would be far worse than one pack of butter. Seen that way, looking away may be the gentlest option.',

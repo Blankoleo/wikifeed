@@ -1,7 +1,7 @@
 {
   "name": "WikiFeed",
   "short_name": "WikiFeed",
-  "description": "Wikipedia-Artikel, die dich wirklich interessieren.",
+  "description": "Wikipedia-Artikel als Feed, nach deinen Themen.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
