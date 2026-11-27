@@ -90,7 +90,8 @@ const TROLLEY_CLASSICS_EN = {
     text: 'You are alone in a self-driving car. Suddenly five people run into the road; braking is no longer possible. The car can go straight on and kill the five, or swerve into a concrete wall, which kills you. You decide beforehand how it is programmed.',
     note: 'A study in “Science” (2016) found a dilemma right here: most people approve of cars that save as many lives as possible – but would rather buy one that protects its passengers.' },
 };
-if (LANG === 'en') TROLLEY_CLASSICS.forEach(c => Object.assign(c, TROLLEY_CLASSICS_EN[c.id]));
+// Französisch (seit 2.7): TROLLEY_CLASSICS_FR steht in i18n.fr.js; fehlt ein Eintrag, gilt der englische.
+if (LANG !== 'de') TROLLEY_CLASSICS.forEach(c => Object.assign(c, (LANG === 'fr' && typeof TROLLEY_CLASSICS_FR !== 'undefined' && TROLLEY_CLASSICS_FR[c.id]) || TROLLEY_CLASSICS_EN[c.id]));
 
 // ---------- Gleis-Ansicht ----------
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -375,7 +376,13 @@ function showClassic(i) {
 }
 
 // ---------- Zufallsrunde ----------
-const WHO = LANG === 'en' ? {
+const WHO = LANG === 'fr' ? {
+  // singulier, pluriel, figure dessinée, article
+  kind: ['enfant', 'enfants', 'child', 'un'], frau: ['femme', 'femmes', 'woman', 'une'], mann: ['homme', 'hommes', 'man', 'un'],
+  opa: ['homme âgé', 'hommes âgés', 'oldman', 'un'], oma: ['femme âgée', 'femmes âgées', 'oldwoman', 'une'],
+  arzt: ['médecin', 'médecins', 'doctor', 'une'], dieb: ['braqueur de banque', 'braqueurs de banque', 'robber', 'un'],
+  hund: ['chien', 'chiens', 'dog', 'un'], katze: ['chat', 'chats', 'cat', 'un'],
+} : LANG === 'en' ? {
   // singular, plural, drawn figure, article
   kind: ['child', 'children', 'child', 'a'], frau: ['woman', 'women', 'woman', 'a'], mann: ['man', 'men', 'man', 'a'],
   opa: ['elderly man', 'elderly men', 'oldman', 'an'], oma: ['elderly woman', 'elderly women', 'oldwoman', 'an'],
@@ -420,7 +427,7 @@ function showEndless() {
   const b = gameScreen(T('Zufallsrunde', 'Random round'));
   $('game-back').setAttribute('aria-label', T('Zurück zum Menü', 'Back to the menu'));
   const sc = makeScene({ scene: 'switch', main: grpFigs(cs.main), side: grpFigs(cs.side) });
-  const line = (label, g, note) => { const p = el('p', 'gline'); p.append(el('b', null, label + ': '), grpText(g) + (note ? ` (${note})` : '')); return p; };
+  const line = (label, g, note) => { const p = el('p', 'gline'); p.append(el('b', null, label + T(': ', ': ')), grpText(g) + (note ? ` (${note})` : '')); return p; };
   b.append(el('p', 'gstep', T(`Fall ${endlessRun + 1} von 10`, `Case ${endlessRun + 1} of 10`)), sc.el, line(T('Hauptgleis', 'Main track'), cs.main, cs.noteMain), line(T('Nebengleis', 'Side track'), cs.side, cs.noteSide), el('p', 'gq', T('Tust du nichts, trifft die Bahn das Hauptgleis.', 'If you do nothing, the trolley hits the main track.')));
   b.append(choiceButtons(T('Weiche umlegen', 'Pull the lever'), T('Nichts tun', 'Do nothing'), async yes => {
     const e = tg.endless;
