@@ -1,14 +1,14 @@
 'use strict';
 
 const API = 'https://' + WIKI.host + '/w/api.php';
-// Gedankenspiele in der aktiven Sprache (thoughts.js / thoughts.en.js)
+// Gedankenspiele in der aktiven Sprache (thoughts.js / thoughts.en.js / thoughts.fr.js; fr fällt auf en zurück)
 // (i18n.js lädt nur die Datei der aktiven Sprache; fehlt sie, bleibt der Bereich leer statt die App anzuhalten)
-const THOUGHTS = (LANG === 'en' ? typeof THOUGHTS_EN !== 'undefined' && THOUGHTS_EN : typeof THOUGHTS_DE !== 'undefined' && THOUGHTS_DE) || [];
+const THOUGHTS = (LANG === 'fr' ? (typeof THOUGHTS_FR !== 'undefined' && THOUGHTS_FR) || (typeof THOUGHTS_EN !== 'undefined' && THOUGHTS_EN) : LANG === 'en' ? typeof THOUGHTS_EN !== 'undefined' && THOUGHTS_EN : typeof THOUGHTS_DE !== 'undefined' && THOUGHTS_DE) || [];
 // Seit 2.6: Alltagsdilemmata und Philosophen-Karten (denken.js / denken.en.js), gleiche Kennungen in beiden Sprachen
-const DENKEN = (LANG === 'en' ? typeof DENKEN_EN !== 'undefined' && DENKEN_EN : typeof DENKEN_DE !== 'undefined' && DENKEN_DE) || { people: {}, alltag: [], philo: [] };
+const DENKEN = (LANG === 'fr' ? (typeof DENKEN_FR !== 'undefined' && DENKEN_FR) || (typeof DENKEN_EN !== 'undefined' && DENKEN_EN) : LANG === 'en' ? typeof DENKEN_EN !== 'undefined' && DENKEN_EN : typeof DENKEN_DE !== 'undefined' && DENKEN_DE) || { people: {}, alltag: [], philo: [] };
 const THINK_ALL = THOUGHTS.concat(DENKEN.alltag || [], DENKEN.philo || []);
 // Fundstücke in der aktiven Sprache (fundstuecke.de.js / fundstuecke.en.js), nur vollständige Einträge
-const FUND = ((LANG === 'en' ? typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUECKE_EN : typeof FUNDSTUECKE_DE !== 'undefined' && FUNDSTUECKE_DE) || [])
+const FUND = ((LANG === 'fr' ? (typeof FUNDSTUECKE_FR !== 'undefined' && FUNDSTUECKE_FR) || (typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUECKE_EN) : LANG === 'en' ? typeof FUNDSTUECKE_EN !== 'undefined' && FUNDSTUECKE_EN : typeof FUNDSTUECKE_DE !== 'undefined' && FUNDSTUECKE_DE) || [])
   .filter(f => f && f.id && f.object && Array.isArray(f.steps) && f.steps.length >= 2 && f.steps.every(s => s && s.title));
 
 // Themen = Wikipedias eigene "articletopic"-Klassifizierung.
@@ -603,7 +603,7 @@ function addCard(item, afterEl) {
   if (item.aotd) meta.append(el('span', 'chip top', T('Artikel des Tages', 'Article of the day')));
   if (item.topic) meta.append(el('span', 'chip', topicLabel(item.topic)));
   if (item.top) meta.append(el('span', 'chip top', T('Ausgezeichnet', 'Featured')));
-  if (item.seed) meta.append(el('span', 'chip sim', T('≈ Ähnlich wie „' + item.seed + '“', '≈ Similar to “' + item.seed + '”')));
+  if (item.seed) meta.append(el('span', 'chip sim', T(`≈ Ähnlich wie „${item.seed}“`, `≈ Similar to “${item.seed}”`)));
   const h = el('h2', null, item.title);
   const p = el('p', 'extract', item.extract);
   body.append(meta, h, p, el('div', 'src', T('Wikipedia · CC BY-SA 4.0', 'Wikipedia · CC BY-SA 4.0')));
@@ -744,7 +744,7 @@ function sanitize(doc) {
 }
 function cleanArticle(htmlText) {
   const doc = sanitize(new DOMParser().parseFromString(htmlText, 'text/html'));
-  doc.querySelectorAll('.navbox, .mw-references-wrap, .reflist, ol.references, sup.reference, .mw-editsection, .sisterproject, #normdaten, .mw-empty-elt').forEach(n => n.remove());
+  doc.querySelectorAll('.navbox, .mw-references-wrap, .reflist, ol.references, sup.reference, .mw-editsection, .sisterproject, #normdaten, .mw-empty-elt, #bandeau-portail').forEach(n => n.remove());
   // Adressen ohne Protokoll ("//upload.wikimedia.org/…") immer als https laden – auch bei Videos und Tönen.
   doc.querySelectorAll('[src], [poster], [srcset]').forEach(n => {
     for (const a of ['src', 'poster']) { const v = n.getAttribute(a); if (v?.startsWith('//')) n.setAttribute(a, 'https:' + v); }
@@ -980,7 +980,7 @@ async function renderArticle(title, restoreScroll = 0) {
 // ---------- Leser: Artikel aufräumen ----------
 // Wie die mobile Wikipedia: der erste Absatz vor Infokasten und Bildern, leere Abschnitte („Einzelnachweise“ ohne
 // sichtbaren Inhalt) fallen weg. Läuft einmal pro geöffnetem Artikel auf dem frischen Dokument, ohne Beobachter.
-const ART_HIDDEN = '.mw-editsection, .navbox, .noprint, .metadata, sup.reference, .mw-empty-elt, .sisterproject, #normdaten, .hatnote, .Vorlage_Begriffsklaerungshinweis, .mw-references-wrap, .reflist, ol.references, .navigation-not-searchable, style, link, meta';
+const ART_HIDDEN = '.mw-editsection, .navbox, .noprint, .metadata, sup.reference, .mw-empty-elt, .sisterproject, #normdaten, .hatnote, .Vorlage_Begriffsklaerungshinweis, .mw-references-wrap, .reflist, ol.references, .navigation-not-searchable, #bandeau-portail, style, link, meta';
 function headLevel(n) {
   if (n.nodeType !== 1) return 0;
   const h = n.matches('.mw-heading') ? n.querySelector('h2, h3, h4, h5, h6') : n;
@@ -1534,7 +1534,7 @@ async function runSearch() {
     if (seq !== searchSeq) return;
     searchList.innerHTML = '';
     searchHint.hidden = pages.length > 0;
-    searchHint.textContent = T('Nichts gefunden für „' + q + '“. Prüfe die Schreibweise oder versuche ein anderes Wort.', 'Nothing found for “' + q + '”. Check the spelling or try another word.');
+    searchHint.textContent = T(`Nichts gefunden für „${q}“. Prüfe die Schreibweise oder versuche ein anderes Wort.`, `Nothing found for “${q}”. Check the spelling or try another word.`);
     for (const p of pages) {
       const it = { title: p.title, extract: p.extract || p.description || '', thumb: p.thumbnail?.source || null, topic: null };
       searchList.append(listItem(it, p.description || p.extract));
@@ -2234,7 +2234,7 @@ function renderStandpoints(box) {
     const dot = el('i'); dot.style.left = ((avg + 1) / 2 * 100) + '%';
     bar.append(dot);
     bar.setAttribute('role', 'img');
-    bar.setAttribute('aria-label', ax.name + ': ' + (avg < -.34 ? T('eher ', 'leaning to ') + ax.ends[0] : avg > .34 ? T('eher ', 'leaning to ') + ax.ends[1] : T('ausgewogen', 'balanced')));
+    bar.setAttribute('aria-label', ax.name + T(': ', ': ') + (avg < -.34 ? T('eher ', 'leaning to ') + ax.ends[0] : avg > .34 ? T('eher ', 'leaning to ') + ax.ends[1] : T('ausgewogen', 'balanced')));
     const ends = el('div', 'th-axis-ends');
     ends.append(el('span', null, ax.ends[0]), el('span', null, ax.ends[1]));
     row.append(top, bar, ends);
@@ -2475,7 +2475,7 @@ function dayLabel(day) {
   if (diff === 0) return T('Heute', 'Today');
   if (diff === 1) return T('Gestern', 'Yesterday');
   const [y, m, d] = day.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(LANG === 'en' ? 'en-GB' : 'de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  return new Date(y, m - 1, d).toLocaleDateString(LANG === 'en' ? 'en-GB' : LANG === 'fr' ? 'fr-FR' : 'de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 // Ebene 2: alle aufgehobenen Fakten, nach Tagen
 function renderDykSheet() {
@@ -2754,21 +2754,22 @@ function updateStaunen() {
 // Begriffe, Listen und Begriffsklärungen; ausgezeichnete und ausführliche Artikel werden bevorzugt.
 const HOLE_PROPS = { prop: 'info|pageprops|description|pageimages|categories', ppprop: 'disambiguation', piprop: 'thumbnail', pithumbsize: '160', pilimit: 'max',
   clcategories: WIKI.topCats, cllimit: 'max', redirects: '1' };
-const MONTHS = 'Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|January|February|March|May|June|July|October|December';
-const HOLE_BAD_TITLE = new RegExp(`^(\\d{1,4}(er)?( Jahre)?|\\d{1,4}s|\\d{1,4} (v\\. Chr\\.|n\\. Chr\\.|BC|BCE|AD|CE)|\\d{1,2}\\. (${MONTHS})( \\d{1,4})?|(${MONTHS})( \\d{1,2})?(, \\d{1,4})?|(${MONTHS}) \\d{4})$`
-  + '|(Jahrhundert|Jahrtausend|century|millennium)\\b|^(Liste|Listen|List|Lists|Index|Outline|Timeline|Glossary|Chronologie|Zeittafel) |\\((Begriffsklärung|disambiguation)\\)', 'i');
-const HOLE_BAD_DESC = /\b(country|sovereign state|constituent country|state of the United States|state (?:of|in) (?:Germany|Austria|Australia|India|Brazil|Mexico|Nigeria|Malaysia)|U\.S\. state|federal state|federated state|province|region of|city in|city of|capital city|town in|village in|municipality|commune in|district of|county|human settlement|continent|ocean|academic discipline|branch of|field of study|religion|ethnic group|nationality|calendar year|decade|century|month of|day of the year|Wikimedia|unit of|Staat|Land in|Bundesland|Bundesstaat|Provinz|Region in|Stadt|Großstadt|Kleinstadt|Hauptstadt|Kreisstadt|Gemeinde|Ortschaft|Ort in|Dorf|Landkreis|Bezirk|Kanton|Kontinent|Ozean|Wissenschaft|Fachgebiet|Teilgebiet|Religion|Volk|Ethnie|Jahr|Jahrzehnt|Jahrhundert|Monat|Maßeinheit)\b/i;
-const HOLE_LANG = /\b(language|Sprache)\b/i;
-const HOLE_REALM = /\b(Reich|Kaiserreich|Königreich|Republik|empire|kingdom|republic|dynasty|Dynastie)\b/i; // Staaten der Geschichte
+const MONTHS = 'Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|January|February|March|May|June|July|October|December|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre';
+const HOLE_BAD_TITLE = new RegExp(`^(\\d{1,4}(er)?( Jahre)?|\\d{1,4}s|\\d{1,4} (v\\. Chr\\.|n\\. Chr\\.|BC|BCE|AD|CE)|\\d{1,2}(\\.|er)? (${MONTHS})( \\d{1,4})?|(${MONTHS})( \\d{1,2})?(, \\d{1,4})?|(${MONTHS}) \\d{4})$`
+  + '|(Jahrhundert|Jahrtausend|century|millennium|siècle|millénaire)\\b|^((Années|Décennie) \\d{1,4}|\\d{1,4} av\\. J\\.-C\\.)$|^(Liste|Listen|List|Lists|Index|Outline|Timeline|Glossary|Chronologie|Zeittafel|Glossaire) |\\((Begriffsklärung|disambiguation|homonymie)\\)', 'i');
+const HOLE_BAD_DESC = /\b(country|sovereign state|constituent country|state of the United States|state (?:of|in) (?:Germany|Austria|Australia|India|Brazil|Mexico|Nigeria|Malaysia)|U\.S\. state|federal state|federated state|province|region of|city in|city of|capital city|town in|village in|municipality|commune in|district of|county|human settlement|continent|ocean|academic discipline|branch of|field of study|religion|ethnic group|nationality|calendar year|decade|century|month of|day of the year|Wikimedia|unit of|Staat|Land in|Bundesland|Bundesstaat|Provinz|Region in|Stadt|Großstadt|Kleinstadt|Hauptstadt|Kreisstadt|Gemeinde|Ortschaft|Ort in|Dorf|Landkreis|Bezirk|Kanton|Kontinent|Ozean|Wissenschaft|Fachgebiet|Teilgebiet|Religion|Volk|Ethnie|Jahr|Jahrzehnt|Jahrhundert|Monat|Maßeinheit|pays|souverain|ville|commune|capitale|village|municipalité|département|région|province|canton|arrondissement|continent|océan|discipline|branche de|domaine d'étude|religion|peuple|ethnie|nationalité|année|décennie|siècle|mois|jour de l'année|unité de|page d'homonymie)\b/i;
+const HOLE_LANG = /\b(language|Sprache|langue)\b/i;
+const HOLE_REALM = /\b(Reich|Kaiserreich|Königreich|Republik|empire|kingdom|republic|dynasty|Dynastie|royaume|république|dynastie)\b/i; // Staaten der Geschichte
 const HOLE_GENERAL = new Set(('Mensch|Wasser|Erde|Sonne|Mond|Leben|Tod|Gott|Zeit|Liebe|Geld|Krieg|Frieden|Kunst|Musik|Wissenschaft|Physik|Chemie|Biologie|Mathematik|Geschichte|Philosophie|Religion|Christentum|Islam|Judentum|Europa|Asien|Afrika|Amerika|Nordamerika|Südamerika|Australien|Antarktis|Internet|Computer|Tier|Pflanze|Pflanzen|Lebewesen|Latein|Deutschland|Vereinigte Staaten|Frankreich|Vereinigtes Königreich|Römisches Reich|Antike|Mittelalter|Neuzeit|Zweiter Weltkrieg|Erster Weltkrieg'
-  + '|Human|Humans|Homo sapiens|Water|Earth|Sun|Moon|Life|Death|God|Time|Love|Money|War|Peace|Art|Music|Science|Physics|Chemistry|Biology|Mathematics|History|Philosophy|Christianity|Judaism|Europe|Asia|Africa|Americas|North America|South America|Australia|Antarctica|Animal|Plant|Organism|Latin|Germany|United States|France|United Kingdom|Roman Empire|Classical antiquity|Middle Ages|World War II|World War I').split('|'));
+  + '|Human|Humans|Homo sapiens|Water|Earth|Sun|Moon|Life|Death|God|Time|Love|Money|War|Peace|Art|Music|Science|Physics|Chemistry|Biology|Mathematics|History|Philosophy|Christianity|Judaism|Europe|Asia|Africa|Americas|North America|South America|Australia|Antarctica|Animal|Plant|Organism|Latin|Germany|United States|France|United Kingdom|Roman Empire|Classical antiquity|Middle Ages|World War II|World War I'
+  + '|Être humain|Homo sapiens|Eau|Terre|Soleil|Lune|Vie|Mort|Dieu|Temps|Amour|Argent|Guerre|Paix|Art|Musique|Science|Physique|Chimie|Biologie|Mathématiques|Histoire|Philosophie|Christianisme|Islam|Judaïsme|Europe|Asie|Afrique|Amérique|Amérique du Nord|Amérique du Sud|Australie|Antarctique|Internet|Ordinateur|Animal|Plante|Être vivant|Latin|Allemagne|États-Unis|France|Royaume-Uni|Empire romain|Antiquité|Moyen Âge|Seconde Guerre mondiale|Première Guerre mondiale').split('|'));
 const holeMem = new Map();
 function holeOk(p, skip) {
   if (!p || p.missing || p.invalid || p.ns !== 0 || skip.has(p.title)) return false;
   if (p.pageprops && 'disambiguation' in p.pageprops) return false;
   if ((p.length || 0) < 3000 || HOLE_BAD_TITLE.test(p.title) || WIKI.ns.test(p.title) || HOLE_GENERAL.has(p.title)) return false;
   const d = p.description || '';
-  return !HOLE_BAD_DESC.test(d) && !HOLE_REALM.test(d) && !HOLE_REALM.test(p.title) && !(HOLE_LANG.test(d) && !/programming|Programmier/i.test(d));
+  return !HOLE_BAD_DESC.test(d) && !HOLE_REALM.test(d) && !HOLE_REALM.test(p.title) && !(HOLE_LANG.test(d) && !/programming|Programmier|programmation/i.test(d));
 }
 // Links aus dem Fließtext (ohne Infokästen, Tabellen, Bildunterschriften), höchstens 50, gleichmäßig über den Artikel verteilt
 function holeLinks(root) {
@@ -3214,12 +3215,13 @@ if (tiltBox.checked && !reduceMotion) {
 }
 
 // ---------- Sprache ----------
-// Englische Fassung der festen Texte aus index.html (data-en, data-en-ph, data-en-aria).
-if (LANG === 'en') {
-  document.documentElement.lang = 'en';
-  document.querySelectorAll('[data-en]').forEach(n => { n.textContent = n.dataset.en; });
-  document.querySelectorAll('[data-en-ph]').forEach(n => { n.placeholder = n.dataset.enPh; });
-  document.querySelectorAll('[data-en-aria]').forEach(n => { n.setAttribute('aria-label', n.dataset.enAria); });
+// Englische bzw. französische Fassung der festen Texte aus index.html (data-en, data-en-ph, data-en-aria).
+// Französisch kommt über T() aus dem Wörterbuch in i18n.fr.js (Schlüssel: der englische Text).
+if (LANG !== 'de') {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-en]').forEach(n => { n.textContent = T(n.textContent, n.dataset.en); });
+  document.querySelectorAll('[data-en-ph]').forEach(n => { n.placeholder = T(n.placeholder, n.dataset.enPh); });
+  document.querySelectorAll('[data-en-aria]').forEach(n => { n.setAttribute('aria-label', T(n.getAttribute('aria-label') || '', n.dataset.enAria)); });
 }
 $('lang-select').value = LANG;
 $('lang-select').onchange = e => { store.set('lang', e.target.value); location.reload(); };
